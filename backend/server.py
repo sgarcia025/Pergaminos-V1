@@ -136,6 +136,9 @@ class Document(BaseModel):
     status: str = "uploaded"  # uploaded, processing, completed, failed, needs_review
     extracted_data: Optional[Dict[str, Any]] = None
     processed_at: Optional[datetime] = None
+    display_order: Optional[int] = None  # For reordering
+    reorder_reasoning: Optional[str] = None  # AI reasoning for reorder
+    reordered_at: Optional[datetime] = None  # When reordered
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     uploaded_by: str  # user id
 
