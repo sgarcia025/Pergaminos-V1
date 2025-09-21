@@ -328,7 +328,119 @@ async def upload_document(
     )
     
     await db.documents.insert_one(document.dict())
+    
+    # Start AI processing in background
+    import asyncio
+    asyncio.create_task(process_document_with_ai(document.id, project))
+    
     return document
+
+# AI Document Processing
+async def process_document_with_ai(document_id: str, project: dict):
+    """Process document with AI and extract data based on semantic instructions"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        # Update document status to processing
+        await db.documents.update_one(
+            {"id": document_id},
+            {"$set": {"status": "processing"}}
+        )
+        
+        # Get document details
+        document = await db.documents.find_one({"id": document_id})
+        if not document:
+            return
+        
+        # Initialize AI chat with GPT-4o
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            await db.documents.update_one(
+                {"id": document_id},
+                {"$set": {"status": "failed"}}
+            )
+            return
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"doc_processing_{document_id}",
+            system_message="You are an expert document analysis AI. Extract structured data from documents based on specific instructions."
+        ).with_model("openai", "gpt-4o")
+        
+        # Create file content for AI processing
+        file_content = FileContentWithMimeType(
+            file_path=document["file_path"],
+            mime_type="application/pdf"
+        )
+        
+        # Create processing prompt
+        semantic_instructions = project.get("semantic_instructions", "")
+        if not semantic_instructions:
+            semantic_instructions = "Extract all key information, dates, names, amounts, and important details from this document."
+        
+        prompt = f"""
+        Analyze this PDF document and extract structured data based on these instructions:
+        
+        {semantic_instructions}
+        
+        Please provide the extracted data in JSON format with clear field names and values.
+        If certain information is not available, mark it as null.
+        Focus on accuracy and completeness.
+        """
+        
+        # Note: Switch to Gemini for file processing since it supports file attachments
+        gemini_chat = LlmChat(
+            api_key=api_key,
+            session_id=f"doc_processing_gemini_{document_id}",
+            system_message="You are an expert document analysis AI. Extract structured data from documents based on specific instructions."
+        ).with_model("gemini", "gemini-2.0-flash")
+        
+        user_message = UserMessage(
+            text=prompt,
+            file_contents=[file_content]
+        )
+        
+        # Process with AI
+        response = await gemini_chat.send_message(user_message)
+        
+        # Try to parse JSON from response
+        import json
+        import re
+        
+        # Extract JSON from response
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        extracted_data = {}
+        
+        if json_match:
+            try:
+                extracted_data = json.loads(json_match.group())
+            except json.JSONDecodeError:
+                # If JSON parsing fails, store raw response
+                extracted_data = {"raw_response": response, "status": "needs_review"}
+        else:
+            extracted_data = {"raw_response": response, "status": "needs_review"}
+        
+        # Update document with extracted data
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "extracted_data": extracted_data,
+                    "processed_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing document {document_id}: {str(e)}")
+        # Update document status to failed
+        await db.documents.update_one(
+            {"id": document_id},
+            {"$set": {"status": "failed"}}
+        )
 
 # Dashboard stats endpoint
 @api_router.get("/dashboard/stats")
