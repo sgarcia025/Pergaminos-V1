@@ -304,6 +304,161 @@ startxref
             return True
         return False
 
+    def test_document_rename(self):
+        """Test document renaming functionality"""
+        if not self.project_id:
+            print("❌ No project ID available for document rename test")
+            return False
+        
+        # First get documents to find one to rename
+        success, documents = self.run_test(
+            "Get Documents for Rename",
+            "GET",
+            f"projects/{self.project_id}/documents",
+            200
+        )
+        
+        if not success or not documents:
+            print("❌ No documents found for rename test")
+            return False
+        
+        document_id = documents[0]['id']
+        original_name = documents[0]['original_filename']
+        new_name = f"Renamed_{datetime.now().strftime('%H%M%S')}.pdf"
+        
+        # Test renaming with form data
+        import requests
+        url = f"{self.api_url}/documents/{document_id}/rename"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        data = {'new_name': new_name}
+        
+        print(f"\n🔍 Testing Document Rename...")
+        print(f"   URL: {url}")
+        print(f"   Original name: {original_name}")
+        print(f"   New name: {new_name}")
+        
+        try:
+            response = requests.put(url, headers=headers, data=data)
+            success = response.status_code == 200
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                result = response.json()
+                if result.get('original_filename') == new_name:
+                    print(f"   Document successfully renamed to: {new_name}")
+                    return True
+                else:
+                    print(f"❌ Name not updated correctly: {result.get('original_filename')}")
+                    return False
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+        finally:
+            self.tests_run += 1
+
+    def test_document_reorder_start(self):
+        """Test starting AI document reordering"""
+        if not self.project_id:
+            print("❌ No project ID available for reorder test")
+            return False
+        
+        # Check if we have completed documents
+        success, documents = self.run_test(
+            "Get Documents for Reorder",
+            "GET",
+            f"projects/{self.project_id}/documents",
+            200
+        )
+        
+        if not success or not documents:
+            print("❌ No documents found for reorder test")
+            return False
+        
+        completed_docs = [doc for doc in documents if doc.get('status') == 'completed']
+        if len(completed_docs) < 1:
+            print("❌ No completed documents found for reorder test")
+            return False
+        
+        # Test reordering with form data
+        import requests
+        url = f"{self.api_url}/projects/{self.project_id}/documents/reorder"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        data = {'semantic_instructions': 'Order documents chronologically with descriptive names based on content'}
+        
+        print(f"\n🔍 Testing Document Reorder Start...")
+        print(f"   URL: {url}")
+        print(f"   Documents to reorder: {len(completed_docs)}")
+        
+        try:
+            response = requests.post(url, headers=headers, data=data)
+            success = response.status_code == 200
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                result = response.json()
+                if 'task_id' in result:
+                    print(f"   Reorder task started with ID: {result['task_id']}")
+                    self.reorder_task_id = result['task_id']
+                    return True
+                else:
+                    print(f"❌ No task_id in response: {result}")
+                    return False
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+        finally:
+            self.tests_run += 1
+
+    def test_document_reorder_status(self):
+        """Test checking AI document reordering status"""
+        if not self.project_id or not hasattr(self, 'reorder_task_id'):
+            print("❌ No project ID or task ID available for reorder status test")
+            return False
+        
+        success, response = self.run_test(
+            "Get Reorder Status",
+            "GET",
+            f"projects/{self.project_id}/reorder-status/{self.reorder_task_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            status = response.get('status', 'unknown')
+            progress = response.get('progress', 0)
+            print(f"   Reorder status: {status} ({progress}%)")
+            
+            # If processing, wait a bit and check again
+            if status == 'processing':
+                print("   Waiting for AI processing to complete...")
+                time.sleep(5)
+                
+                success2, response2 = self.run_test(
+                    "Get Reorder Status (2nd check)",
+                    "GET",
+                    f"projects/{self.project_id}/reorder-status/{self.reorder_task_id}",
+                    200
+                )
+                
+                if success2:
+                    status2 = response2.get('status', 'unknown')
+                    progress2 = response2.get('progress', 0)
+                    print(f"   Updated status: {status2} ({progress2}%)")
+            
+            return True
+        return False
+
     def test_invalid_login(self):
         """Test login with invalid credentials"""
         success, response = self.run_test(
