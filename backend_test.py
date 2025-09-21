@@ -711,6 +711,49 @@ startxref
         finally:
             self.tests_run += 1
 
+    def test_get_enhanced_process_status(self):
+        """Test getting enhanced document processing status"""
+        if not self.project_id or not hasattr(self, 'enhanced_process_task_id'):
+            print("❌ No project ID or enhanced process task ID available")
+            return False
+        
+        success, response = self.run_test(
+            "Get Enhanced Process Status",
+            "GET",
+            f"projects/{self.project_id}/process-status/{self.enhanced_process_task_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            status = response.get('status', 'unknown')
+            progress = response.get('progress', 0)
+            download_url = response.get('download_url', None)
+            print(f"   Enhanced process status: {status} ({progress}%)")
+            if download_url:
+                print(f"   Download URL available: {download_url}")
+                self.enhanced_download_url = download_url
+            return True
+        return False
+
+    def test_download_processed_pdf(self):
+        """Test downloading processed PDF"""
+        if not self.project_id or not hasattr(self, 'enhanced_process_task_id'):
+            print("❌ No project ID or enhanced process task ID available for download test")
+            return False
+        
+        # Test the download endpoint
+        success, response = self.run_test(
+            "Download Processed PDF",
+            "GET",
+            f"projects/{self.project_id}/download-processed/{self.enhanced_process_task_id}",
+            200
+        )
+        
+        if success:
+            print(f"   PDF download successful")
+            return True
+        return False
+
     def test_get_process_status(self):
         """Test getting document processing status"""
         if not self.project_id or not hasattr(self, 'process_task_id'):
