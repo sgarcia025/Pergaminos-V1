@@ -998,10 +998,13 @@ def main():
     test_results.append(("Toggle User Status", tester.test_toggle_user_status()))
     test_results.append(("Client Login", tester.test_client_login()))
     
-    # NEW FEATURE TESTS - Document Processing Module
-    print("\n🔍 Testing Document Processing Module...")
-    test_results.append(("Process Documents Reorder", tester.test_process_documents_reorder()))
-    test_results.append(("Get Process Status", tester.test_get_process_status()))
+    # NEW FEATURE TESTS - Document Processing Module (Enhanced)
+    print("\n🔍 Testing NEW Enhanced Document Processing Module...")
+    test_results.append(("Process Documents Rename-Reorder (NEW)", tester.test_process_documents_rename_reorder()))
+    test_results.append(("Get Enhanced Process Status (NEW)", tester.test_get_enhanced_process_status()))
+    test_results.append(("Download Processed PDF (NEW)", tester.test_download_processed_pdf()))
+    test_results.append(("Process Documents Reorder (Legacy)", tester.test_process_documents_reorder()))
+    test_results.append(("Get Process Status (Legacy)", tester.test_get_process_status()))
     
     # NEW FEATURE TESTS - Client Portal AI Questions
     print("\n🔍 Testing Client Portal AI Questions...")
