@@ -767,8 +767,9 @@ startxref
         return success
 
 def main():
-    print("🧪 Starting Pergaminos API Testing Suite")
-    print("=" * 50)
+    print("🧪 Starting Comprehensive Pergaminos API Testing Suite")
+    print("🔍 Testing ALL NEW FEATURES: QA Agents, User Management, Document Processing, Client Portal")
+    print("=" * 80)
     
     tester = PergaminosAPITester()
     
@@ -788,6 +789,10 @@ def main():
     test_results.append(("Invalid Login", tester.test_invalid_login()))
     test_results.append(("Unauthorized Access", tester.test_unauthorized_access()))
     
+    # Test existing credentials
+    test_results.append(("Existing Admin Login", tester.test_existing_admin_login()))
+    test_results.append(("Existing Client Login", tester.test_existing_client_login()))
+    
     # Company management tests
     test_results.append(("Create Company", tester.test_create_company()))
     test_results.append(("Get Companies", tester.test_get_companies()))
@@ -806,36 +811,84 @@ def main():
     print("\n⏳ Waiting for document processing...")
     time.sleep(10)
     
-    # New document management tests
+    # Document management tests
     test_results.append(("Document Rename", tester.test_document_rename()))
     test_results.append(("Document Reorder Start", tester.test_document_reorder_start()))
     test_results.append(("Document Reorder Status", tester.test_document_reorder_status()))
+    
+    # NEW FEATURE TESTS - QA Agents Module
+    print("\n🔍 Testing QA Agents Module...")
+    test_results.append(("Create QA Agent", tester.test_create_qa_agent()))
+    test_results.append(("Get QA Agents", tester.test_get_qa_agents()))
+    test_results.append(("Run QA Agent", tester.test_run_qa_agent()))
+    
+    # NEW FEATURE TESTS - User Management Module
+    print("\n🔍 Testing User Management Module...")
+    test_results.append(("Create Client User", tester.test_create_client_user()))
+    test_results.append(("Get Users List", tester.test_get_users()))
+    test_results.append(("Toggle User Status", tester.test_toggle_user_status()))
+    test_results.append(("Client Login", tester.test_client_login()))
+    
+    # NEW FEATURE TESTS - Document Processing Module
+    print("\n🔍 Testing Document Processing Module...")
+    test_results.append(("Process Documents Reorder", tester.test_process_documents_reorder()))
+    test_results.append(("Get Process Status", tester.test_get_process_status()))
+    
+    # NEW FEATURE TESTS - Client Portal AI Questions
+    print("\n🔍 Testing Client Portal AI Questions...")
+    test_results.append(("Ask AI About Documents", tester.test_ask_ai_about_documents()))
     
     # Dashboard stats test
     test_results.append(("Dashboard Stats", tester.test_dashboard_stats()))
     
     # Print final results
-    print("\n" + "=" * 50)
-    print("📊 FINAL TEST RESULTS")
-    print("=" * 50)
+    print("\n" + "=" * 80)
+    print("📊 COMPREHENSIVE TEST RESULTS - ALL NEW PERGAMINOS FEATURES")
+    print("=" * 80)
     
     passed_tests = []
     failed_tests = []
     
-    for test_name, result in test_results:
-        if result:
-            passed_tests.append(test_name)
-            print(f"✅ {test_name}")
-        else:
-            failed_tests.append(test_name)
-            print(f"❌ {test_name}")
+    # Group results by category
+    categories = {
+        "Authentication & Security": ["Initialize Admin", "Admin Login", "Get Current User", "Invalid Login", "Unauthorized Access", "Existing Admin Login", "Existing Client Login"],
+        "Company Management": ["Create Company", "Get Companies", "Get Company Detail"],
+        "Project Management": ["Create Project", "Get Projects", "Get Project Detail", "Get Project Documents"],
+        "Document Management": ["Upload Document", "Document Rename", "Document Reorder Start", "Document Reorder Status"],
+        "QA Agents Module (NEW)": ["Create QA Agent", "Get QA Agents", "Run QA Agent"],
+        "User Management Module (NEW)": ["Create Client User", "Get Users List", "Toggle User Status", "Client Login"],
+        "Document Processing Module (NEW)": ["Process Documents Reorder", "Get Process Status"],
+        "Client Portal AI (NEW)": ["Ask AI About Documents"],
+        "Dashboard": ["Dashboard Stats"]
+    }
     
-    print(f"\n📈 Summary: {len(passed_tests)}/{len(test_results)} tests passed")
+    for category, tests in categories.items():
+        print(f"\n📋 {category}:")
+        category_passed = 0
+        category_total = 0
+        
+        for test_name, result in test_results:
+            if test_name in tests:
+                category_total += 1
+                if result:
+                    passed_tests.append(test_name)
+                    print(f"   ✅ {test_name}")
+                    category_passed += 1
+                else:
+                    failed_tests.append(test_name)
+                    print(f"   ❌ {test_name}")
+        
+        if category_total > 0:
+            print(f"   📊 {category_passed}/{category_total} passed")
+    
+    print(f"\n📈 OVERALL SUMMARY: {len(passed_tests)}/{len(test_results)} tests passed")
     
     if failed_tests:
-        print(f"\n❌ Failed tests:")
+        print(f"\n❌ FAILED TESTS REQUIRING ATTENTION:")
         for test in failed_tests:
             print(f"   - {test}")
+    else:
+        print(f"\n🎉 ALL TESTS PASSED! All new Pergaminos features are working correctly.")
     
     return 0 if len(failed_tests) == 0 else 1
 
