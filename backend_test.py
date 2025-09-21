@@ -524,6 +524,15 @@ def main():
     # Document upload test
     test_results.append(("Upload Document", tester.test_document_upload()))
     
+    # Wait a bit for document processing
+    print("\n⏳ Waiting for document processing...")
+    time.sleep(10)
+    
+    # New document management tests
+    test_results.append(("Document Rename", tester.test_document_rename()))
+    test_results.append(("Document Reorder Start", tester.test_document_reorder_start()))
+    test_results.append(("Document Reorder Status", tester.test_document_reorder_status()))
+    
     # Dashboard stats test
     test_results.append(("Dashboard Stats", tester.test_dashboard_stats()))
     
