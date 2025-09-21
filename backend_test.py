@@ -600,9 +600,78 @@ startxref
                 return True
         return False
 
-    # NEW FEATURE TESTS - Document Processing
+    # NEW FEATURE TESTS - Document Processing (Enhanced)
+    def test_process_documents_rename_reorder(self):
+        """Test NEW enhanced document processing with individual rename/reorder"""
+        if not self.project_id:
+            print("❌ No project ID available for document processing test")
+            return False
+        
+        # First get documents to create changes for
+        success, documents = self.run_test(
+            "Get Documents for Enhanced Processing",
+            "GET",
+            f"projects/{self.project_id}/documents",
+            200
+        )
+        
+        if not success or not documents:
+            print("❌ No documents found for enhanced processing test")
+            return False
+        
+        completed_docs = [doc for doc in documents if doc.get('status') == 'completed']
+        if len(completed_docs) < 1:
+            print("❌ No completed documents found for enhanced processing test")
+            return False
+        
+        # Create document changes JSON
+        document_changes = {}
+        for i, doc in enumerate(completed_docs[:3]):  # Test with first 3 docs
+            document_changes[doc['id']] = {
+                "newName": f"Procesado_{i+1}_{doc['original_filename']}",
+                "newOrder": i + 1,
+                "currentName": doc['original_filename'],
+                "currentOrder": doc.get('display_order', i + 1)
+            }
+        
+        # Test NEW enhanced processing endpoint
+        import requests
+        url = f"{self.api_url}/projects/{self.project_id}/documents/process-rename-reorder"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        data = {'document_changes': json.dumps(document_changes)}
+        
+        print(f"\n🔍 Testing NEW Enhanced Document Processing...")
+        print(f"   URL: {url}")
+        print(f"   Documents to process: {len(document_changes)}")
+        
+        try:
+            response = requests.post(url, headers=headers, data=data)
+            success = response.status_code == 200
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                result = response.json()
+                if 'task_id' in result:
+                    print(f"   Enhanced processing task started with ID: {result['task_id']}")
+                    self.enhanced_process_task_id = result['task_id']
+                    return True
+                else:
+                    print(f"❌ No task_id in response: {result}")
+                    return False
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+        finally:
+            self.tests_run += 1
+
     def test_process_documents_reorder(self):
-        """Test document processing with reorder"""
+        """Test document processing with reorder (legacy)"""
         if not self.project_id:
             print("❌ No project ID available for document processing test")
             return False
