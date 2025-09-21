@@ -574,8 +574,9 @@ startxref
             print("❌ No client user ID available for status toggle test")
             return False
         
+        # First disable user
         success, response = self.run_test(
-            "Toggle User Status",
+            "Toggle User Status (Disable)",
             "PUT",
             f"users/{self.client_user_id}/toggle-status",
             200,
@@ -583,8 +584,20 @@ startxref
         )
         
         if success:
-            print(f"   User status toggled successfully")
-            return True
+            print(f"   User disabled successfully")
+            
+            # Then re-enable user for other tests
+            success2, response2 = self.run_test(
+                "Toggle User Status (Enable)",
+                "PUT",
+                f"users/{self.client_user_id}/toggle-status",
+                200,
+                data={"is_active": True}
+            )
+            
+            if success2:
+                print(f"   User re-enabled successfully")
+                return True
         return False
 
     # NEW FEATURE TESTS - Document Processing
