@@ -9,6 +9,10 @@ import Dashboard from "./components/Dashboard";
 import Companies from "./components/Companies";
 import Projects from "./components/Projects";
 import ProjectDetail from "./components/ProjectDetail";
+import DocumentProcessor from "./components/DocumentProcessor";
+import QAAgents from "./components/QAAgents";
+import UserManagement from "./components/UserManagement";
+import ClientPortal from "./components/ClientPortal";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
