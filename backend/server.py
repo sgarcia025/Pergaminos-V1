@@ -832,7 +832,235 @@ async def toggle_user_status(user_id: str, status_data: dict, current_user: User
     
     return {"message": "User status updated"}
 
-# Document processing endpoints
+# Document processing endpoints - Enhanced version
+@api_router.post("/projects/{project_id}/documents/process-rename-reorder")
+async def process_documents_rename_reorder(
+    project_id: str,
+    document_changes: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    try:
+        changes = json.loads(document_changes)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid document changes format")
+    
+    # Get documents that have changes
+    document_ids = list(changes.keys())
+    documents = await db.documents.find({
+        "id": {"$in": document_ids},
+        "project_id": project_id,
+        "status": "completed"
+    }).to_list(1000)
+    
+    if len(documents) == 0:
+        raise HTTPException(status_code=400, detail="No valid documents found for processing")
+    
+    # Start processing in background
+    import asyncio
+    task_id = str(uuid.uuid4())
+    asyncio.create_task(process_document_changes(project_id, documents, changes, task_id))
+    
+    return {
+        "message": "Document processing started",
+        "task_id": task_id,
+        "documents_count": len(documents),
+        "status": "processing"
+    }
+
+@api_router.get("/projects/{project_id}/download-processed/{task_id}")
+async def download_processed_documents(
+    project_id: str,
+    task_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get task status
+    task_status = await db.process_tasks.find_one({"task_id": task_id, "project_id": project_id})
+    if not task_status or task_status.get("status") != "completed":
+        raise HTTPException(status_code=404, detail="Processed file not found or not ready")
+    
+    # Generate a simple PDF with the processed document information
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        import io
+        
+        # Create PDF in memory
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        
+        # Title
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(50, 750, f"Documentos Procesados - {project['name']}")
+        
+        # Date
+        p.setFont("Helvetica", 10)
+        p.drawString(50, 730, f"Generado: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        # Document list
+        y_position = 700
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y_position, "Lista de Documentos Procesados:")
+        y_position -= 30
+        
+        # Get processed documents
+        documents = await db.documents.find({
+            "project_id": project_id,
+            "status": "completed"
+        }).sort("display_order", 1).to_list(1000)
+        
+        p.setFont("Helvetica", 10)
+        for i, doc in enumerate(documents):
+            if y_position < 50:  # Start new page if needed
+                p.showPage()
+                y_position = 750
+            
+            order = doc.get("display_order", i + 1)
+            name = doc.get("original_filename", "Documento sin nombre")
+            p.drawString(50, y_position, f"{order}. {name}")
+            
+            if doc.get("reorder_reasoning"):
+                y_position -= 15
+                p.setFont("Helvetica-Oblique", 8)
+                p.drawString(70, y_position, f"IA: {doc.get('reorder_reasoning')[:100]}...")
+                p.setFont("Helvetica", 10)
+            
+            y_position -= 20
+        
+        p.save()
+        buffer.seek(0)
+        
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(
+            io.BytesIO(buffer.read()),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=documentos_procesados_{project_id}.pdf"}
+        )
+        
+    except ImportError:
+        # Fallback if reportlab is not available
+        # Return a simple text response
+        from fastapi.responses import PlainTextResponse
+        
+        documents = await db.documents.find({
+            "project_id": project_id,
+            "status": "completed"
+        }).sort("display_order", 1).to_list(1000)
+        
+        content = f"Documentos Procesados - {project['name']}\n"
+        content += f"Generado: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        
+        for i, doc in enumerate(documents):
+            order = doc.get("display_order", i + 1)
+            name = doc.get("original_filename", "Documento sin nombre")
+            content += f"{order}. {name}\n"
+            if doc.get("reorder_reasoning"):
+                content += f"   IA: {doc.get('reorder_reasoning')}\n"
+        
+        return PlainTextResponse(
+            content,
+            headers={"Content-Disposition": f"attachment; filename=documentos_procesados_{project_id}.txt"}
+        )
+
+# Enhanced background processing function
+async def process_document_changes(project_id: str, documents: list, changes: dict, task_id: str):
+    """Process individual document changes"""
+    try:
+        # Create task status
+        await db.process_tasks.insert_one({
+            "task_id": task_id,
+            "project_id": project_id,
+            "status": "processing",
+            "progress": 0
+        })
+        
+        # Update progress
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 25}}
+        )
+        
+        # Apply changes to each document
+        processed_count = 0
+        total_docs = len(documents)
+        
+        for document in documents:
+            doc_id = document["id"]
+            if doc_id in changes:
+                change = changes[doc_id]
+                new_name = change.get("newName", document["original_filename"])
+                new_order = change.get("newOrder", 1)
+                
+                # Update document in database
+                await db.documents.update_one(
+                    {"id": doc_id},
+                    {
+                        "$set": {
+                            "original_filename": new_name,
+                            "display_order": new_order,
+                            "reorder_reasoning": f"Renombrado a '{new_name}' y reordenado a posición {new_order}",
+                            "reordered_at": datetime.now(timezone.utc)
+                        }
+                    }
+                )
+                
+                processed_count += 1
+                
+                # Update progress
+                progress = 25 + int((processed_count / total_docs) * 50)
+                await db.process_tasks.update_one(
+                    {"task_id": task_id},
+                    {"$set": {"progress": progress}}
+                )
+        
+        # Update progress to 75%
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 75}}
+        )
+        
+        # Generate download URL
+        download_url = f"/api/projects/{project_id}/download-processed/{task_id}"
+        
+        # Complete task
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "progress": 100,
+                    "download_url": download_url,
+                    "result": {
+                        "processed_documents": processed_count,
+                        "total_documents": total_docs
+                    }
+                }
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in document changes processing {task_id}: {str(e)}")
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"status": "failed", "error": str(e)}}
+        )
+
+# Document processing endpoints (keep original for backward compatibility)
 @api_router.post("/projects/{project_id}/documents/process-reorder")
 async def process_documents_reorder(
     project_id: str,
