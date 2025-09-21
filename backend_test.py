@@ -1029,7 +1029,7 @@ def main():
         "Document Management": ["Upload Document", "Document Rename", "Document Reorder Start", "Document Reorder Status"],
         "QA Agents Module (NEW)": ["Create QA Agent", "Get QA Agents", "Run QA Agent"],
         "User Management Module (NEW)": ["Create Client User", "Get Users List", "Toggle User Status", "Client Login"],
-        "Document Processing Module (NEW)": ["Process Documents Reorder", "Get Process Status"],
+        "Document Processing Module (NEW)": ["Process Documents Rename-Reorder (NEW)", "Get Enhanced Process Status (NEW)", "Download Processed PDF (NEW)", "Process Documents Reorder (Legacy)", "Get Process Status (Legacy)"],
         "Client Portal AI (NEW)": ["Ask AI About Documents"],
         "Dashboard": ["Dashboard Stats"]
     }
