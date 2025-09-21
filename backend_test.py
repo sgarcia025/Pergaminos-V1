@@ -691,13 +691,57 @@ startxref
 
     def test_ask_ai_about_documents(self):
         """Test AI questions about documents (client feature)"""
-        if not self.project_id or not hasattr(self, 'client_token'):
-            print("❌ No project ID or client token available for AI question test")
+        # Use existing client credentials to test AI questions
+        success, response = self.run_test(
+            "Existing Client Login for AI Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success or 'access_token' not in response:
+            print("❌ Could not login existing client for AI test")
             return False
         
-        # Use client token for this test
+        # Save admin token and use client token
         admin_token = self.token
-        self.token = self.client_token
+        self.token = response['access_token']
+        client_user = response['user']
+        
+        # Get client's projects to find one with documents
+        success_projects, projects = self.run_test(
+            "Get Client Projects",
+            "GET",
+            "projects",
+            200
+        )
+        
+        if not success_projects or not projects:
+            print("❌ No projects found for client")
+            self.token = admin_token
+            return False
+        
+        # Find a project with documents
+        test_project_id = None
+        for project in projects:
+            success_docs, documents = self.run_test(
+                "Get Project Documents for AI Test",
+                "GET",
+                f"projects/{project['id']}/documents",
+                200
+            )
+            if success_docs and documents:
+                # Check if any documents have extracted data
+                completed_docs = [doc for doc in documents if doc.get('status') == 'completed' and doc.get('extracted_data')]
+                if completed_docs:
+                    test_project_id = project['id']
+                    break
+        
+        if not test_project_id:
+            print("❌ No project with processed documents found for AI test")
+            self.token = admin_token
+            return False
         
         ai_question_data = {
             "question": "What are the main topics covered in the uploaded documents?",
@@ -707,7 +751,7 @@ startxref
         success, response = self.run_test(
             "Ask AI About Documents",
             "POST",
-            f"projects/{self.project_id}/ask-ai",
+            f"projects/{test_project_id}/ask-ai",
             200,
             data=ai_question_data
         )
