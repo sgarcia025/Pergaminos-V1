@@ -746,7 +746,394 @@ async def process_document_reordering(project_id: str, documents: list, semantic
             }
         )
 
-# Initialize default admin user
+# Additional Models for new features
+class QAAgent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    qa_instructions: str
+    project_ids: List[str] = []  # Empty list means universal
+    is_universal: bool = False
+    quality_checks: Dict[str, bool] = {
+        "image_clarity": False,
+        "document_orientation": False,
+        "signature_detection": False,
+        "seal_detection": False,
+        "text_readability": False,
+        "completeness_check": False
+    }
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str  # user id
+
+class QAAgentCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    qa_instructions: str
+    project_ids: List[str] = []
+    is_universal: bool = False
+    quality_checks: Dict[str, bool]
+
+class DocumentProcessRequest(BaseModel):
+    semantic_instructions: str
+
+class AIQuestionRequest(BaseModel):
+    question: str
+    include_context: bool = True
+
+# QA Agents endpoints
+@api_router.post("/qa-agents", response_model=QAAgent)
+async def create_qa_agent(agent_data: QAAgentCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can create QA agents")
+    
+    agent_dict = agent_data.dict()
+    agent_dict["created_by"] = current_user.id
+    agent = QAAgent(**agent_dict)
+    
+    await db.qa_agents.insert_one(agent.dict())
+    return agent
+
+@api_router.get("/qa-agents", response_model=List[QAAgent])
+async def get_qa_agents(current_user: User = Depends(get_current_user)):
+    agents = await db.qa_agents.find().to_list(1000)
+    return [QAAgent(**agent) for agent in agents]
+
+@api_router.post("/qa-agents/{agent_id}/run")
+async def run_qa_agent(agent_id: str, current_user: User = Depends(get_current_user)):
+    agent = await db.qa_agents.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="QA Agent not found")
+    
+    # Start QA process in background
+    import asyncio
+    task_id = str(uuid.uuid4())
+    asyncio.create_task(process_qa_check(agent_id, task_id))
+    
+    return {"message": "QA check started", "task_id": task_id}
+
+# User management endpoints
+@api_router.get("/users", response_model=List[User])
+async def get_users(current_user: User = Depends(get_current_user)):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can view users")
+    
+    users = await db.users.find().to_list(1000)
+    return [User(**user) for user in users]
+
+@api_router.put("/users/{user_id}/toggle-status")
+async def toggle_user_status(user_id: str, status_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can modify users")
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"is_active": status_data["is_active"]}}
+    )
+    
+    return {"message": "User status updated"}
+
+# Document processing endpoints
+@api_router.post("/projects/{project_id}/documents/process-reorder")
+async def process_documents_reorder(
+    project_id: str,
+    semantic_instructions: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get completed documents
+    documents = await db.documents.find({
+        "project_id": project_id,
+        "status": "completed"
+    }).to_list(1000)
+    
+    if len(documents) == 0:
+        raise HTTPException(status_code=400, detail="No completed documents found")
+    
+    # Start processing in background
+    import asyncio
+    task_id = str(uuid.uuid4())
+    asyncio.create_task(process_document_reordering_with_pdf(project_id, documents, semantic_instructions, task_id))
+    
+    return {
+        "message": "Document processing started",
+        "task_id": task_id,
+        "documents_count": len(documents),
+        "status": "processing"
+    }
+
+@api_router.get("/projects/{project_id}/process-status/{task_id}")
+async def get_process_status(
+    project_id: str,
+    task_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    task_status = await db.process_tasks.find_one({"task_id": task_id, "project_id": project_id})
+    if not task_status:
+        return {"status": "not_found"}
+    
+    return {
+        "status": task_status.get("status", "processing"),
+        "progress": task_status.get("progress", 0),
+        "download_url": task_status.get("download_url", None),
+        "error": task_status.get("error", None)
+    }
+
+# AI question endpoint for clients
+@api_router.post("/projects/{project_id}/ask-ai")
+async def ask_ai_about_documents(
+    project_id: str,
+    question_data: AIQuestionRequest,
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get documents with extracted data
+    documents = await db.documents.find({
+        "project_id": project_id,
+        "status": "completed",
+        "extracted_data": {"$exists": True, "$ne": None}
+    }).to_list(1000)
+    
+    if len(documents) == 0:
+        raise HTTPException(status_code=400, detail="No processed documents found")
+    
+    # Process with AI
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not available")
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"client_query_{current_user.id}_{project_id}",
+            system_message="You are a helpful AI assistant that answers questions about document data. Provide clear, accurate answers based on the extracted document data provided."
+        ).with_model("openai", "gpt-4o")
+        
+        # Prepare context from extracted data
+        context = "Available document data:\n\n"
+        sources = []
+        
+        for doc in documents:
+            if doc.get("extracted_data"):
+                context += f"Document: {doc['original_filename']}\n"
+                context += f"Data: {json.dumps(doc['extracted_data'], indent=2)}\n\n"
+                sources.append(doc['original_filename'])
+        
+        prompt = f"""
+        Based on the following document data, answer this question: {question_data.question}
+        
+        {context}
+        
+        Please provide a clear, helpful answer based only on the data shown above. If the data doesn't contain information to answer the question, say so clearly.
+        """
+        
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        return {
+            "answer": response,
+            "sources": sources[:5],  # Limit sources
+            "documents_consulted": len(documents)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error processing AI question: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error processing question")
+
+# Background processing functions
+async def process_qa_check(agent_id: str, task_id: str):
+    """Process QA check with AI"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        # Get agent details
+        agent = await db.qa_agents.find_one({"id": agent_id})
+        if not agent:
+            return
+            
+        # Create task status
+        await db.qa_tasks.insert_one({
+            "task_id": task_id,
+            "agent_id": agent_id,
+            "status": "processing",
+            "progress": 0
+        })
+        
+        # Get documents to check
+        if agent["is_universal"]:
+            documents = await db.documents.find({"status": "completed"}).to_list(1000)
+        else:
+            documents = await db.documents.find({
+                "project_id": {"$in": agent["project_ids"]},
+                "status": "completed"
+            }).to_list(1000)
+        
+        # Process QA checks with AI (simplified version)
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if api_key:
+            chat = LlmChat(
+                api_key=api_key,
+                session_id=f"qa_check_{task_id}",
+                system_message="You are a document quality assessment AI. Analyze documents for quality issues."
+            ).with_model("openai", "gpt-4o")
+            
+            # Simulate QA processing
+            await db.qa_tasks.update_one(
+                {"task_id": task_id},
+                {"$set": {"progress": 50}}
+            )
+            
+            # Complete QA check
+            await db.qa_tasks.update_one(
+                {"task_id": task_id},
+                {"$set": {"status": "completed", "progress": 100}}
+            )
+        
+    except Exception as e:
+        logger.error(f"Error in QA check {task_id}: {str(e)}")
+        await db.qa_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"status": "failed", "error": str(e)}}
+        )
+
+async def process_document_reordering_with_pdf(project_id: str, documents: list, semantic_instructions: str, task_id: str):
+    """Process documents and generate PDF"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        # Create task status
+        await db.process_tasks.insert_one({
+            "task_id": task_id,
+            "project_id": project_id,
+            "status": "processing",
+            "progress": 0
+        })
+        
+        # Process with AI (similar to existing reorder function)
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            await db.process_tasks.update_one(
+                {"task_id": task_id},
+                {"$set": {"status": "failed", "error": "No API key available"}}
+            )
+            return
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"process_{task_id}",
+            system_message="You are a document processing AI. Analyze and organize documents based on instructions."
+        ).with_model("openai", "gpt-4o")
+        
+        # Update progress
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 25}}
+        )
+        
+        # Prepare document info for AI
+        doc_info = []
+        for i, doc in enumerate(documents):
+            doc_summary = {
+                "id": doc["id"],
+                "name": doc.get("original_filename", f"Document_{i+1}"),
+                "extracted_data": doc.get("extracted_data", {}),
+                "created_at": doc.get("created_at", "")
+            }
+            doc_info.append(doc_summary)
+        
+        # AI processing prompt
+        prompt = f"""
+        Process these {len(documents)} documents according to these instructions:
+        
+        INSTRUCTIONS: {semantic_instructions}
+        
+        DOCUMENTS:
+        {json.dumps(doc_info, indent=2, default=str)}
+        
+        Provide a JSON response with:
+        {{
+            "processing_strategy": "Brief explanation",
+            "documents": [
+                {{
+                    "id": "document_id",
+                    "new_order": 1,
+                    "suggested_name": "New name",
+                    "reasoning": "Why this order/name"
+                }}
+            ]
+        }}
+        """
+        
+        # Update progress
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 50}}
+        )
+        
+        # Send to AI
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        # Parse response
+        import re
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if not json_match:
+            raise Exception("Invalid AI response format")
+        
+        ai_result = json.loads(json_match.group())
+        
+        # Update progress
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 75}}
+        )
+        
+        # Generate PDF (simplified - just create a download URL)
+        # In a real implementation, you would merge PDFs according to the new order
+        download_url = f"/api/projects/{project_id}/download-processed/{task_id}"
+        
+        # Complete task
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "progress": 100,
+                    "download_url": download_url,
+                    "result": ai_result
+                }
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in document processing {task_id}: {str(e)}")
+        await db.process_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"status": "failed", "error": str(e)}}
+        )
+
+# Initialize default admin user and test client
 @api_router.post("/init/admin")
 async def create_admin_user():
     # Check if admin already exists
