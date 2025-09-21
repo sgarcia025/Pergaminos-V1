@@ -485,6 +485,252 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
             "documents_completed": documents_completed
         }
 
+# Document management endpoints
+@api_router.put("/documents/{document_id}/rename", response_model=Document)
+async def rename_document(
+    document_id: str,
+    new_name: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    # Get document and verify access
+    document = await db.documents.find_one({"id": document_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Get project to check permissions
+    project = await db.projects.find_one({"id": document["project_id"]})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Check access permissions
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Update document name
+    await db.documents.update_one(
+        {"id": document_id},
+        {"$set": {"original_filename": new_name}}
+    )
+    
+    # Return updated document
+    updated_document = await db.documents.find_one({"id": document_id})
+    return Document(**updated_document)
+
+@api_router.post("/projects/{project_id}/documents/reorder")
+async def reorder_documents_with_ai(
+    project_id: str,
+    semantic_instructions: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get all completed documents for this project
+    documents = await db.documents.find({
+        "project_id": project_id,
+        "status": "completed"
+    }).to_list(1000)
+    
+    if len(documents) == 0:
+        raise HTTPException(status_code=400, detail="No completed documents found for reordering")
+    
+    # Start AI reordering process in background
+    import asyncio
+    task_id = str(uuid.uuid4())
+    asyncio.create_task(process_document_reordering(project_id, documents, semantic_instructions, task_id))
+    
+    return {
+        "message": "Document reordering started",
+        "task_id": task_id,
+        "documents_count": len(documents),
+        "status": "processing"
+    }
+
+@api_router.get("/projects/{project_id}/reorder-status/{task_id}")
+async def get_reorder_status(
+    project_id: str,
+    task_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    # Check if reordering task status exists
+    task_status = await db.reorder_tasks.find_one({"task_id": task_id, "project_id": project_id})
+    if not task_status:
+        return {"status": "not_found"}
+    
+    return {
+        "status": task_status.get("status", "processing"),
+        "progress": task_status.get("progress", 0),
+        "result": task_status.get("result", {}),
+        "error": task_status.get("error", None)
+    }
+
+# AI Document Reordering Function
+async def process_document_reordering(project_id: str, documents: list, semantic_instructions: str, task_id: str):
+    """Process document reordering with AI based on semantic instructions"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from dotenv import load_dotenv
+        load_dotenv()
+        
+        # Create initial task status
+        await db.reorder_tasks.insert_one({
+            "task_id": task_id,
+            "project_id": project_id,
+            "status": "processing",
+            "progress": 0
+        })
+        
+        # Get API key
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            await db.reorder_tasks.update_one(
+                {"task_id": task_id},
+                {"$set": {"status": "failed", "error": "No API key available"}}
+            )
+            return
+        
+        # Initialize AI chat
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"reorder_{task_id}",
+            system_message="You are an expert document organization AI. You analyze document content and metadata to determine optimal ordering and naming based on specific instructions."
+        ).with_model("openai", "gpt-4o")
+        
+        # Prepare document information for AI
+        doc_info = []
+        for i, doc in enumerate(documents):
+            doc_summary = {
+                "id": doc["id"],
+                "current_name": doc.get("original_filename", f"Document_{i+1}"),
+                "extracted_data": doc.get("extracted_data", {}),
+                "upload_date": doc.get("created_at", ""),
+                "processed_date": doc.get("processed_at", "")
+            }
+            doc_info.append(doc_summary)
+        
+        # Update progress
+        await db.reorder_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 25}}
+        )
+        
+        # Create AI prompt for reordering
+        prompt = f"""
+        Analyze the following {len(documents)} documents and provide a reordering and renaming strategy based on these instructions:
+        
+        INSTRUCTIONS: {semantic_instructions}
+        
+        DOCUMENTS TO ANALYZE:
+        {json.dumps(doc_info, indent=2, default=str)}
+        
+        Please provide a JSON response with the following structure:
+        {{
+            "reordering_strategy": "Brief explanation of the ordering logic used",
+            "documents": [
+                {{
+                    "id": "document_id",
+                    "new_order": 1,
+                    "suggested_name": "New document name",
+                    "reasoning": "Why this order and name"
+                }}
+            ]
+        }}
+        
+        Consider factors like:
+        - Document content and type
+        - Dates and chronological order
+        - Importance and priority
+        - Logical workflow or process flow
+        - Any patterns in the extracted data
+        
+        Ensure all document IDs are preserved and each document gets a unique order number starting from 1.
+        """
+        
+        # Update progress
+        await db.reorder_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 50}}
+        )
+        
+        # Send to AI
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        # Parse AI response
+        import re
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if not json_match:
+            raise Exception("Invalid AI response format")
+        
+        ai_result = json.loads(json_match.group())
+        
+        # Update progress
+        await db.reorder_tasks.update_one(
+            {"task_id": task_id},
+            {"$set": {"progress": 75}}
+        )
+        
+        # Apply the reordering and renaming
+        reorder_results = []
+        for doc_instruction in ai_result.get("documents", []):
+            doc_id = doc_instruction["id"]
+            new_order = doc_instruction["new_order"]
+            suggested_name = doc_instruction["suggested_name"]
+            reasoning = doc_instruction.get("reasoning", "")
+            
+            # Update document with new order and name
+            await db.documents.update_one(
+                {"id": doc_id},
+                {
+                    "$set": {
+                        "display_order": new_order,
+                        "original_filename": suggested_name,
+                        "reorder_reasoning": reasoning,
+                        "reordered_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            
+            reorder_results.append({
+                "id": doc_id,
+                "new_order": new_order,
+                "new_name": suggested_name,
+                "reasoning": reasoning
+            })
+        
+        # Complete the task
+        await db.reorder_tasks.update_one(
+            {"task_id": task_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "progress": 100,
+                    "result": {
+                        "strategy": ai_result.get("reordering_strategy", ""),
+                        "documents": reorder_results,
+                        "total_processed": len(reorder_results)
+                    }
+                }
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in document reordering {task_id}: {str(e)}")
+        await db.reorder_tasks.update_one(
+            {"task_id": task_id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "error": str(e)
+                }
+            }
+        )
+
 # Initialize default admin user
 @api_router.post("/init/admin")
 async def create_admin_user():
