@@ -89,12 +89,16 @@ function App() {
           <Header user={user} onLogout={logout} />
           <main className="flex-1 p-6">
             <Routes>
-              <Route path="/" element={<Dashboard user={user} />} />
+              <Route path="/" element={user.role === 'client' ? <ClientPortal user={user} /> : <Dashboard user={user} />} />
               <Route path="/dashboard" element={<Dashboard user={user} />} />
+              <Route path="/client-portal" element={<ClientPortal user={user} />} />
               <Route path="/companies" element={<Companies user={user} />} />
               <Route path="/projects" element={<Projects user={user} />} />
               <Route path="/projects/:projectId" element={<ProjectDetail user={user} />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/document-processor" element={<DocumentProcessor user={user} />} />
+              <Route path="/qa-agents" element={<QAAgents user={user} />} />
+              <Route path="/user-management" element={<UserManagement user={user} />} />
+              <Route path="*" element={user.role === 'client' ? <ClientPortal user={user} /> : <Dashboard user={user} />} />
             </Routes>
           </main>
         </div>
