@@ -460,6 +460,284 @@ startxref
             return True
         return False
 
+    # NEW FEATURE TESTS - QA Agents
+    def test_create_qa_agent(self):
+        """Test creating a QA agent"""
+        qa_agent_data = {
+            "name": f"Test QA Agent {datetime.now().strftime('%H%M%S')}",
+            "description": "A test QA agent for document quality checks",
+            "qa_instructions": "Check document clarity, orientation, and completeness. Verify all text is readable and signatures are present.",
+            "project_ids": [self.project_id] if self.project_id else [],
+            "is_universal": False,
+            "quality_checks": {
+                "image_clarity": True,
+                "document_orientation": True,
+                "signature_detection": True,
+                "seal_detection": False,
+                "text_readability": True,
+                "completeness_check": True
+            }
+        }
+        
+        success, response = self.run_test(
+            "Create QA Agent",
+            "POST",
+            "qa-agents",
+            200,
+            data=qa_agent_data
+        )
+        
+        if success and 'id' in response:
+            self.qa_agent_id = response['id']
+            print(f"   Created QA agent ID: {self.qa_agent_id}")
+            return True
+        return False
+
+    def test_get_qa_agents(self):
+        """Test getting QA agents list"""
+        success, response = self.run_test(
+            "Get QA Agents",
+            "GET",
+            "qa-agents",
+            200
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} QA agents")
+            return True
+        return False
+
+    def test_run_qa_agent(self):
+        """Test running a QA agent"""
+        if not hasattr(self, 'qa_agent_id'):
+            print("❌ No QA agent ID available for run test")
+            return False
+        
+        success, response = self.run_test(
+            "Run QA Agent",
+            "POST",
+            f"qa-agents/{self.qa_agent_id}/run",
+            200
+        )
+        
+        if success and 'task_id' in response:
+            print(f"   QA check started with task ID: {response['task_id']}")
+            return True
+        return False
+
+    # NEW FEATURE TESTS - User Management
+    def test_create_client_user(self):
+        """Test creating a client user"""
+        if not self.company_id:
+            print("❌ No company ID available for client user creation")
+            return False
+            
+        client_user_data = {
+            "email": f"testclient{datetime.now().strftime('%H%M%S')}@test.com",
+            "name": "Test Client User",
+            "password": "testpass123",
+            "role": "client",
+            "company_id": self.company_id
+        }
+        
+        success, response = self.run_test(
+            "Create Client User",
+            "POST",
+            "auth/register",
+            200,
+            data=client_user_data
+        )
+        
+        if success and 'id' in response:
+            self.client_user_id = response['id']
+            self.client_email = client_user_data['email']
+            self.client_password = client_user_data['password']
+            print(f"   Created client user ID: {self.client_user_id}")
+            return True
+        return False
+
+    def test_get_users(self):
+        """Test getting users list (staff only)"""
+        success, response = self.run_test(
+            "Get Users List",
+            "GET",
+            "users",
+            200
+        )
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} users")
+            return True
+        return False
+
+    def test_toggle_user_status(self):
+        """Test toggling user status"""
+        if not hasattr(self, 'client_user_id'):
+            print("❌ No client user ID available for status toggle test")
+            return False
+        
+        success, response = self.run_test(
+            "Toggle User Status",
+            "PUT",
+            f"users/{self.client_user_id}/toggle-status",
+            200,
+            data={"is_active": False}
+        )
+        
+        if success:
+            print(f"   User status toggled successfully")
+            return True
+        return False
+
+    # NEW FEATURE TESTS - Document Processing
+    def test_process_documents_reorder(self):
+        """Test document processing with reorder"""
+        if not self.project_id:
+            print("❌ No project ID available for document processing test")
+            return False
+        
+        # Test processing with form data
+        import requests
+        url = f"{self.api_url}/projects/{self.project_id}/documents/process-reorder"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        data = {'semantic_instructions': 'Organize documents by importance and create a comprehensive summary'}
+        
+        print(f"\n🔍 Testing Document Processing...")
+        print(f"   URL: {url}")
+        
+        try:
+            response = requests.post(url, headers=headers, data=data)
+            success = response.status_code == 200
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                result = response.json()
+                if 'task_id' in result:
+                    print(f"   Processing task started with ID: {result['task_id']}")
+                    self.process_task_id = result['task_id']
+                    return True
+                else:
+                    print(f"❌ No task_id in response: {result}")
+                    return False
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+        finally:
+            self.tests_run += 1
+
+    def test_get_process_status(self):
+        """Test getting document processing status"""
+        if not self.project_id or not hasattr(self, 'process_task_id'):
+            print("❌ No project ID or process task ID available")
+            return False
+        
+        success, response = self.run_test(
+            "Get Process Status",
+            "GET",
+            f"projects/{self.project_id}/process-status/{self.process_task_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            status = response.get('status', 'unknown')
+            progress = response.get('progress', 0)
+            print(f"   Process status: {status} ({progress}%)")
+            return True
+        return False
+
+    # NEW FEATURE TESTS - Client AI Questions
+    def test_client_login(self):
+        """Test client user login"""
+        if not hasattr(self, 'client_email'):
+            print("❌ No client credentials available for login test")
+            return False
+        
+        # Save admin token
+        admin_token = self.token
+        
+        success, response = self.run_test(
+            "Client Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": self.client_email, "password": self.client_password}
+        )
+        
+        if success and 'access_token' in response:
+            self.client_token = response['access_token']
+            print(f"   Client logged in successfully")
+            
+            # Restore admin token for other tests
+            self.token = admin_token
+            return True
+        return False
+
+    def test_ask_ai_about_documents(self):
+        """Test AI questions about documents (client feature)"""
+        if not self.project_id or not hasattr(self, 'client_token'):
+            print("❌ No project ID or client token available for AI question test")
+            return False
+        
+        # Use client token for this test
+        admin_token = self.token
+        self.token = self.client_token
+        
+        ai_question_data = {
+            "question": "What are the main topics covered in the uploaded documents?",
+            "include_context": True
+        }
+        
+        success, response = self.run_test(
+            "Ask AI About Documents",
+            "POST",
+            f"projects/{self.project_id}/ask-ai",
+            200,
+            data=ai_question_data
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success and isinstance(response, dict):
+            if 'answer' in response:
+                print(f"   AI answered: {response['answer'][:100]}...")
+                print(f"   Sources consulted: {response.get('sources', [])}")
+                return True
+        return False
+
+    # EXISTING CREDENTIAL TESTS
+    def test_existing_admin_login(self):
+        """Test login with existing admin credentials"""
+        success, response = self.run_test(
+            "Existing Admin Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "admin@pergaminos.com", "password": "admin123"}
+        )
+        if success and 'access_token' in response:
+            print(f"   Existing admin login successful")
+            return True
+        return False
+
+    def test_existing_client_login(self):
+        """Test login with existing client credentials"""
+        success, response = self.run_test(
+            "Existing Client Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        if success and 'access_token' in response:
+            print(f"   Existing client login successful")
+            return True
+        return False
+
     def test_invalid_login(self):
         """Test login with invalid credentials"""
         success, response = self.run_test(
