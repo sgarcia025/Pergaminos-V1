@@ -291,7 +291,19 @@ async def get_project_documents(project_id: str, current_user: User = Depends(ge
     if current_user.role == "client" and current_user.company_id != project["company_id"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
+    # Get documents, ordered by display_order if available, then by created_at
     documents = await db.documents.find({"project_id": project_id}).to_list(1000)
+    
+    # Sort documents: first by display_order (if exists), then by created_at
+    def sort_key(doc):
+        display_order = doc.get("display_order")
+        if display_order is not None:
+            return (0, display_order)  # Ordered documents first
+        else:
+            return (1, doc.get("created_at", datetime.min))  # Unordered documents after
+    
+    documents.sort(key=sort_key)
+    
     return [Document(**doc) for doc in documents]
 
 # Document upload endpoint
