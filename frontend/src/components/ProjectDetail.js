@@ -14,6 +14,11 @@ const ProjectDetail = ({ user }) => {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showReorderModal, setShowReorderModal] = useState(false);
+  const [reorderInstructions, setReorderInstructions] = useState('');
+  const [reorderStatus, setReorderStatus] = useState(null);
+  const [renamingDoc, setRenamingDoc] = useState(null);
+  const [newDocName, setNewDocName] = useState('');
 
   useEffect(() => {
     fetchProject();
@@ -73,6 +78,75 @@ const ProjectDetail = ({ user }) => {
     }
   };
 
+  const handleRenameDocument = async (documentId, newName) => {
+    try {
+      const formData = new FormData();
+      formData.append('new_name', newName);
+      
+      await axios.put(`${API}/documents/${documentId}/rename`, formData);
+      setSuccess('Documento renombrado exitosamente');
+      setRenamingDoc(null);
+      setNewDocName('');
+      fetchDocuments();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al renombrar el documento');
+    }
+  };
+
+  const handleReorderDocuments = async () => {
+    if (!reorderInstructions.trim()) {
+      setError('Las instrucciones de reordenación son requeridas');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('semantic_instructions', reorderInstructions);
+      
+      const response = await axios.post(`${API}/projects/${projectId}/documents/reorder`, formData);
+      
+      setReorderStatus({
+        taskId: response.data.task_id,
+        status: 'processing',
+        progress: 0
+      });
+      
+      setShowReorderModal(false);
+      setSuccess('Proceso de reordenación iniciado con IA');
+      
+      // Poll for status updates
+      pollReorderStatus(response.data.task_id);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al iniciar la reordenación');
+    }
+  };
+
+  const pollReorderStatus = async (taskId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await axios.get(`${API}/projects/${projectId}/reorder-status/${taskId}`);
+        const status = response.data;
+        
+        setReorderStatus(status);
+        
+        if (status.status === 'completed') {
+          clearInterval(pollInterval);
+          setSuccess('Documentos reordenados exitosamente por IA');
+          fetchDocuments();
+        } else if (status.status === 'failed') {
+          clearInterval(pollInterval);
+          setError(`Error en reordenación: ${status.error}`);
+        }
+      } catch (error) {
+        clearInterval(pollInterval);
+        setError('Error al obtener estado de reordenación');
+      }
+    }, 2000);
+
+    // Clear interval after 5 minutes to prevent infinite polling
+    setTimeout(() => clearInterval(pollInterval), 300000);
+  };
+
   const handleDragOver = (e) => {
     e.preventDefault();
     setDragOver(true);
@@ -111,6 +185,8 @@ const ProjectDetail = ({ user }) => {
     };
     return texts[status] || status;
   };
+
+  const completedDocuments = documents.filter(doc => doc.status === 'completed');
 
   if (loading) {
     return (
@@ -185,6 +261,19 @@ const ProjectDetail = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {/* Reorder Status */}
+      {reorderStatus && reorderStatus.status === 'processing' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-3"></div>
+            <div className="flex-1">
+              <h4 className="text-blue-900 font-medium">Reordenando documentos con IA</h4>
+              <p className="text-blue-700 text-sm">Progreso: {reorderStatus.progress || 0}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* File Upload Area */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Subir Documentos</h2>
@@ -226,14 +315,28 @@ const ProjectDetail = ({ user }) => {
       {/* Documents List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Documentos ({documents.length})
-          </h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Documentos ({documents.length})
+            </h2>
+            {completedDocuments.length > 1 && (
+              <button
+                onClick={() => setShowReorderModal(true)}
+                className="btn-secondary flex items-center"
+                disabled={reorderStatus?.status === 'processing'}
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+                Reordenar con IA
+              </button>
+            )}
+          </div>
         </div>
         
         {documents.length > 0 ? (
           <div className="divide-y divide-gray-200">
-            {documents.map((document) => (
+            {documents.map((document, index) => (
               <div key={document.id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center flex-1">
@@ -244,9 +347,44 @@ const ProjectDetail = ({ user }) => {
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
-                        {document.original_filename}
-                      </h4>
+                      <div className="flex items-center">
+                        {document.display_order && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 mr-2">
+                            #{document.display_order}
+                          </span>
+                        )}
+                        <h4 className="text-sm font-medium text-gray-900 truncate">
+                          {renamingDoc === document.id ? (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="text"
+                                value={newDocName}
+                                onChange={(e) => setNewDocName(e.target.value)}
+                                className="text-sm border border-gray-300 rounded px-2 py-1"
+                                placeholder="Nuevo nombre"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleRenameDocument(document.id, newDocName)}
+                                className="text-emerald-600 hover:text-emerald-700"
+                              >
+                                ✓
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setRenamingDoc(null);
+                                  setNewDocName('');
+                                }}
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <span>{document.original_filename}</span>
+                          )}
+                        </h4>
+                      </div>
                       <div className="flex items-center mt-1 space-x-4">
                         <span className="text-xs text-gray-500">
                           Subido {new Date(document.created_at).toLocaleDateString()}
@@ -256,7 +394,17 @@ const ProjectDetail = ({ user }) => {
                             Procesado {new Date(document.processed_at).toLocaleDateString()}
                           </span>
                         )}
+                        {document.reordered_at && (
+                          <span className="text-xs text-emerald-600">
+                            Reordenado por IA
+                          </span>
+                        )}
                       </div>
+                      {document.reorder_reasoning && (
+                        <div className="mt-2 text-xs text-gray-600 bg-gray-50 rounded p-2">
+                          <strong>IA:</strong> {document.reorder_reasoning}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -265,11 +413,26 @@ const ProjectDetail = ({ user }) => {
                       {getStatusText(document.status)}
                     </span>
                     
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => {
+                          setRenamingDoc(document.id);
+                          setNewDocName(document.original_filename);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 p-1"
+                        title="Renombrar documento"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      
+                      <button className="text-gray-400 hover:text-gray-600 p-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
@@ -296,6 +459,73 @@ const ProjectDetail = ({ user }) => {
           </div>
         )}
       </div>
+
+      {/* Reorder Modal */}
+      {showReorderModal && (
+        <div className="modal-overlay" onClick={() => setShowReorderModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Reordenar Documentos con IA</h3>
+              <button
+                onClick={() => setShowReorderModal(false)}
+                className="modal-close"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h4 className="text-blue-900 font-medium">¿Cómo funciona?</h4>
+                    <p className="text-blue-800 text-sm mt-1">
+                      La IA analizará el contenido de {completedDocuments.length} documentos procesados y los reordenará según tus instrucciones. También sugerirá nombres más descriptivos.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="reorder-instructions" className="form-label">
+                  Instrucciones de Reordenación *
+                </label>
+                <textarea
+                  id="reorder-instructions"
+                  value={reorderInstructions}
+                  onChange={(e) => setReorderInstructions(e.target.value)}
+                  className="form-textarea"
+                  rows="4"
+                  placeholder="Ejemplo: Ordena los documentos cronológicamente por fecha, con los contratos más recientes primero. Renombra usando el formato 'Contrato_[Empresa]_[Fecha]'"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Describe cómo quieres que la IA organice y renombre los documentos.
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowReorderModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleReorderDocuments}
+                  className="btn-primary"
+                  disabled={!reorderInstructions.trim()}
+                >
+                  Reordenar con IA
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
