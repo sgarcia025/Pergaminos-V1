@@ -8,6 +8,9 @@ const Companies = ({ user }) => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -25,7 +28,9 @@ const Companies = ({ user }) => {
   const fetchCompanies = async () => {
     try {
       const response = await axios.get(`${API}/companies`);
-      setCompanies(response.data);
+      // Filtrar solo empresas activas
+      const activeCompanies = response.data.filter(company => company.is_active);
+      setCompanies(activeCompanies);
     } catch (error) {
       console.error('Error fetching companies:', error);
       setError('Error al cargar las empresas');
@@ -56,11 +61,44 @@ const Companies = ({ user }) => {
     }
   };
 
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      await axios.put(`${API}/companies/${selectedCompany.id}`, formData);
+      setSuccess('Empresa actualizada exitosamente');
+      setEditMode(false);
+      setShowDetailModal(false);
+      fetchCompanies();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al actualizar la empresa');
+    }
+  };
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleCompanyClick = (company) => {
+    setSelectedCompany(company);
+    setFormData({
+      name: company.name,
+      description: company.description || '',
+      contact_email: company.contact_email || '',
+      contact_phone: company.contact_phone || '',
+      address: company.address || ''
+    });
+    setEditMode(false);
+    setShowDetailModal(true);
+  };
+
+  const canEdit = () => {
+    return user.role === 'staff';
   };
 
   if (loading) {
@@ -76,10 +114,10 @@ const Companies = ({ user }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Playfair Display' }}>
-            Empresas
+            Empresas Activas
           </h1>
           <p className="text-gray-600 mt-1">
-            Gestiona los clientes del sistema
+            Gestiona los clientes activos del sistema
           </p>
         </div>
         
@@ -102,7 +140,11 @@ const Companies = ({ user }) => {
       {/* Companies Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {companies.map((company) => (
-          <div key={company.id} className="card hover:shadow-lg transition-all">
+          <div 
+            key={company.id} 
+            className="card hover:shadow-lg transition-all cursor-pointer"
+            onClick={() => handleCompanyClick(company)}
+          >
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -142,9 +184,9 @@ const Companies = ({ user }) => {
                 <div className="text-xs text-gray-500">
                   Creada {new Date(company.created_at).toLocaleDateString()}
                 </div>
-                <button className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
-                  Ver Proyectos
-                </button>
+                <div className="text-emerald-600 text-sm font-medium">
+                  Ver detalles →
+                </div>
               </div>
             </div>
           </div>
@@ -156,10 +198,149 @@ const Companies = ({ user }) => {
           <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2-2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No hay empresas registradas</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No hay empresas activas registradas</h3>
           <p className="text-gray-600">
             {user.role === 'staff' ? 'Comienza creando tu primera empresa cliente.' : 'Contacta con el administrador para obtener acceso.'}
           </p>
+        </div>
+      )}
+
+      {/* Company Detail Modal */}
+      {showDetailModal && selectedCompany && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">
+                {editMode ? 'Editar Empresa' : 'Detalles de la Empresa'}
+              </h3>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                className="modal-close"
+              >
+                ×
+              </button>
+            </div>
+            
+            <form onSubmit={editMode ? handleUpdate : (e) => e.preventDefault()} className="space-y-4">
+              <div className="form-group">
+                <label htmlFor="detail-name" className="form-label">
+                  Nombre de la Empresa
+                </label>
+                <input
+                  id="detail-name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="form-input"
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="detail-description" className="form-label">
+                  Descripción
+                </label>
+                <textarea
+                  id="detail-description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="form-textarea"
+                  rows="3"
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="detail-contact-email" className="form-label">
+                  Email de Contacto
+                </label>
+                <input
+                  id="detail-contact-email"
+                  name="contact_email"
+                  type="email"
+                  value={formData.contact_email}
+                  onChange={handleChange}
+                  className="form-input"
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="detail-contact-phone" className="form-label">
+                  Teléfono de Contacto
+                </label>
+                <input
+                  id="detail-contact-phone"
+                  name="contact_phone"
+                  type="tel"
+                  value={formData.contact_phone}
+                  onChange={handleChange}
+                  className="form-input"
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="detail-address" className="form-label">
+                  Dirección
+                </label>
+                <textarea
+                  id="detail-address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="form-textarea"
+                  rows="2"
+                  disabled={!editMode}
+                />
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <div className="text-sm text-gray-500">
+                  Creada: {new Date(selectedCompany.created_at).toLocaleDateString()}
+                </div>
+                <div className="flex space-x-3">
+                  {!editMode && canEdit() && (
+                    <button
+                      type="button"
+                      onClick={() => setEditMode(true)}
+                      className="btn-secondary"
+                    >
+                      Editar
+                    </button>
+                  )}
+                  {editMode && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setEditMode(false)}
+                        className="btn-secondary"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn-primary"
+                      >
+                        Guardar Cambios
+                      </button>
+                    </>
+                  )}
+                  {!editMode && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDetailModal(false)}
+                      className="btn-primary"
+                    >
+                      Cerrar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
