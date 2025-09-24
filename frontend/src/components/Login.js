@@ -5,7 +5,6 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showDemo, setShowDemo] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,12 +18,6 @@ const Login = ({ onLogin }) => {
     }
     
     setLoading(false);
-  };
-
-  const loginAsDemo = (demoEmail, demoPassword) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setShowDemo(false);
   };
 
   return (
