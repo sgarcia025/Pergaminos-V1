@@ -91,36 +91,6 @@ const Login = ({ onLogin }) => {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          {!showDemo ? (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <button
-                onClick={() => setShowDemo(true)}
-                className="w-full text-center text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors"
-              >
-                Ver credenciales de prueba
-              </button>
-            </div>
-          ) : (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-4 text-center">Credenciales de prueba:</p>
-              <div className="space-y-2">
-                <button
-                  onClick={() => loginAsDemo('admin@pergaminos.com', 'admin123')}
-                  className="w-full p-3 text-left bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors"
-                >
-                  <div className="font-medium text-emerald-900">Administrador</div>
-                  <div className="text-sm text-emerald-700">admin@pergaminos.com</div>
-                </button>
-              </div>
-              <button
-                onClick={() => setShowDemo(false)}
-                className="w-full text-center text-gray-500 hover:text-gray-700 font-medium text-sm mt-3 transition-colors"
-              >
-                Ocultar credenciales
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
