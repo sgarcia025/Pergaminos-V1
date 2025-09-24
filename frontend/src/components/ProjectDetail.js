@@ -435,15 +435,6 @@ const ProjectDetail = ({ user }) => {
                     </div>
                   </div>
                 </div>
-                
-                {document.extracted_data && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h5 className="text-sm font-medium text-gray-900 mb-2">Datos Extraídos:</h5>
-                    <pre className="text-xs text-gray-600 whitespace-pre-wrap">
-                      {JSON.stringify(document.extracted_data, null, 2)}
-                    </pre>
-                  </div>
-                )}
               </div>
             ))}
           </div>
