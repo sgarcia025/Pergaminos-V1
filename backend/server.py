@@ -262,12 +262,15 @@ async def get_companies(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/companies/{company_id}", response_model=Company)
 async def get_company(company_id: str, current_user: User = Depends(get_current_user)):
-    if current_user.role == "client" and current_user.company_id != company_id:
-        raise HTTPException(status_code=403, detail="Access denied")
-    
     company = await db.companies.find_one({"id": company_id})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check access permissions
+    if current_user.role == "client" and current_user.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     return Company(**company)
 
