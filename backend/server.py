@@ -251,6 +251,9 @@ async def get_companies(current_user: User = Depends(get_current_user)):
     if current_user.role == "client" and current_user.company_id:
         # Clients can only see their own company
         companies = await db.companies.find({"id": current_user.company_id}).to_list(1000)
+    elif current_user.role == "asesor":
+        # Asesores can only see companies assigned to them
+        companies = await db.companies.find({"asesor_comercial_id": current_user.id}).to_list(1000)
     else:
         # Staff can see all companies
         companies = await db.companies.find().to_list(1000)
