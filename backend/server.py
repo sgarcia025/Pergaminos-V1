@@ -94,6 +94,18 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class Segmento(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nombre: str
+    descripcion: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str  # staff user id
+
+class SegmentoCreate(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = None
+
 class Company(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str  # Nombre comercial
