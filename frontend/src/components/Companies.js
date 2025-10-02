@@ -26,6 +26,8 @@ const Companies = ({ user }) => {
   const [success, setSuccess] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [editingCompany, setEditingCompany] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [asesores, setAsesores] = useState([]);
   const [segmentos, setSegmentos] = useState([]);
 
