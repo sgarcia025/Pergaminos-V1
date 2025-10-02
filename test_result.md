@@ -122,27 +122,33 @@ backend:
 
   - task: "Endpoint DELETE para empresas"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Agregado endpoint DELETE /companies/{company_id} con validaciones para proyectos y usuarios asociados"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED SUCCESSFULLY: DELETE /api/companies/{company_id} endpoint working correctly. Tested: (1) Successfully deletes company without projects/users, (2) Correctly prevents deletion when company has projects (returns 400), (3) Correctly prevents client users from deleting (returns 403), (4) Returns 404 for non-existent companies. All validations and permissions working as expected."
 
   - task: "Endpoint DELETE para proyectos"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Agregado endpoint DELETE /projects/{project_id} que elimina proyecto, documentos y archivos asociados"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED SUCCESSFULLY: DELETE /api/projects/{project_id} endpoint working correctly. Tested: (1) Successfully deletes project with all associated documents (cleaned up 1 document), (2) Correctly prevents client users from deleting (returns 403), (3) Returns 404 for non-existent projects. Document cleanup and permissions working as expected."
 
 frontend:
   - task: "Botón eliminar empresas para admin"
