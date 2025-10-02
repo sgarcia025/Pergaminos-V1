@@ -424,10 +424,14 @@ body {
 .file-upload {
   border: 2px dashed #d1d5db;
   border-radius: 0.75rem;
-  padding: 2rem;
+  padding: 1.5rem;
   text-align: center;
   transition: all 0.2s ease;
   cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .file-upload:hover {
@@ -441,9 +445,11 @@ body {
 }
 
 .file-upload-icon {
-  font-size: 3rem;
+  font-size: 2rem;
   color: #9ca3af;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
 .file-upload-text {
