@@ -96,21 +96,36 @@ class UserLogin(BaseModel):
 
 class Company(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
+    name: str  # Nombre comercial
+    razon_social: Optional[str] = None
+    nombre_comercial: Optional[str] = None  # Duplicado de name para claridad
+    nit: Optional[str] = None
     description: Optional[str] = None
+    contacto: Optional[str] = None  # Nombre del contacto
     contact_email: Optional[EmailStr] = None
-    contact_phone: Optional[str] = None
-    address: Optional[str] = None
+    telefono: Optional[str] = None
+    direccion: Optional[str] = None
+    asesor_comercial_id: Optional[str] = None  # ID del usuario asesor
+    segmento: Optional[str] = None  # Industria/segmento
+    estado: Optional[str] = None  # Estado de la empresa (texto libre)
+    corporacion: Optional[str] = None  # Corporación (texto libre)
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: str  # staff user id
 
 class CompanyCreate(BaseModel):
-    name: str
+    name: str  # Nombre comercial (requerido)
+    razon_social: Optional[str] = None
+    nit: Optional[str] = None
     description: Optional[str] = None
+    contacto: Optional[str] = None
     contact_email: Optional[EmailStr] = None
-    contact_phone: Optional[str] = None
-    address: Optional[str] = None
+    telefono: Optional[str] = None
+    direccion: Optional[str] = None
+    asesor_comercial_id: Optional[str] = None
+    segmento: Optional[str] = None
+    estado: Optional[str] = None
+    corporacion: Optional[str] = None
 
 class Project(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
