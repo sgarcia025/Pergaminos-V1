@@ -396,7 +396,7 @@ const ProjectDetail = ({ user }) => {
               <p className="file-upload-text">
                 Arrastra y suelta tus archivos PDF aquí, o <span className="text-emerald-600 font-medium">haz clic para seleccionar</span>
               </p>
-              <p className="file-upload-hint">Solo se aceptan archivos PDF</p>
+              <p className="file-upload-hint">Solo se aceptan archivos PDF • Máximo 10 archivos simultáneos</p>
             </div>
           )}
         </div>
