@@ -264,9 +264,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Endpoint DELETE para usuarios"
-    - "Modelo Company expandido"
-    - "Rol asesor comercial"
     - "Botón eliminar usuarios para admin"
     - "Formulario empresa expandido"
   stuck_tasks: []
@@ -278,3 +275,5 @@ agent_communication:
     - message: "Implementadas las funcionalidades de eliminación solicitadas. Eliminada la marca de agua 'Made with emergent' y agregados endpoints y botones de eliminación para empresas y proyectos, con acceso restringido a usuarios staff. Necesita testing del backend y frontend."
     - agent: "testing"
     - message: "✅ BACKEND DELETE ENDPOINTS TESTED SUCCESSFULLY: Both DELETE endpoints are working perfectly. DELETE /api/companies/{company_id} correctly validates that companies cannot be deleted if they have projects or users, and only staff users can delete. DELETE /api/projects/{project_id} successfully deletes projects and cleans up all associated documents. All permission checks, validations, and error handling working as expected. Ready for frontend integration testing."
+    - agent: "testing"
+    - message: "✅ PHASE 1 BACKEND TESTING COMPLETED SUCCESSFULLY: All Phase 1 backend functionality is working perfectly. Tested and verified: (1) User deletion with all validations (self-deletion prevention, asesor assignment checks), (2) Expanded Company model with all new fields (razon_social, nit, contacto, telefono, direccion, asesor_comercial_id, segmento, estado, corporacion), (3) Asesor role functionality with proper access controls (only see assigned companies), (4) Complete segment management (CRUD operations with usage validation), (5) Asesores list endpoint with proper permissions. All 25/25 Phase 1 tests passed. Backend is ready for frontend integration."
