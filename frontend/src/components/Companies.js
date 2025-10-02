@@ -10,15 +10,24 @@ const Companies = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    razon_social: '',
+    nit: '',
     description: '',
+    contacto: '',
     contact_email: '',
-    contact_phone: '',
-    address: ''
+    telefono: '',
+    direccion: '',
+    asesor_comercial_id: '',
+    segmento: '',
+    estado: '',
+    corporacion: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [asesores, setAsesores] = useState([]);
+  const [segmentos, setSegmentos] = useState([]);
 
   useEffect(() => {
     fetchCompanies();
