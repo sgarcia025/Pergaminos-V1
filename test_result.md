@@ -256,6 +256,54 @@ frontend:
         - agent: "main"
         - comment: "Actualizado formulario con todos los campos nuevos, carga de asesores y segmentos, layout responsivo"
 
+  - task: "Gestión de segmentos de industria"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/Segmentos.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Componente completo para gestión de segmentos, agregado al menú lateral, CRUD completo con validaciones"
+
+  - task: "Edición de empresas"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/Companies.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Endpoint PUT y botones de edición implementados, modal reutilizado para crear/editar"
+
+  - task: "Procesamiento paralelo 10 PDFs backend"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Endpoints batch-upload y batch-status, modelo BatchProcessTask, semáforo asyncio para límite de 10 concurrentes"
+
+  - task: "Frontend subida múltiple con progreso"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/ProjectDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Input múltiple, polling de estado batch, indicadores de progreso por archivo, UI para tracking en tiempo real"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
