@@ -132,6 +132,46 @@ const Companies = ({ user }) => {
     }
   };
 
+  const handleEditClick = (company) => {
+    setEditingCompany(company);
+    setIsEditing(true);
+    setFormData({
+      name: company.name || '',
+      razon_social: company.razon_social || '',
+      nit: company.nit || '',
+      description: company.description || '',
+      contacto: company.contacto || '',
+      contact_email: company.contact_email || '',
+      telefono: company.telefono || '',
+      direccion: company.direccion || '',
+      asesor_comercial_id: company.asesor_comercial_id || '',
+      segmento: company.segmento || '',
+      estado: company.estado || '',
+      corporacion: company.corporacion || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleNewClick = () => {
+    setIsEditing(false);
+    setEditingCompany(null);
+    setFormData({
+      name: '',
+      razon_social: '',
+      nit: '',
+      description: '',
+      contacto: '',
+      contact_email: '',
+      telefono: '',
+      direccion: '',
+      asesor_comercial_id: '',
+      segmento: '',
+      estado: '',
+      corporacion: ''
+    });
+    setShowModal(true);
+  };
+
   if (loading) {
     return (
       <div className="loading">
