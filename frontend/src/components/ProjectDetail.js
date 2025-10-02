@@ -379,6 +379,7 @@ const ProjectDetail = ({ user }) => {
             id="file-input"
             type="file"
             accept=".pdf"
+            multiple
             onChange={(e) => handleFileUpload(e.target.files)}
             className="hidden"
           />
