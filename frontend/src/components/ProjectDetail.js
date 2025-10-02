@@ -126,6 +126,48 @@ const ProjectDetail = ({ user }) => {
     }
   };
 
+  const pollBatchStatus = async (taskId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await axios.get(`${API}/projects/${projectId}/batch-status/${taskId}`);
+        const status = response.data;
+        
+        setBatchProgress(status);
+        
+        // Update individual file progress
+        const updatedProgress = uploadProgress.map(item => {
+          const docStatus = status.document_statuses.find(doc => 
+            doc.filename === item.name
+          );
+          return {
+            ...item,
+            status: docStatus ? docStatus.status : 'pending',
+            progress: docStatus ? (docStatus.status === 'completed' ? 100 : docStatus.status === 'processing' ? 50 : 0) : 0
+          };
+        });
+        setUploadProgress(updatedProgress);
+        
+        // Stop polling when batch is completed
+        if (status.status === 'completed' || status.status === 'failed') {
+          clearInterval(pollInterval);
+          setBatchUploading(false);
+          setBatchTaskId(null);
+          fetchDocuments();
+          
+          if (status.status === 'completed') {
+            setSuccess(`Procesamiento completado: ${status.completed_documents} exitosos, ${status.failed_documents} fallidos`);
+          } else {
+            setError('Error en el procesamiento del lote');
+          }
+        }
+      } catch (error) {
+        console.error('Error polling batch status:', error);
+        clearInterval(pollInterval);
+        setBatchUploading(false);
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+
   const handleRenameDocument = async (documentId, newName) => {
     try {
       const formData = new FormData();
