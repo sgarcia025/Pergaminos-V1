@@ -2375,6 +2375,20 @@ def main():
     test_results.append(("Get Asesores List", tester.test_get_asesores_list()))
     test_results.append(("Client Cannot Get Asesores", tester.test_client_cannot_get_asesores()))
 
+    # NEW BATCH PROCESSING TESTS
+    print("\n🔍 Testing NEW BATCH PROCESSING Features...")
+    test_results.append(("Batch Upload Documents", tester.test_batch_upload_documents()))
+    test_results.append(("Batch Upload Limit Exceeded", tester.test_batch_upload_limit_exceeded()))
+    test_results.append(("Batch Status Check", tester.test_batch_status_check()))
+    test_results.append(("Batch Processing Wait Completion", tester.test_batch_processing_wait_completion()))
+
+    # NEW COMPANY EDITING TESTS
+    print("\n🔍 Testing NEW COMPANY EDITING Features...")
+    test_results.append(("Update Company All Fields", tester.test_update_company_all_fields()))
+    test_results.append(("Update Company Partial Fields", tester.test_update_company_partial_fields()))
+    test_results.append(("Update Non-existent Company", tester.test_update_nonexistent_company()))
+    test_results.append(("Client Cannot Update Company", tester.test_client_cannot_update_company()))
+
     # NEW FEATURE TESTS - DELETE ENDPOINTS (Staff Only)
     print("\n🔍 Testing DELETE Endpoints (Staff Only)...")
     test_results.append(("Delete Company Without Projects", tester.test_delete_company_without_projects()))
