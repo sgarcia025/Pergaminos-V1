@@ -183,8 +183,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Endpoint DELETE para empresas"
-    - "Endpoint DELETE para proyectos"
     - "Botón eliminar empresas para admin"
     - "Botón eliminar proyectos para admin"
   stuck_tasks: []
