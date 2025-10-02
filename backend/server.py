@@ -542,6 +542,99 @@ async def get_batch_processing_status(
         "completed_at": batch_task.get("completed_at")
     }
 
+# Batch Processing Function
+async def process_documents_batch(batch_task_id: str, project: dict):
+    """Process multiple documents in parallel with a limit of 10 concurrent tasks"""
+    try:
+        # Update batch task status
+        await db.batch_tasks.update_one(
+            {"id": batch_task_id},
+            {
+                "$set": {
+                    "status": "processing",
+                    "started_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        # Get batch task details
+        batch_task = await db.batch_tasks.find_one({"id": batch_task_id})
+        if not batch_task:
+            return
+        
+        document_ids = batch_task["document_ids"]
+        total_documents = len(document_ids)
+        completed_documents = 0
+        failed_documents = 0
+        
+        # Create semaphore to limit concurrent processing to 10
+        semaphore = asyncio.Semaphore(10)
+        
+        async def process_single_document(doc_id):
+            nonlocal completed_documents, failed_documents
+            
+            async with semaphore:
+                try:
+                    await process_document_with_ai(doc_id, project)
+                    
+                    # Check if processing was successful
+                    doc = await db.documents.find_one({"id": doc_id})
+                    if doc and doc["status"] == "completed":
+                        completed_documents += 1
+                    else:
+                        failed_documents += 1
+                        
+                except Exception as e:
+                    logger.error(f"Error processing document {doc_id}: {str(e)}")
+                    failed_documents += 1
+                    await db.documents.update_one(
+                        {"id": doc_id},
+                        {"$set": {"status": "failed"}}
+                    )
+                
+                # Update batch progress
+                progress = int(((completed_documents + failed_documents) / total_documents) * 100)
+                await db.batch_tasks.update_one(
+                    {"id": batch_task_id},
+                    {
+                        "$set": {
+                            "progress": progress,
+                            "completed_documents": completed_documents,
+                            "failed_documents": failed_documents
+                        }
+                    }
+                )
+        
+        # Process all documents in parallel
+        tasks = [process_single_document(doc_id) for doc_id in document_ids]
+        await asyncio.gather(*tasks)
+        
+        # Update batch task as completed
+        await db.batch_tasks.update_one(
+            {"id": batch_task_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "progress": 100,
+                    "completed_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        logger.info(f"Batch processing completed: {completed_documents} successful, {failed_documents} failed")
+        
+    except Exception as e:
+        logger.error(f"Error in batch processing {batch_task_id}: {str(e)}")
+        await db.batch_tasks.update_one(
+            {"id": batch_task_id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "completed_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+
 # AI Document Processing
 async def process_document_with_ai(document_id: str, project: dict):
     """Process document with AI and extract data based on semantic instructions"""
