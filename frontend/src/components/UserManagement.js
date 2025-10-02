@@ -214,8 +214,13 @@ const UserManagement = ({ user }) => {
                 </td>
                 <td className="text-gray-600">{userItem.email}</td>
                 <td>
-                  <span className={`status-badge ${userItem.role === 'staff' ? 'status-completed' : 'status-active'}`}>
-                    {userItem.role === 'staff' ? 'Staff' : 'Cliente'}
+                  <span className={`status-badge ${
+                    userItem.role === 'staff' ? 'status-completed' : 
+                    userItem.role === 'asesor' ? 'status-processing' : 
+                    'status-active'
+                  }`}>
+                    {userItem.role === 'staff' ? 'Staff' : 
+                     userItem.role === 'asesor' ? 'Asesor' : 'Cliente'}
                   </span>
                 </td>
                 <td className="text-gray-600">
