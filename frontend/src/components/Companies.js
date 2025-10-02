@@ -249,19 +249,174 @@ const Companies = ({ user }) => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label htmlFor="name" className="form-label">
+                    Nombre Comercial *
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="razon_social" className="form-label">
+                    Razón Social
+                  </label>
+                  <input
+                    id="razon_social"
+                    name="razon_social"
+                    type="text"
+                    value={formData.razon_social}
+                    onChange={handleChange}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="nit" className="form-label">
+                    NIT
+                  </label>
+                  <input
+                    id="nit"
+                    name="nit"
+                    type="text"
+                    value={formData.nit}
+                    onChange={handleChange}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contacto" className="form-label">
+                    Contacto
+                  </label>
+                  <input
+                    id="contacto"
+                    name="contacto"
+                    type="text"
+                    value={formData.contacto}
+                    onChange={handleChange}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="contact_email" className="form-label">
+                    Correo Electrónico
+                  </label>
+                  <input
+                    id="contact_email"
+                    name="contact_email"
+                    type="email"
+                    value={formData.contact_email}
+                    onChange={handleChange}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="telefono" className="form-label">
+                    Teléfono
+                  </label>
+                  <input
+                    id="telefono"
+                    name="telefono"
+                    type="tel"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="asesor_comercial_id" className="form-label">
+                    Asesor Comercial
+                  </label>
+                  <select
+                    id="asesor_comercial_id"
+                    name="asesor_comercial_id"
+                    value={formData.asesor_comercial_id}
+                    onChange={handleChange}
+                    className="form-input"
+                  >
+                    <option value="">Sin asesor asignado</option>
+                    {asesores.map((asesor) => (
+                      <option key={asesor.id} value={asesor.id}>
+                        {asesor.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="segmento" className="form-label">
+                    Segmento/Industria
+                  </label>
+                  <select
+                    id="segmento"
+                    name="segmento"
+                    value={formData.segmento}
+                    onChange={handleChange}
+                    className="form-input"
+                  >
+                    <option value="">Seleccionar segmento</option>
+                    {segmentos.map((segmento) => (
+                      <option key={segmento.id} value={segmento.nombre}>
+                        {segmento.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="estado" className="form-label">
+                    Estado
+                  </label>
+                  <input
+                    id="estado"
+                    name="estado"
+                    type="text"
+                    value={formData.estado}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="ej: Activa, Potencial, etc."
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="corporacion" className="form-label">
+                    Corporación
+                  </label>
+                  <input
+                    id="corporacion"
+                    name="corporacion"
+                    type="text"
+                    value={formData.corporacion}
+                    onChange={handleChange}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
               <div className="form-group">
-                <label htmlFor="name" className="form-label">
-                  Nombre de la Empresa *
+                <label htmlFor="direccion" className="form-label">
+                  Dirección
                 </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
+                <textarea
+                  id="direccion"
+                  name="direccion"
+                  value={formData.direccion}
                   onChange={handleChange}
-                  className="form-input"
-                  required
+                  className="form-textarea"
+                  rows="2"
                 />
               </div>
 
@@ -276,48 +431,6 @@ const Companies = ({ user }) => {
                   onChange={handleChange}
                   className="form-textarea"
                   rows="3"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="contact_email" className="form-label">
-                  Email de Contacto
-                </label>
-                <input
-                  id="contact_email"
-                  name="contact_email"
-                  type="email"
-                  value={formData.contact_email}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="contact_phone" className="form-label">
-                  Teléfono de Contacto
-                </label>
-                <input
-                  id="contact_phone"
-                  name="contact_phone"
-                  type="tel"
-                  value={formData.contact_phone}
-                  onChange={handleChange}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="address" className="form-label">
-                  Dirección
-                </label>
-                <textarea
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="form-textarea"
-                  rows="2"
                 />
               </div>
 
