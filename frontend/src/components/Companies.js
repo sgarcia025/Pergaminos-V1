@@ -65,6 +65,27 @@ const Companies = ({ user }) => {
     });
   };
 
+  const handleDeleteClick = (company) => {
+    setCompanyToDelete(company);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!companyToDelete) return;
+
+    try {
+      await axios.delete(`${API}/companies/${companyToDelete.id}`);
+      setSuccess('Empresa eliminada exitosamente');
+      setShowDeleteModal(false);
+      setCompanyToDelete(null);
+      fetchCompanies();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al eliminar la empresa');
+      setShowDeleteModal(false);
+      setCompanyToDelete(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading">
