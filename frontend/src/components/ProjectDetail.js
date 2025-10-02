@@ -390,14 +390,14 @@ const ProjectDetail = ({ user }) => {
               <p className="text-gray-600">Subiendo documento...</p>
             </div>
           ) : (
-            <div className="text-center">
-              <svg className="file-upload-icon mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex flex-col items-center justify-center">
+              <svg className="file-upload-icon mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
-              <p className="file-upload-text">
-                Arrastra y suelta tus archivos PDF aquí, o <span className="text-emerald-600 font-medium">haz clic para seleccionar</span>
+              <p className="file-upload-text mb-1">
+                Arrastra archivos PDF o <span className="text-emerald-600 font-medium">haz clic</span>
               </p>
-              <p className="file-upload-hint">Solo se aceptan archivos PDF • Máximo 10 archivos simultáneos</p>
+              <p className="file-upload-hint">Máximo 10 archivos simultáneos</p>
             </div>
           )}
         </div>
