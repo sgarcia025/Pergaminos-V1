@@ -878,6 +878,263 @@ startxref
                 return True
         return False
 
+    # NEW FEATURE TESTS - DELETE ENDPOINTS (Staff Only)
+    def test_delete_company_without_projects(self):
+        """Test deleting a company without projects (should work)"""
+        # Create a new company specifically for deletion test
+        company_data = {
+            "name": f"Delete Test Company {datetime.now().strftime('%H%M%S')}",
+            "description": "A company created specifically for deletion testing",
+            "contact_email": "delete@test.com"
+        }
+        
+        success, response = self.run_test(
+            "Create Company for Deletion",
+            "POST",
+            "companies",
+            200,
+            data=company_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create company for deletion test")
+            return False
+        
+        delete_company_id = response['id']
+        print(f"   Created company for deletion: {delete_company_id}")
+        
+        # Now delete the company (should work since no projects/users)
+        success, response = self.run_test(
+            "Delete Company Without Projects",
+            "DELETE",
+            f"companies/{delete_company_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('message') and 'deleted successfully' in response.get('message', ''):
+                print(f"   Company deleted successfully: {delete_company_id}")
+                return True
+        return False
+
+    def test_delete_company_with_projects_should_fail(self):
+        """Test deleting a company with projects (should fail)"""
+        if not self.company_id:
+            print("❌ No company ID available for deletion test")
+            return False
+        
+        # Try to delete company that has projects (should fail)
+        success, response = self.run_test(
+            "Delete Company With Projects (Should Fail)",
+            "DELETE",
+            f"companies/{self.company_id}",
+            400  # Should return 400 Bad Request
+        )
+        
+        if success:
+            print(f"   Correctly prevented deletion of company with projects")
+            return True
+        return False
+
+    def test_delete_project_with_documents(self):
+        """Test deleting a project with documents (should work and clean up)"""
+        if not self.project_id:
+            print("❌ No project ID available for deletion test")
+            return False
+        
+        # First check how many documents exist
+        success_docs, documents = self.run_test(
+            "Get Documents Before Project Deletion",
+            "GET",
+            f"projects/{self.project_id}/documents",
+            200
+        )
+        
+        doc_count = len(documents) if success_docs and documents else 0
+        print(f"   Project has {doc_count} documents before deletion")
+        
+        # Delete the project (should work and clean up documents)
+        success, response = self.run_test(
+            "Delete Project With Documents",
+            "DELETE",
+            f"projects/{self.project_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('message') and 'deleted successfully' in response.get('message', ''):
+                deleted_docs = response.get('deleted_documents', 0)
+                print(f"   Project deleted successfully with {deleted_docs} documents cleaned up")
+                # Clear project_id since it's been deleted
+                self.project_id = None
+                return True
+        return False
+
+    def test_client_cannot_delete_company(self):
+        """Test that client users cannot delete companies"""
+        # Create a test company first
+        company_data = {
+            "name": f"Client Delete Test Company {datetime.now().strftime('%H%M%S')}",
+            "description": "Company for testing client deletion permissions"
+        }
+        
+        success, response = self.run_test(
+            "Create Company for Client Delete Test",
+            "POST",
+            "companies",
+            200,
+            data=company_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create company for client delete test")
+            return False
+        
+        test_company_id = response['id']
+        
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for Delete Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for delete test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        
+        # Try to delete company as client (should fail with 403)
+        success, response = self.run_test(
+            "Client Delete Company (Should Fail)",
+            "DELETE",
+            f"companies/{test_company_id}",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from deleting company")
+            
+            # Clean up: delete the test company as admin
+            cleanup_success, cleanup_response = self.run_test(
+                "Cleanup Test Company",
+                "DELETE",
+                f"companies/{test_company_id}",
+                200
+            )
+            return True
+        return False
+
+    def test_client_cannot_delete_project(self):
+        """Test that client users cannot delete projects"""
+        # Create a test project first
+        if not self.company_id:
+            print("❌ No company ID available for client project delete test")
+            return False
+        
+        project_data = {
+            "name": f"Client Delete Test Project {datetime.now().strftime('%H%M%S')}",
+            "description": "Project for testing client deletion permissions",
+            "company_id": self.company_id
+        }
+        
+        success, response = self.run_test(
+            "Create Project for Client Delete Test",
+            "POST",
+            "projects",
+            200,
+            data=project_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create project for client delete test")
+            return False
+        
+        test_project_id = response['id']
+        
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for Project Delete Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for project delete test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        
+        # Try to delete project as client (should fail with 403)
+        success, response = self.run_test(
+            "Client Delete Project (Should Fail)",
+            "DELETE",
+            f"projects/{test_project_id}",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from deleting project")
+            
+            # Clean up: delete the test project as admin
+            cleanup_success, cleanup_response = self.run_test(
+                "Cleanup Test Project",
+                "DELETE",
+                f"projects/{test_project_id}",
+                200
+            )
+            return True
+        return False
+
+    def test_delete_nonexistent_company(self):
+        """Test deleting a non-existent company (should return 404)"""
+        fake_company_id = "nonexistent-company-id-12345"
+        
+        success, response = self.run_test(
+            "Delete Non-existent Company",
+            "DELETE",
+            f"companies/{fake_company_id}",
+            404  # Should return 404 Not Found
+        )
+        
+        if success:
+            print(f"   Correctly returned 404 for non-existent company")
+            return True
+        return False
+
+    def test_delete_nonexistent_project(self):
+        """Test deleting a non-existent project (should return 404)"""
+        fake_project_id = "nonexistent-project-id-12345"
+        
+        success, response = self.run_test(
+            "Delete Non-existent Project",
+            "DELETE",
+            f"projects/{fake_project_id}",
+            404  # Should return 404 Not Found
+        )
+        
+        if success:
+            print(f"   Correctly returned 404 for non-existent project")
+            return True
+        return False
+
     # EXISTING CREDENTIAL TESTS
     def test_existing_admin_login(self):
         """Test login with existing admin credentials"""
