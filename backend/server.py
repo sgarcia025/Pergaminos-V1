@@ -833,6 +833,36 @@ async def toggle_user_status(user_id: str, status_data: dict, current_user: User
     
     return {"message": "User status updated"}
 
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
+    # Only staff can delete users
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can delete users")
+    
+    # Check if user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent self-deletion
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own user account")
+    
+    # Check if user is assigned as asesor comercial to any companies
+    companies_assigned = await db.companies.count_documents({"asesor_comercial_id": user_id})
+    if companies_assigned > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete user. User is assigned as asesor comercial to {companies_assigned} companies. Reassign companies first."
+        )
+    
+    # Delete the user
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"message": "User deleted successfully", "user_id": user_id}
+
 # Document processing endpoints - Enhanced version
 @api_router.post("/projects/{project_id}/documents/process-rename-reorder")
 async def process_documents_rename_reorder(
