@@ -31,6 +31,8 @@ const Companies = ({ user }) => {
 
   useEffect(() => {
     fetchCompanies();
+    fetchAsesores();
+    fetchSegmentos();
   }, []);
 
   const fetchCompanies = async () => {
