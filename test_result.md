@@ -177,39 +177,60 @@ frontend:
 
   - task: "Endpoint DELETE para usuarios"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Agregado endpoint DELETE /users/{user_id} con validaciones para asignaciones de asesor y auto-eliminación"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED SUCCESSFULLY: DELETE /api/users/{user_id} endpoint working perfectly. Tested: (1) Prevents self-deletion (returns 400), (2) Prevents deletion of asesor assigned to companies (returns 400 with clear message), (3) Successfully deletes user after reassignment, (4) Only staff can delete users (403 for clients). All validations and permissions working as expected."
 
   - task: "Modelo Company expandido"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Actualizado modelo Company con campos: razon_social, nit, contacto, telefono, direccion, asesor_comercial_id, segmento, estado, corporacion"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED SUCCESSFULLY: Expanded Company model working perfectly. Tested: (1) All new fields (razon_social, nit, contacto, telefono, direccion, asesor_comercial_id, segmento, estado, corporacion) are correctly saved and retrieved, (2) Company creation with asesor assignment works, (3) All field validations working. Company model expansion complete and functional."
 
   - task: "Rol asesor comercial"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Agregado rol 'asesor' con permisos para ver solo empresas asignadas, endpoints para gestión de segmentos y asesores"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED SUCCESSFULLY: Asesor role functionality working perfectly. Tested: (1) Asesor users can login and authenticate, (2) GET /api/companies - Asesores only see companies assigned to them (asesor_comercial_id filter working), (3) GET /api/companies/{id} - Access control prevents asesores from viewing non-assigned companies (403), (4) GET /api/users/asesores - Lists only active asesor users (staff only, 403 for clients). All role-based permissions working correctly."
+
+  - task: "Gestión de segmentos"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "✅ TESTED SUCCESSFULLY: Segment management working perfectly. Tested: (1) POST /api/segmentos - Creates segmentos with nombre, descripcion (staff only), (2) GET /api/segmentos - Returns only active segmentos (accessible to all users), (3) DELETE /api/segmentos/{id} - Prevents deletion when segmento is used by companies (400), successfully deletes unused segmentos (staff only), (4) Proper permission controls (403 for clients). All segment CRUD operations working correctly."
 
   - task: "Botón eliminar usuarios para admin"
     implemented: true
