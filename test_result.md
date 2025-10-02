@@ -175,6 +175,66 @@ frontend:
         - agent: "main"
         - comment: "Agregado botón de eliminación con modal de confirmación, visible solo para usuarios staff"
 
+  - task: "Endpoint DELETE para usuarios"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado endpoint DELETE /users/{user_id} con validaciones para asignaciones de asesor y auto-eliminación"
+
+  - task: "Modelo Company expandido"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Actualizado modelo Company con campos: razon_social, nit, contacto, telefono, direccion, asesor_comercial_id, segmento, estado, corporacion"
+
+  - task: "Rol asesor comercial"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado rol 'asesor' con permisos para ver solo empresas asignadas, endpoints para gestión de segmentos y asesores"
+
+  - task: "Botón eliminar usuarios para admin"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/UserManagement.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado botón de eliminación con modal de confirmación, actualizado para mostrar rol asesor"
+
+  - task: "Formulario empresa expandido"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/Companies.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Actualizado formulario con todos los campos nuevos, carga de asesores y segmentos, layout responsivo"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
