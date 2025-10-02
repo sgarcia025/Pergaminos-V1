@@ -1297,6 +1297,7 @@ def main():
         "QA Agents Module (NEW)": ["Create QA Agent", "Get QA Agents", "Run QA Agent"],
         "User Management Module (NEW)": ["Create Client User", "Get Users List", "Toggle User Status", "Client Login"],
         "Document Processing Module (NEW)": ["Process Documents Rename-Reorder (NEW)", "Get Enhanced Process Status (NEW)", "Download Processed PDF (NEW)", "Process Documents Reorder (Legacy)", "Get Process Status (Legacy)"],
+        "Delete Endpoints (NEW)": ["Delete Company Without Projects", "Delete Company With Projects (Should Fail)", "Delete Project With Documents", "Client Cannot Delete Company", "Client Cannot Delete Project", "Delete Non-existent Company", "Delete Non-existent Project"],
         "Client Portal AI (NEW)": ["Ask AI About Documents"],
         "Dashboard": ["Dashboard Stats"]
     }
