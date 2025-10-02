@@ -365,8 +365,8 @@ const ProjectDetail = ({ user }) => {
       )}
 
       {/* File Upload Area */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Subir Documentos</h2>
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Subir Documentos</h2>
         
         <div
           className={`file-upload ${dragOver ? 'active' : ''}`}
