@@ -426,6 +426,122 @@ async def upload_document(
     
     return document
 
+# Batch Upload Endpoint - Up to 10 PDFs simultaneously
+@api_router.post("/projects/{project_id}/documents/batch-upload")
+async def batch_upload_documents(
+    project_id: str,
+    files: List[UploadFile] = File(...),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Limit to 10 files maximum
+    if len(files) > 10:
+        raise HTTPException(status_code=400, detail="Maximum 10 files allowed per batch")
+    
+    # Validate all files are PDFs
+    for file in files:
+        if not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF. Only PDF files are supported")
+    
+    document_ids = []
+    
+    # Save all files first
+    for file in files:
+        # Save file
+        file_id = str(uuid.uuid4())
+        file_extension = Path(file.filename).suffix
+        filename = f"{file_id}{file_extension}"
+        file_path = UPLOAD_DIR / filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Create document record
+        document = Document(
+            filename=filename,
+            original_filename=file.filename,
+            project_id=project_id,
+            file_path=str(file_path),
+            status="pending",  # Start as pending for batch processing
+            uploaded_by=current_user.id
+        )
+        
+        await db.documents.insert_one(document.dict())
+        document_ids.append(document.id)
+    
+    # Create batch processing task
+    batch_task = BatchProcessTask(
+        project_id=project_id,
+        document_ids=document_ids
+    )
+    
+    await db.batch_tasks.insert_one(batch_task.dict())
+    
+    # Start batch processing in background
+    background_tasks.add_task(process_documents_batch, batch_task.id, project)
+    
+    return {
+        "message": f"Batch upload successful. {len(files)} documents uploaded.",
+        "batch_task_id": batch_task.id,
+        "document_ids": document_ids,
+        "files_uploaded": len(files)
+    }
+
+# Batch Processing Status Endpoint
+@api_router.get("/projects/{project_id}/batch-status/{batch_task_id}")
+async def get_batch_processing_status(
+    project_id: str,
+    batch_task_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get batch task
+    batch_task = await db.batch_tasks.find_one({"id": batch_task_id})
+    if not batch_task:
+        raise HTTPException(status_code=404, detail="Batch task not found")
+    
+    # Get current document statuses
+    documents = await db.documents.find(
+        {"id": {"$in": batch_task["document_ids"]}}
+    ).to_list(length=None)
+    
+    document_statuses = []
+    for doc in documents:
+        document_statuses.append({
+            "id": doc["id"],
+            "filename": doc["original_filename"],
+            "status": doc["status"],
+            "processed_at": doc.get("processed_at")
+        })
+    
+    return {
+        "batch_task_id": batch_task_id,
+        "status": batch_task["status"],
+        "progress": batch_task["progress"],
+        "completed_documents": batch_task["completed_documents"],
+        "failed_documents": batch_task["failed_documents"],
+        "total_documents": len(batch_task["document_ids"]),
+        "document_statuses": document_statuses,
+        "created_at": batch_task["created_at"],
+        "started_at": batch_task.get("started_at"),
+        "completed_at": batch_task.get("completed_at")
+    }
+
 # AI Document Processing
 async def process_document_with_ai(document_id: str, project: dict):
     """Process document with AI and extract data based on semantic instructions"""
