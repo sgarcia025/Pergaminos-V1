@@ -89,6 +89,29 @@ const Projects = ({ user }) => {
     return colors[status] || 'status-active';
   };
 
+  const handleDeleteClick = (e, project) => {
+    e.preventDefault(); // Prevenir la navegación del Link
+    e.stopPropagation();
+    setProjectToDelete(project);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      await axios.delete(`${API}/projects/${projectToDelete.id}`);
+      setSuccess('Proyecto eliminado exitosamente');
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
+      fetchProjects();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al eliminar el proyecto');
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading">
