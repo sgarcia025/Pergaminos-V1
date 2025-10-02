@@ -194,11 +194,24 @@ const Projects = ({ user }) => {
                   <div className="text-xs text-gray-500">
                     Creado {new Date(project.created_at).toLocaleDateString()}
                   </div>
-                  <div className="flex items-center text-emerald-600 text-sm font-medium">
-                    Ver detalles
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center text-emerald-600 text-sm font-medium">
+                      Ver detalles
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                    {user.role === 'staff' && (
+                      <button
+                        onClick={(e) => handleDeleteClick(e, project)}
+                        className="text-red-600 hover:text-red-700 text-sm font-medium"
+                        title="Eliminar proyecto"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
