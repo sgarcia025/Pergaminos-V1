@@ -1135,6 +1135,686 @@ startxref
             return True
         return False
 
+    # PHASE 1 NEW FEATURE TESTS - User Deletion
+    def test_create_asesor_user(self):
+        """Test creating an asesor user for testing"""
+        asesor_user_data = {
+            "email": f"asesor{datetime.now().strftime('%H%M%S')}@pergaminos.com",
+            "name": "Test Asesor Comercial",
+            "password": "asesor123",
+            "role": "asesor"
+        }
+        
+        success, response = self.run_test(
+            "Create Asesor User",
+            "POST",
+            "auth/register",
+            200,
+            data=asesor_user_data
+        )
+        
+        if success and 'id' in response:
+            self.asesor_user_id = response['id']
+            self.asesor_email = asesor_user_data['email']
+            self.asesor_password = asesor_user_data['password']
+            print(f"   Created asesor user ID: {self.asesor_user_id}")
+            return True
+        return False
+
+    def test_delete_user_self_prevention(self):
+        """Test that users cannot delete themselves"""
+        success, response = self.run_test(
+            "Delete Self (Should Fail)",
+            "DELETE",
+            f"users/{self.user['id']}",
+            400  # Should return 400 Bad Request
+        )
+        
+        if success:
+            print(f"   Correctly prevented self-deletion")
+            return True
+        return False
+
+    def test_delete_user_with_company_assignment(self):
+        """Test deleting asesor assigned to companies (should fail)"""
+        if not hasattr(self, 'asesor_user_id'):
+            print("❌ No asesor user ID available for assignment test")
+            return False
+        
+        # First create a company with this asesor assigned
+        company_data = {
+            "name": f"Asesor Test Company {datetime.now().strftime('%H%M%S')}",
+            "razon_social": "Razón Social Test",
+            "nit": "123456789-0",
+            "contacto": "Juan Pérez",
+            "telefono": "+57 300 123 4567",
+            "direccion": "Calle 123 #45-67, Bogotá",
+            "asesor_comercial_id": self.asesor_user_id,
+            "segmento": "Tecnología",
+            "estado": "Activo",
+            "corporacion": "Grupo Empresarial Test"
+        }
+        
+        success, response = self.run_test(
+            "Create Company with Asesor Assignment",
+            "POST",
+            "companies",
+            200,
+            data=company_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create company with asesor assignment")
+            return False
+        
+        self.asesor_company_id = response['id']
+        print(f"   Created company with asesor assignment: {self.asesor_company_id}")
+        
+        # Now try to delete the asesor (should fail)
+        success, response = self.run_test(
+            "Delete Asesor with Company Assignment (Should Fail)",
+            "DELETE",
+            f"users/{self.asesor_user_id}",
+            400  # Should return 400 Bad Request
+        )
+        
+        if success:
+            print(f"   Correctly prevented deletion of asesor with company assignments")
+            return True
+        return False
+
+    def test_delete_user_after_reassignment(self):
+        """Test deleting asesor after reassigning companies (should work)"""
+        if not hasattr(self, 'asesor_company_id') or not hasattr(self, 'asesor_user_id'):
+            print("❌ No asesor company or user ID available for reassignment test")
+            return False
+        
+        # First reassign the company to remove asesor assignment
+        # We'll update the company to remove the asesor_comercial_id
+        # Since there's no PUT endpoint for companies, we'll create another asesor and assign
+        
+        # Create another asesor for reassignment
+        new_asesor_data = {
+            "email": f"newasesor{datetime.now().strftime('%H%M%S')}@pergaminos.com",
+            "name": "New Asesor for Reassignment",
+            "password": "newasesor123",
+            "role": "asesor"
+        }
+        
+        success, response = self.run_test(
+            "Create New Asesor for Reassignment",
+            "POST",
+            "auth/register",
+            200,
+            data=new_asesor_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create new asesor for reassignment")
+            return False
+        
+        new_asesor_id = response['id']
+        
+        # For this test, we'll simulate reassignment by deleting the company
+        # since there's no company update endpoint
+        success, response = self.run_test(
+            "Delete Company to Remove Asesor Assignment",
+            "DELETE",
+            f"companies/{self.asesor_company_id}",
+            200
+        )
+        
+        if not success:
+            print("❌ Could not delete company to remove asesor assignment")
+            return False
+        
+        print(f"   Removed asesor assignment by deleting company")
+        
+        # Now try to delete the original asesor (should work)
+        success, response = self.run_test(
+            "Delete Asesor After Reassignment",
+            "DELETE",
+            f"users/{self.asesor_user_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('message') and 'deleted successfully' in response.get('message', ''):
+                print(f"   Asesor deleted successfully after reassignment")
+                # Clean up the new asesor too
+                cleanup_success, cleanup_response = self.run_test(
+                    "Cleanup New Asesor",
+                    "DELETE",
+                    f"users/{new_asesor_id}",
+                    200
+                )
+                return True
+        return False
+
+    def test_client_cannot_delete_users(self):
+        """Test that client users cannot delete users"""
+        # Create a test user first
+        test_user_data = {
+            "email": f"deletetest{datetime.now().strftime('%H%M%S')}@test.com",
+            "name": "Delete Test User",
+            "password": "deletetest123",
+            "role": "client"
+        }
+        
+        success, response = self.run_test(
+            "Create User for Client Delete Test",
+            "POST",
+            "auth/register",
+            200,
+            data=test_user_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create user for client delete test")
+            return False
+        
+        test_user_id = response['id']
+        
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for User Delete Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for user delete test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        
+        # Try to delete user as client (should fail with 403)
+        success, response = self.run_test(
+            "Client Delete User (Should Fail)",
+            "DELETE",
+            f"users/{test_user_id}",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from deleting users")
+            
+            # Clean up: delete the test user as admin
+            cleanup_success, cleanup_response = self.run_test(
+                "Cleanup Test User",
+                "DELETE",
+                f"users/{test_user_id}",
+                200
+            )
+            return True
+        return False
+
+    # PHASE 1 NEW FEATURE TESTS - Expanded Company Model
+    def test_create_company_with_new_fields(self):
+        """Test creating company with all new fields"""
+        # First create a segmento to use
+        segmento_data = {
+            "nombre": "Tecnología Avanzada",
+            "descripcion": "Empresas del sector tecnológico"
+        }
+        
+        success, response = self.run_test(
+            "Create Segmento for Company Test",
+            "POST",
+            "segmentos",
+            200,
+            data=segmento_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create segmento for company test")
+            return False
+        
+        segmento_id = response['id']
+        
+        # Create another asesor for assignment
+        asesor_data = {
+            "email": f"asesorcompany{datetime.now().strftime('%H%M%S')}@pergaminos.com",
+            "name": "Asesor for Company Test",
+            "password": "asesorcompany123",
+            "role": "asesor"
+        }
+        
+        success, response = self.run_test(
+            "Create Asesor for Company Test",
+            "POST",
+            "auth/register",
+            200,
+            data=asesor_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create asesor for company test")
+            return False
+        
+        asesor_id = response['id']
+        
+        # Now create company with all new fields
+        company_data = {
+            "name": f"Empresa Completa {datetime.now().strftime('%H%M%S')}",
+            "razon_social": "Empresa Completa S.A.S.",
+            "nit": "900123456-7",
+            "description": "Empresa de prueba con todos los campos nuevos",
+            "contacto": "María González",
+            "contact_email": "maria@empresacompleta.com",
+            "telefono": "+57 301 234 5678",
+            "direccion": "Carrera 15 #93-47, Oficina 501, Bogotá D.C.",
+            "asesor_comercial_id": asesor_id,
+            "segmento": segmento_id,
+            "estado": "Prospecto",
+            "corporacion": "Holding Empresarial Colombia"
+        }
+        
+        success, response = self.run_test(
+            "Create Company with All New Fields",
+            "POST",
+            "companies",
+            200,
+            data=company_data
+        )
+        
+        if success and 'id' in response:
+            self.expanded_company_id = response['id']
+            self.test_asesor_id = asesor_id
+            self.test_segmento_id = segmento_id
+            print(f"   Created expanded company ID: {self.expanded_company_id}")
+            
+            # Verify all fields were saved correctly
+            if (response.get('razon_social') == company_data['razon_social'] and
+                response.get('nit') == company_data['nit'] and
+                response.get('contacto') == company_data['contacto'] and
+                response.get('telefono') == company_data['telefono'] and
+                response.get('direccion') == company_data['direccion'] and
+                response.get('asesor_comercial_id') == company_data['asesor_comercial_id'] and
+                response.get('segmento') == company_data['segmento'] and
+                response.get('estado') == company_data['estado'] and
+                response.get('corporacion') == company_data['corporacion']):
+                print(f"   All new fields saved correctly")
+                return True
+            else:
+                print(f"   Some fields not saved correctly")
+                return False
+        return False
+
+    # PHASE 1 NEW FEATURE TESTS - Asesor Role Functionality
+    def test_asesor_login_and_permissions(self):
+        """Test asesor login and company access permissions"""
+        if not hasattr(self, 'test_asesor_id'):
+            print("❌ No test asesor ID available for login test")
+            return False
+        
+        # Get asesor credentials (we need to find the asesor we created)
+        # For this test, we'll create a new asesor with known credentials
+        asesor_login_data = {
+            "email": f"asesorlogin{datetime.now().strftime('%H%M%S')}@pergaminos.com",
+            "name": "Asesor Login Test",
+            "password": "asesorlogin123",
+            "role": "asesor"
+        }
+        
+        success, response = self.run_test(
+            "Create Asesor for Login Test",
+            "POST",
+            "auth/register",
+            200,
+            data=asesor_login_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create asesor for login test")
+            return False
+        
+        login_asesor_id = response['id']
+        
+        # Create a company assigned to this asesor
+        company_for_asesor = {
+            "name": f"Asesor Company {datetime.now().strftime('%H%M%S')}",
+            "razon_social": "Asesor Company S.A.S.",
+            "asesor_comercial_id": login_asesor_id,
+            "segmento": "Servicios"
+        }
+        
+        success, response = self.run_test(
+            "Create Company for Asesor Test",
+            "POST",
+            "companies",
+            200,
+            data=company_for_asesor
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create company for asesor test")
+            return False
+        
+        asesor_company_id = response['id']
+        
+        # Save admin token and login as asesor
+        admin_token = self.token
+        success, response = self.run_test(
+            "Asesor Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": asesor_login_data['email'], "password": asesor_login_data['password']}
+        )
+        
+        if not success or 'access_token' not in response:
+            print("❌ Asesor login failed")
+            self.token = admin_token
+            return False
+        
+        # Use asesor token
+        self.token = response['access_token']
+        asesor_user = response['user']
+        print(f"   Asesor logged in: {asesor_user['name']} ({asesor_user['role']})")
+        
+        # Test that asesor can only see assigned companies
+        success, response = self.run_test(
+            "Asesor Get Companies (Only Assigned)",
+            "GET",
+            "companies",
+            200
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success and isinstance(response, list):
+            # Asesor should only see companies assigned to them
+            assigned_companies = [comp for comp in response if comp.get('asesor_comercial_id') == login_asesor_id]
+            if len(response) == len(assigned_companies) and len(response) >= 1:
+                print(f"   Asesor correctly sees only assigned companies: {len(response)}")
+                
+                # Clean up
+                cleanup_success, cleanup_response = self.run_test(
+                    "Cleanup Asesor Company",
+                    "DELETE",
+                    f"companies/{asesor_company_id}",
+                    200
+                )
+                cleanup_success, cleanup_response = self.run_test(
+                    "Cleanup Login Asesor",
+                    "DELETE",
+                    f"users/{login_asesor_id}",
+                    200
+                )
+                return True
+            else:
+                print(f"   Asesor permission issue: saw {len(response)} companies, expected only assigned ones")
+                return False
+        return False
+
+    def test_asesor_company_detail_access(self):
+        """Test asesor access to specific company details"""
+        if not hasattr(self, 'expanded_company_id') or not hasattr(self, 'test_asesor_id'):
+            print("❌ No expanded company or test asesor ID available")
+            return False
+        
+        # Create asesor credentials for this test
+        asesor_detail_data = {
+            "email": f"asesordetail{datetime.now().strftime('%H%M%S')}@pergaminos.com",
+            "name": "Asesor Detail Test",
+            "password": "asesordetail123",
+            "role": "asesor"
+        }
+        
+        success, response = self.run_test(
+            "Create Asesor for Detail Test",
+            "POST",
+            "auth/register",
+            200,
+            data=asesor_detail_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create asesor for detail test")
+            return False
+        
+        detail_asesor_id = response['id']
+        
+        # Save admin token and login as asesor
+        admin_token = self.token
+        success, response = self.run_test(
+            "Asesor Detail Login",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": asesor_detail_data['email'], "password": asesor_detail_data['password']}
+        )
+        
+        if not success or 'access_token' not in response:
+            print("❌ Asesor detail login failed")
+            self.token = admin_token
+            return False
+        
+        # Use asesor token
+        self.token = response['access_token']
+        
+        # Try to access company not assigned to this asesor (should fail with 403)
+        success, response = self.run_test(
+            "Asesor Access Non-Assigned Company (Should Fail)",
+            "GET",
+            f"companies/{self.expanded_company_id}",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented asesor from accessing non-assigned company")
+            
+            # Clean up
+            cleanup_success, cleanup_response = self.run_test(
+                "Cleanup Detail Asesor",
+                "DELETE",
+                f"users/{detail_asesor_id}",
+                200
+            )
+            return True
+        return False
+
+    # PHASE 1 NEW FEATURE TESTS - Segment Management
+    def test_create_segmento(self):
+        """Test creating a segmento"""
+        segmento_data = {
+            "nombre": f"Segmento Test {datetime.now().strftime('%H%M%S')}",
+            "descripcion": "Segmento creado para pruebas automatizadas"
+        }
+        
+        success, response = self.run_test(
+            "Create Segmento",
+            "POST",
+            "segmentos",
+            200,
+            data=segmento_data
+        )
+        
+        if success and 'id' in response:
+            self.test_segmento_new_id = response['id']
+            print(f"   Created segmento ID: {self.test_segmento_new_id}")
+            
+            # Verify fields were saved correctly
+            if (response.get('nombre') == segmento_data['nombre'] and
+                response.get('descripcion') == segmento_data['descripcion'] and
+                response.get('is_active') == True):
+                print(f"   Segmento fields saved correctly")
+                return True
+            else:
+                print(f"   Segmento fields not saved correctly")
+                return False
+        return False
+
+    def test_get_segmentos(self):
+        """Test getting active segmentos list"""
+        success, response = self.run_test(
+            "Get Segmentos",
+            "GET",
+            "segmentos",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            print(f"   Found {len(response)} active segmentos")
+            # Verify all returned segmentos are active
+            active_segmentos = [seg for seg in response if seg.get('is_active') == True]
+            if len(response) == len(active_segmentos):
+                print(f"   All returned segmentos are active")
+                return True
+            else:
+                print(f"   Some inactive segmentos returned")
+                return False
+        return False
+
+    def test_delete_segmento_in_use(self):
+        """Test deleting segmento that's in use by companies (should fail)"""
+        if not hasattr(self, 'test_segmento_id'):
+            print("❌ No test segmento ID available for deletion test")
+            return False
+        
+        # The expanded company we created earlier uses this segmento
+        success, response = self.run_test(
+            "Delete Segmento In Use (Should Fail)",
+            "DELETE",
+            f"segmentos/{self.test_segmento_id}",
+            400  # Should return 400 Bad Request
+        )
+        
+        if success:
+            print(f"   Correctly prevented deletion of segmento in use")
+            return True
+        return False
+
+    def test_delete_unused_segmento(self):
+        """Test deleting segmento not in use (should work)"""
+        if not hasattr(self, 'test_segmento_new_id'):
+            print("❌ No unused segmento ID available for deletion test")
+            return False
+        
+        success, response = self.run_test(
+            "Delete Unused Segmento",
+            "DELETE",
+            f"segmentos/{self.test_segmento_new_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('message') and 'deleted successfully' in response.get('message', ''):
+                print(f"   Unused segmento deleted successfully")
+                return True
+        return False
+
+    def test_client_cannot_create_segmentos(self):
+        """Test that client users cannot create segmentos"""
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for Segmento Create Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for segmento create test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        
+        segmento_data = {
+            "nombre": "Segmento Client Test",
+            "descripcion": "Should not be created by client"
+        }
+        
+        # Try to create segmento as client (should fail with 403)
+        success, response = self.run_test(
+            "Client Create Segmento (Should Fail)",
+            "POST",
+            "segmentos",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from creating segmentos")
+            return True
+        return False
+
+    # PHASE 1 NEW FEATURE TESTS - Get Asesores List
+    def test_get_asesores_list(self):
+        """Test getting list of asesor users (staff only)"""
+        success, response = self.run_test(
+            "Get Asesores List",
+            "GET",
+            "users/asesores",
+            200
+        )
+        
+        if success and isinstance(response, list):
+            # Verify all returned users have asesor role and are active
+            asesor_users = [user for user in response if user.get('role') == 'asesor' and user.get('is_active') == True]
+            if len(response) == len(asesor_users):
+                print(f"   Found {len(response)} active asesor users")
+                return True
+            else:
+                print(f"   Some non-asesor or inactive users returned")
+                return False
+        return False
+
+    def test_client_cannot_get_asesores(self):
+        """Test that client users cannot get asesores list"""
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for Asesores List Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for asesores list test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        
+        # Try to get asesores list as client (should fail with 403)
+        success, response = self.run_test(
+            "Client Get Asesores (Should Fail)",
+            "GET",
+            "users/asesores",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from accessing asesores list")
+            return True
+        return False
+
     # EXISTING CREDENTIAL TESTS
     def test_existing_admin_login(self):
         """Test login with existing admin credentials"""
