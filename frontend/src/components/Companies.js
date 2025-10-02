@@ -17,6 +17,8 @@ const Companies = ({ user }) => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState(null);
 
   useEffect(() => {
     fetchCompanies();
