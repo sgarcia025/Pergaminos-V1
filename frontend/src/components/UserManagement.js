@@ -333,6 +333,7 @@ const UserManagement = ({ user }) => {
                   required
                 >
                   <option value="client">Cliente</option>
+                  <option value="asesor">Asesor Comercial</option>
                   <option value="staff">Staff</option>
                 </select>
               </div>
