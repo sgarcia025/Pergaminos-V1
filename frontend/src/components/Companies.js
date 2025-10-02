@@ -76,10 +76,17 @@ const Companies = ({ user }) => {
       setShowModal(false);
       setFormData({
         name: '',
+        razon_social: '',
+        nit: '',
         description: '',
+        contacto: '',
         contact_email: '',
-        contact_phone: '',
-        address: ''
+        telefono: '',
+        direccion: '',
+        asesor_comercial_id: '',
+        segmento: '',
+        estado: '',
+        corporacion: ''
       });
       fetchCompanies();
     } catch (error) {
