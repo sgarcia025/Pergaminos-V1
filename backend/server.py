@@ -1425,6 +1425,53 @@ async def process_document_reordering_with_pdf(project_id: str, documents: list,
             {"$set": {"status": "failed", "error": str(e)}}
         )
 
+# Segmentos management endpoints
+@api_router.post("/segmentos", response_model=Segmento)
+async def create_segmento(segmento_data: SegmentoCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can create segmentos")
+    
+    segmento_dict = segmento_data.dict()
+    segmento_dict["created_by"] = current_user.id
+    segmento = Segmento(**segmento_dict)
+    
+    await db.segmentos.insert_one(segmento.dict())
+    return segmento
+
+@api_router.get("/segmentos", response_model=List[Segmento])
+async def get_segmentos():
+    # All users can see active segmentos for selection
+    segmentos = await db.segmentos.find({"is_active": True}).to_list(1000)
+    return [Segmento(**segmento) for segmento in segmentos]
+
+@api_router.delete("/segmentos/{segmento_id}")
+async def delete_segmento(segmento_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can delete segmentos")
+    
+    # Check if segmento is being used by any company
+    companies_using = await db.companies.count_documents({"segmento": segmento_id})
+    if companies_using > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete segmento. {companies_using} companies are using this segmento."
+        )
+    
+    result = await db.segmentos.delete_one({"id": segmento_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Segmento not found")
+    
+    return {"message": "Segmento deleted successfully", "segmento_id": segmento_id}
+
+# Endpoint to get users with specific role (for asesor assignment)
+@api_router.get("/users/asesores", response_model=List[User])
+async def get_asesores(current_user: User = Depends(get_current_user)):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can view asesores")
+    
+    asesores = await db.users.find({"role": "asesor", "is_active": True}).to_list(1000)
+    return [User(**asesor) for asesor in asesores]
+
 # Delete endpoints (only for admin/staff)
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: User = Depends(get_current_user)):
