@@ -1779,6 +1779,408 @@ startxref
                 return False
         return False
 
+    # NEW BATCH PROCESSING TESTS
+    def test_batch_upload_documents(self):
+        """Test batch upload of multiple PDFs (up to 10)"""
+        if not self.project_id:
+            print("❌ No project ID available for batch upload test")
+            return False
+        
+        # Create multiple test PDF files (3 files for testing)
+        pdf_content = b"""%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/Length 44
+>>
+stream
+BT
+/F1 12 Tf
+100 700 Td
+(Batch Test Document) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000206 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+300
+%%EOF"""
+        
+        # Create 3 files for batch upload
+        files = [
+            ('files', ('batch_test_1.pdf', pdf_content, 'application/pdf')),
+            ('files', ('batch_test_2.pdf', pdf_content, 'application/pdf')),
+            ('files', ('batch_test_3.pdf', pdf_content, 'application/pdf'))
+        ]
+        
+        import requests
+        url = f"{self.api_url}/projects/{self.project_id}/documents/batch-upload"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        print(f"\n🔍 Testing Batch Upload Documents...")
+        print(f"   URL: {url}")
+        print(f"   Files to upload: {len(files)}")
+        
+        try:
+            response = requests.post(url, headers=headers, files=files)
+            success = response.status_code == 200
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                result = response.json()
+                if 'batch_task_id' in result and 'document_ids' in result:
+                    self.batch_task_id = result['batch_task_id']
+                    self.batch_document_ids = result['document_ids']
+                    print(f"   Batch task ID: {self.batch_task_id}")
+                    print(f"   Documents uploaded: {result.get('files_uploaded', 0)}")
+                    print(f"   Document IDs: {len(self.batch_document_ids)}")
+                    return True
+                else:
+                    print(f"❌ Missing batch_task_id or document_ids in response")
+                    return False
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+        finally:
+            self.tests_run += 1
+
+    def test_batch_upload_limit_exceeded(self):
+        """Test batch upload with more than 10 files (should fail)"""
+        if not self.project_id:
+            print("❌ No project ID available for batch limit test")
+            return False
+        
+        # Create 11 files to exceed the limit
+        pdf_content = b"""%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj
+xref
+0 4
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+trailer<</Size 4/Root 1 0 R>>
+startxref
+200
+%%EOF"""
+        
+        files = []
+        for i in range(11):  # 11 files to exceed limit
+            files.append(('files', (f'limit_test_{i+1}.pdf', pdf_content, 'application/pdf')))
+        
+        import requests
+        url = f"{self.api_url}/projects/{self.project_id}/documents/batch-upload"
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        print(f"\n🔍 Testing Batch Upload Limit (11 files - should fail)...")
+        print(f"   URL: {url}")
+        print(f"   Files to upload: {len(files)}")
+        
+        try:
+            response = requests.post(url, headers=headers, files=files)
+            success = response.status_code == 400  # Should return 400 Bad Request
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                print(f"   Correctly rejected upload of {len(files)} files (limit is 10)")
+                return True
+            else:
+                print(f"❌ Failed - Expected 400, got {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
+        finally:
+            self.tests_run += 1
+
+    def test_batch_status_check(self):
+        """Test checking batch processing status"""
+        if not self.project_id or not hasattr(self, 'batch_task_id'):
+            print("❌ No project ID or batch task ID available for status test")
+            return False
+        
+        success, response = self.run_test(
+            "Get Batch Processing Status",
+            "GET",
+            f"projects/{self.project_id}/batch-status/{self.batch_task_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            status = response.get('status', 'unknown')
+            progress = response.get('progress', 0)
+            total_docs = response.get('total_documents', 0)
+            completed_docs = response.get('completed_documents', 0)
+            failed_docs = response.get('failed_documents', 0)
+            document_statuses = response.get('document_statuses', [])
+            
+            print(f"   Batch status: {status} ({progress}%)")
+            print(f"   Documents: {completed_docs}/{total_docs} completed, {failed_docs} failed")
+            print(f"   Individual document statuses: {len(document_statuses)}")
+            
+            # Verify response structure
+            if ('batch_task_id' in response and 
+                'status' in response and 
+                'document_statuses' in response and
+                isinstance(document_statuses, list)):
+                print(f"   Batch status response structure is correct")
+                return True
+            else:
+                print(f"   Batch status response structure is incorrect")
+                return False
+        return False
+
+    def test_batch_processing_wait_completion(self):
+        """Test waiting for batch processing to complete"""
+        if not self.project_id or not hasattr(self, 'batch_task_id'):
+            print("❌ No project ID or batch task ID available for completion test")
+            return False
+        
+        print(f"\n🔍 Waiting for batch processing to complete...")
+        max_wait_time = 60  # Maximum 60 seconds
+        wait_interval = 3   # Check every 3 seconds
+        waited_time = 0
+        
+        while waited_time < max_wait_time:
+            success, response = self.run_test(
+                f"Check Batch Status (wait {waited_time}s)",
+                "GET",
+                f"projects/{self.project_id}/batch-status/{self.batch_task_id}",
+                200
+            )
+            
+            if success and isinstance(response, dict):
+                status = response.get('status', 'unknown')
+                progress = response.get('progress', 0)
+                
+                print(f"   Status: {status} ({progress}%) - waited {waited_time}s")
+                
+                if status in ['completed', 'failed']:
+                    if status == 'completed':
+                        print(f"✅ Batch processing completed successfully")
+                        return True
+                    else:
+                        print(f"❌ Batch processing failed")
+                        return False
+                
+                # Wait before next check
+                time.sleep(wait_interval)
+                waited_time += wait_interval
+            else:
+                print(f"❌ Failed to get batch status")
+                return False
+        
+        print(f"❌ Batch processing did not complete within {max_wait_time} seconds")
+        return False
+
+    # COMPANY EDITING TESTS
+    def test_update_company_all_fields(self):
+        """Test updating company with all new fields"""
+        if not self.company_id:
+            print("❌ No company ID available for update test")
+            return False
+        
+        # Get current company data first
+        success, current_company = self.run_test(
+            "Get Company Before Update",
+            "GET",
+            f"companies/{self.company_id}",
+            200
+        )
+        
+        if not success:
+            print("❌ Could not get current company data")
+            return False
+        
+        # Create update data with all new fields
+        update_data = {
+            "name": f"Updated Company {datetime.now().strftime('%H%M%S')}",
+            "razon_social": "Updated Company S.A.S.",
+            "nit": "900987654-3",
+            "description": "Updated company description with all new fields",
+            "contacto": "Carlos Rodríguez",
+            "contact_email": "carlos@updatedcompany.com",
+            "telefono": "+57 302 987 6543",
+            "direccion": "Avenida 68 #45-23, Piso 8, Bogotá D.C.",
+            "segmento": "Servicios Financieros",
+            "estado": "Cliente Activo",
+            "corporacion": "Grupo Financiero Internacional"
+        }
+        
+        success, response = self.run_test(
+            "Update Company with All Fields",
+            "PUT",
+            f"companies/{self.company_id}",
+            200,
+            data=update_data
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify all fields were updated correctly
+            fields_correct = True
+            for field, expected_value in update_data.items():
+                actual_value = response.get(field)
+                if actual_value != expected_value:
+                    print(f"   Field {field}: expected '{expected_value}', got '{actual_value}'")
+                    fields_correct = False
+            
+            if fields_correct:
+                print(f"   All company fields updated correctly")
+                print(f"   Updated company: {response.get('name')}")
+                print(f"   Razón social: {response.get('razon_social')}")
+                print(f"   NIT: {response.get('nit')}")
+                print(f"   Contacto: {response.get('contacto')}")
+                return True
+            else:
+                print(f"   Some company fields were not updated correctly")
+                return False
+        return False
+
+    def test_update_company_partial_fields(self):
+        """Test updating company with only some fields"""
+        if not self.company_id:
+            print("❌ No company ID available for partial update test")
+            return False
+        
+        # Update only a few fields
+        partial_update = {
+            "telefono": "+57 305 111 2222",
+            "estado": "Prospecto Calificado",
+            "description": "Partially updated company description"
+        }
+        
+        success, response = self.run_test(
+            "Update Company Partial Fields",
+            "PUT",
+            f"companies/{self.company_id}",
+            200,
+            data=partial_update
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify updated fields
+            for field, expected_value in partial_update.items():
+                actual_value = response.get(field)
+                if actual_value != expected_value:
+                    print(f"   Partial update failed for {field}: expected '{expected_value}', got '{actual_value}'")
+                    return False
+            
+            print(f"   Partial company update successful")
+            print(f"   Updated telefono: {response.get('telefono')}")
+            print(f"   Updated estado: {response.get('estado')}")
+            return True
+        return False
+
+    def test_update_nonexistent_company(self):
+        """Test updating a non-existent company (should return 404)"""
+        fake_company_id = "nonexistent-company-update-test"
+        
+        update_data = {
+            "name": "Should Not Work",
+            "description": "This update should fail"
+        }
+        
+        success, response = self.run_test(
+            "Update Non-existent Company",
+            "PUT",
+            f"companies/{fake_company_id}",
+            404,  # Should return 404 Not Found
+            data=update_data
+        )
+        
+        if success:
+            print(f"   Correctly returned 404 for non-existent company update")
+            return True
+        return False
+
+    def test_client_cannot_update_company(self):
+        """Test that client users cannot update companies"""
+        if not self.company_id:
+            print("❌ No company ID available for client update test")
+            return False
+        
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for Company Update Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for company update test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        
+        update_data = {
+            "name": "Client Should Not Update This",
+            "description": "This should fail"
+        }
+        
+        # Try to update company as client (should fail with 403)
+        success, response = self.run_test(
+            "Client Update Company (Should Fail)",
+            "PUT",
+            f"companies/{self.company_id}",
+            403,  # Should return 403 Forbidden
+            data=update_data
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from updating company")
+            return True
+        return False
+
     def test_client_cannot_get_asesores(self):
         """Test that client users cannot get asesores list"""
         # Login as client user
