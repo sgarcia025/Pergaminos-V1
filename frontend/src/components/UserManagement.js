@@ -81,6 +81,27 @@ const UserManagement = ({ user }) => {
     }
   };
 
+  const handleDeleteClick = (userToDelete) => {
+    setUserToDelete(userToDelete);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await axios.delete(`${API}/users/${userToDelete.id}`);
+      setSuccess('Usuario eliminado exitosamente');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al eliminar usuario');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    }
+  };
+
   const generateTestCredentials = async () => {
     const testClient = {
       email: 'cliente@empresademo.com',
