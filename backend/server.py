@@ -1361,6 +1361,79 @@ async def process_document_reordering_with_pdf(project_id: str, documents: list,
             {"$set": {"status": "failed", "error": str(e)}}
         )
 
+# Delete endpoints (only for admin/staff)
+@api_router.delete("/companies/{company_id}")
+async def delete_company(company_id: str, current_user: User = Depends(get_current_user)):
+    # Only staff can delete companies
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can delete companies")
+    
+    # Check if company exists
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check if there are projects associated with this company
+    projects_count = await db.projects.count_documents({"company_id": company_id})
+    if projects_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete company. There are {projects_count} projects associated with this company. Delete projects first."
+        )
+    
+    # Check if there are users associated with this company
+    users_count = await db.users.count_documents({"company_id": company_id})
+    if users_count > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete company. There are {users_count} users associated with this company. Update users first."
+        )
+    
+    # Delete the company
+    result = await db.companies.delete_one({"id": company_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    return {"message": "Company deleted successfully", "company_id": company_id}
+
+@api_router.delete("/projects/{project_id}")
+async def delete_project(project_id: str, current_user: User = Depends(get_current_user)):
+    # Only staff can delete projects
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can delete projects")
+    
+    # Check if project exists
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Check if there are documents associated with this project
+    documents_count = await db.documents.count_documents({"project_id": project_id})
+    if documents_count > 0:
+        # Delete all documents associated with this project
+        await db.documents.delete_many({"project_id": project_id})
+        logger.info(f"Deleted {documents_count} documents associated with project {project_id}")
+        
+        # Also clean up any uploaded files (optional, depends on your file storage strategy)
+        import glob
+        project_upload_path = f"/app/backend/uploads/{project_id}/*"
+        files_to_delete = glob.glob(project_upload_path)
+        for file_path in files_to_delete:
+            try:
+                os.remove(file_path)
+            except Exception as e:
+                logger.warning(f"Could not delete file {file_path}: {e}")
+    
+    # Delete any processing tasks associated with this project
+    await db.process_tasks.delete_many({"project_id": project_id})
+    
+    # Delete the project
+    result = await db.projects.delete_one({"id": project_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return {"message": "Project deleted successfully", "project_id": project_id, "deleted_documents": documents_count}
+
 # Initialize default admin user and test client
 @api_router.post("/init/admin")
 async def create_admin_user():
