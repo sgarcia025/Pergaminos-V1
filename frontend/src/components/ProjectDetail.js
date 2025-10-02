@@ -54,31 +54,75 @@ const ProjectDetail = ({ user }) => {
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      setError('Solo se permiten archivos PDF');
+    // Validate all files are PDFs
+    const nonPdfFiles = Array.from(files).filter(file => !file.name.toLowerCase().endsWith('.pdf'));
+    if (nonPdfFiles.length > 0) {
+      setError(`Los siguientes archivos no son PDFs: ${nonPdfFiles.map(f => f.name).join(', ')}`);
       return;
     }
 
-    setUploading(true);
+    // Limit to 10 files
+    if (files.length > 10) {
+      setError('Máximo 10 archivos permitidos por lote');
+      return;
+    }
+
     setError('');
     setSuccess('');
 
-    const formData = new FormData();
-    formData.append('file', file);
+    // Single file upload (legacy)
+    if (files.length === 1) {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', files[0]);
 
-    try {
-      await axios.post(`${API}/projects/${projectId}/documents/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      try {
+        await axios.post(`${API}/projects/${projectId}/documents/upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setSuccess('Documento subido exitosamente');
+        fetchDocuments();
+      } catch (error) {
+        setError(error.response?.data?.detail || 'Error al subir el documento');
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      // Batch upload for multiple files
+      setBatchUploading(true);
+      
+      // Initialize upload progress tracking
+      const progressTracking = Array.from(files).map(file => ({
+        name: file.name,
+        status: 'pending',
+        progress: 0
+      }));
+      setUploadProgress(progressTracking);
+
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('files', file);
       });
-      setSuccess('Documento subido exitosamente');
-      fetchDocuments();
-    } catch (error) {
-      setError(error.response?.data?.detail || 'Error al subir el documento');
-    } finally {
-      setUploading(false);
+
+      try {
+        const response = await axios.post(`${API}/projects/${projectId}/documents/batch-upload`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        
+        setSuccess(`${files.length} documentos subidos exitosamente. Procesando...`);
+        setBatchTaskId(response.data.batch_task_id);
+        
+        // Start polling for batch status
+        pollBatchStatus(response.data.batch_task_id);
+        
+      } catch (error) {
+        setError(error.response?.data?.detail || 'Error al subir los documentos');
+        setBatchUploading(false);
+      }
     }
   };
 
