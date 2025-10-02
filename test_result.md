@@ -270,27 +270,33 @@ frontend:
 
   - task: "Edición de empresas"
     implemented: true
-    working: false
-    file: "/app/frontend/src/components/Companies.js"
+    working: true
+    file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Endpoint PUT y botones de edición implementados, modal reutilizado para crear/editar"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ BACKEND TESTED SUCCESSFULLY: PUT /api/companies/{company_id} endpoint working correctly. Tested: (1) Update company with all new fields (name, razon_social, nit, contacto, telefono, direccion, segmento, estado, corporacion) - all fields updated correctly, (2) Returns 404 for non-existent companies, (3) Only staff can update companies (403 for clients). Company editing backend functionality is working perfectly. Minor: Partial updates require name field due to CompanyCreate model validation."
 
   - task: "Procesamiento paralelo 10 PDFs backend"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Endpoints batch-upload y batch-status, modelo BatchProcessTask, semáforo asyncio para límite de 10 concurrentes"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ BATCH PROCESSING TESTED SUCCESSFULLY: All batch processing functionality working perfectly. Tested: (1) POST /api/projects/{project_id}/documents/batch-upload - Successfully uploaded 3 PDFs in batch, returned batch_task_id and document_ids, (2) Batch limit enforcement - Correctly rejected 11 files (limit is 10) with 400 status, (3) GET /api/projects/{project_id}/batch-status/{batch_task_id} - Status tracking working correctly, shows progress, completed/failed counts, individual document statuses, (4) Parallel processing - Batch completed successfully with 3/3 documents processed, 0 failed. Semaphore concurrency control and asyncio processing working as expected."
 
   - task: "Frontend subida múltiple con progreso"
     implemented: true
