@@ -2084,8 +2084,21 @@ startxref
             print("❌ No company ID available for partial update test")
             return False
         
-        # Update only a few fields
+        # Get current company data first to include required name field
+        success, current_company = self.run_test(
+            "Get Company for Partial Update",
+            "GET",
+            f"companies/{self.company_id}",
+            200
+        )
+        
+        if not success:
+            print("❌ Could not get current company data for partial update")
+            return False
+        
+        # Update only a few fields but include required name field
         partial_update = {
+            "name": current_company.get("name", "Default Company Name"),  # Keep existing name
             "telefono": "+57 305 111 2222",
             "estado": "Prospecto Calificado",
             "description": "Partially updated company description"
