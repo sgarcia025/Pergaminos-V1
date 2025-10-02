@@ -1006,6 +1006,16 @@ def main():
     test_results.append(("Process Documents Reorder (Legacy)", tester.test_process_documents_reorder()))
     test_results.append(("Get Process Status (Legacy)", tester.test_get_process_status()))
     
+    # NEW FEATURE TESTS - DELETE ENDPOINTS (Staff Only)
+    print("\n🔍 Testing DELETE Endpoints (Staff Only)...")
+    test_results.append(("Delete Company Without Projects", tester.test_delete_company_without_projects()))
+    test_results.append(("Delete Company With Projects (Should Fail)", tester.test_delete_company_with_projects_should_fail()))
+    test_results.append(("Delete Project With Documents", tester.test_delete_project_with_documents()))
+    test_results.append(("Client Cannot Delete Company", tester.test_client_cannot_delete_company()))
+    test_results.append(("Client Cannot Delete Project", tester.test_client_cannot_delete_project()))
+    test_results.append(("Delete Non-existent Company", tester.test_delete_nonexistent_company()))
+    test_results.append(("Delete Non-existent Project", tester.test_delete_nonexistent_project()))
+    
     # NEW FEATURE TESTS - Client Portal AI Questions
     print("\n🔍 Testing Client Portal AI Questions...")
     test_results.append(("Ask AI About Documents", tester.test_ask_ai_about_documents()))
