@@ -102,28 +102,6 @@ const UserManagement = ({ user }) => {
     }
   };
 
-  const generateTestCredentials = async () => {
-    const testClient = {
-      email: 'cliente@empresademo.com',
-      name: 'Cliente Demo',
-      password: 'cliente123',
-      role: 'client',
-      company_id: companies.length > 0 ? companies[0].id : ''
-    };
-
-    try {
-      await axios.post(`${API}/auth/register`, testClient);
-      setSuccess('Usuario cliente de prueba creado: cliente@empresademo.com / cliente123');
-      fetchUsers();
-    } catch (error) {
-      if (error.response?.status === 400) {
-        setError('El usuario cliente de prueba ya existe');
-      } else {
-        setError('Error al crear usuario de prueba');
-      }
-    }
-  };
-
   if (user.role !== 'staff') {
     return (
       <div className="text-center py-12">
