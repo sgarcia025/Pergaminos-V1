@@ -304,6 +304,63 @@ const Companies = ({ user }) => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && companyToDelete && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Eliminar Empresa</h3>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="modal-close"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex">
+                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      ¿Estás seguro de que deseas eliminar esta empresa?
+                    </h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>Esta acción eliminará permanentemente:</p>
+                      <ul className="list-disc list-inside mt-1">
+                        <li><strong>{companyToDelete.name}</strong></li>
+                        <li>Todos sus datos asociados</li>
+                      </ul>
+                      <p className="mt-2 font-medium">Esta acción no se puede deshacer.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
