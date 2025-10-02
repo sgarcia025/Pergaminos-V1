@@ -72,13 +72,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 # Pydantic Models
 class UserRole(BaseModel):
-    role: str  # "staff" or "client"
+    role: str  # "staff", "asesor", or "client"
 
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
     name: str
-    role: str  # "staff" or "client"
+    role: str  # "staff", "asesor", or "client"
     company_id: Optional[str] = None  # Only for client users
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -87,7 +87,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     name: str
     password: str
-    role: str  # "staff" or "client"
+    role: str  # "staff", "asesor", or "client"
     company_id: Optional[str] = None
 
 class UserLogin(BaseModel):
