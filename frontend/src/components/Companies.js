@@ -47,6 +47,24 @@ const Companies = ({ user }) => {
     }
   };
 
+  const fetchAsesores = async () => {
+    try {
+      const response = await axios.get(`${API}/users/asesores`);
+      setAsesores(response.data);
+    } catch (error) {
+      console.error('Error fetching asesores:', error);
+    }
+  };
+
+  const fetchSegmentos = async () => {
+    try {
+      const response = await axios.get(`${API}/segmentos`);
+      setSegmentos(response.data);
+    } catch (error) {
+      console.error('Error fetching segmentos:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
