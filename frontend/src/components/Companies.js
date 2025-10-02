@@ -507,7 +507,7 @@ const Companies = ({ user }) => {
                   type="submit"
                   className="btn-primary"
                 >
-                  Crear Empresa
+                  {isEditing ? 'Actualizar Empresa' : 'Crear Empresa'}
                 </button>
               </div>
             </form>
