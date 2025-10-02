@@ -243,8 +243,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Botón eliminar empresas para admin"
-    - "Botón eliminar proyectos para admin"
+    - "Endpoint DELETE para usuarios"
+    - "Modelo Company expandido"
+    - "Rol asesor comercial"
+    - "Botón eliminar usuarios para admin"
+    - "Formulario empresa expandido"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
