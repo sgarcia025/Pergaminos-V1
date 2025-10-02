@@ -194,3 +194,5 @@ test_plan:
 agent_communication:
     - agent: "main"
     - message: "Implementadas las funcionalidades de eliminación solicitadas. Eliminada la marca de agua 'Made with emergent' y agregados endpoints y botones de eliminación para empresas y proyectos, con acceso restringido a usuarios staff. Necesita testing del backend y frontend."
+    - agent: "testing"
+    - message: "✅ BACKEND DELETE ENDPOINTS TESTED SUCCESSFULLY: Both DELETE endpoints are working perfectly. DELETE /api/companies/{company_id} correctly validates that companies cannot be deleted if they have projects or users, and only staff users can delete. DELETE /api/projects/{project_id} successfully deletes projects and cleans up all associated documents. All permission checks, validations, and error handling working as expected. Ready for frontend integration testing."
