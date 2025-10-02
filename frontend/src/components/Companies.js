@@ -73,9 +73,17 @@ const Companies = ({ user }) => {
     setSuccess('');
 
     try {
-      await axios.post(`${API}/companies`, formData);
-      setSuccess('Empresa creada exitosamente');
+      if (isEditing && editingCompany) {
+        await axios.put(`${API}/companies/${editingCompany.id}`, formData);
+        setSuccess('Empresa actualizada exitosamente');
+      } else {
+        await axios.post(`${API}/companies`, formData);
+        setSuccess('Empresa creada exitosamente');
+      }
+      
       setShowModal(false);
+      setIsEditing(false);
+      setEditingCompany(null);
       setFormData({
         name: '',
         razon_social: '',
@@ -92,7 +100,7 @@ const Companies = ({ user }) => {
       });
       fetchCompanies();
     } catch (error) {
-      setError(error.response?.data?.detail || 'Error al crear la empresa');
+      setError(error.response?.data?.detail || (isEditing ? 'Error al actualizar la empresa' : 'Error al crear la empresa'));
     }
   };
 
