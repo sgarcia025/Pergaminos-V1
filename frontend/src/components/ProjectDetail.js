@@ -19,6 +19,10 @@ const ProjectDetail = ({ user }) => {
   const [reorderStatus, setReorderStatus] = useState(null);
   const [renamingDoc, setRenamingDoc] = useState(null);
   const [newDocName, setNewDocName] = useState('');
+  const [batchUploading, setBatchUploading] = useState(false);
+  const [batchTaskId, setBatchTaskId] = useState(null);
+  const [batchProgress, setBatchProgress] = useState({});
+  const [uploadProgress, setUploadProgress] = useState([]);
 
   useEffect(() => {
     fetchProject();
