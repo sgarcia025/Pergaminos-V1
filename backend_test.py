@@ -1943,6 +1943,36 @@ def main():
     test_results.append(("Process Documents Reorder (Legacy)", tester.test_process_documents_reorder()))
     test_results.append(("Get Process Status (Legacy)", tester.test_get_process_status()))
     
+    # PHASE 1 NEW FEATURE TESTS - User Deletion
+    print("\n🔍 Testing PHASE 1 - User Deletion Features...")
+    test_results.append(("Create Asesor User", tester.test_create_asesor_user()))
+    test_results.append(("Delete Self Prevention", tester.test_delete_user_self_prevention()))
+    test_results.append(("Delete User with Company Assignment (Should Fail)", tester.test_delete_user_with_company_assignment()))
+    test_results.append(("Delete User After Reassignment", tester.test_delete_user_after_reassignment()))
+    test_results.append(("Client Cannot Delete Users", tester.test_client_cannot_delete_users()))
+    
+    # PHASE 1 NEW FEATURE TESTS - Expanded Company Model
+    print("\n🔍 Testing PHASE 1 - Expanded Company Model...")
+    test_results.append(("Create Company with New Fields", tester.test_create_company_with_new_fields()))
+    
+    # PHASE 1 NEW FEATURE TESTS - Asesor Role Functionality
+    print("\n🔍 Testing PHASE 1 - Asesor Role Functionality...")
+    test_results.append(("Asesor Login and Permissions", tester.test_asesor_login_and_permissions()))
+    test_results.append(("Asesor Company Detail Access", tester.test_asesor_company_detail_access()))
+    
+    # PHASE 1 NEW FEATURE TESTS - Segment Management
+    print("\n🔍 Testing PHASE 1 - Segment Management...")
+    test_results.append(("Create Segmento", tester.test_create_segmento()))
+    test_results.append(("Get Segmentos", tester.test_get_segmentos()))
+    test_results.append(("Delete Segmento In Use (Should Fail)", tester.test_delete_segmento_in_use()))
+    test_results.append(("Delete Unused Segmento", tester.test_delete_unused_segmento()))
+    test_results.append(("Client Cannot Create Segmentos", tester.test_client_cannot_create_segmentos()))
+    
+    # PHASE 1 NEW FEATURE TESTS - Get Asesores List
+    print("\n🔍 Testing PHASE 1 - Asesores List...")
+    test_results.append(("Get Asesores List", tester.test_get_asesores_list()))
+    test_results.append(("Client Cannot Get Asesores", tester.test_client_cannot_get_asesores()))
+
     # NEW FEATURE TESTS - DELETE ENDPOINTS (Staff Only)
     print("\n🔍 Testing DELETE Endpoints (Staff Only)...")
     test_results.append(("Delete Company Without Projects", tester.test_delete_company_without_projects()))
