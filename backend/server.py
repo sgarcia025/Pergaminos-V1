@@ -274,6 +274,32 @@ async def get_company(company_id: str, current_user: User = Depends(get_current_
     
     return Company(**company)
 
+@api_router.put("/companies/{company_id}", response_model=Company)
+async def update_company(company_id: str, company_data: CompanyCreate, current_user: User = Depends(get_current_user)):
+    # Only staff can update companies
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can update companies")
+    
+    # Check if company exists
+    existing_company = await db.companies.find_one({"id": company_id})
+    if not existing_company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Update company data
+    update_data = company_data.dict(exclude_unset=True)
+    
+    result = await db.companies.update_one(
+        {"id": company_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Return updated company
+    updated_company = await db.companies.find_one({"id": company_id})
+    return Company(**updated_company)
+
 # Project management endpoints
 @api_router.post("/projects", response_model=Project)
 async def create_project(project_data: ProjectCreate, current_user: User = Depends(get_current_user)):
