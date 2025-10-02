@@ -101,3 +101,90 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  El usuario solicita dos mejoras específicas:
+  1. Eliminar la marca de agua "Made with emergent" del frontend
+  2. Dar al rol de admin/staff la opción de eliminar empresas y proyectos
+
+backend:
+  - task: "Eliminar marca de agua Made with emergent"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/public/index.html"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Eliminada la marca de agua y cambiado título a 'Pergaminos Digitalización'"
+
+  - task: "Endpoint DELETE para empresas"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado endpoint DELETE /companies/{company_id} con validaciones para proyectos y usuarios asociados"
+
+  - task: "Endpoint DELETE para proyectos"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado endpoint DELETE /projects/{project_id} que elimina proyecto, documentos y archivos asociados"
+
+frontend:
+  - task: "Botón eliminar empresas para admin"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/Companies.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado botón de eliminación con modal de confirmación, visible solo para usuarios staff"
+
+  - task: "Botón eliminar proyectos para admin"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/components/Projects.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Agregado botón de eliminación con modal de confirmación, visible solo para usuarios staff"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Endpoint DELETE para empresas"
+    - "Endpoint DELETE para proyectos"
+    - "Botón eliminar empresas para admin"
+    - "Botón eliminar proyectos para admin"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+    - message: "Implementadas las funcionalidades de eliminación solicitadas. Eliminada la marca de agua 'Made with emergent' y agregados endpoints y botones de eliminación para empresas y proyectos, con acceso restringido a usuarios staff. Necesita testing del backend y frontend."
