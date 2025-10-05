@@ -676,48 +676,126 @@ def create_pdf_chunk(source_path: str, start_page: int, end_page: int, output_pa
 
 # AI Document Processing
 async def process_document_with_ai(document_id: str, project: dict):
-    """Process document with AI and extract data based on semantic instructions"""
+    """Process document with AI using chunking for large documents"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
         from dotenv import load_dotenv
+        import os
+        from pathlib import Path
         load_dotenv()
-        
-        # Update document status to processing
-        await db.documents.update_one(
-            {"id": document_id},
-            {"$set": {"status": "processing"}}
-        )
         
         # Get document details
         document = await db.documents.find_one({"id": document_id})
         if not document:
             return
         
-        # Initialize AI chat with GPT-4o
+        # Get PDF page count
+        total_pages = get_pdf_page_count(document["file_path"])
+        if total_pages == 0:
+            await db.documents.update_one(
+                {"id": document_id},
+                {"$set": {"status": "failed", "error": "Could not read PDF file"}}
+            )
+            return
+        
+        # Determine if chunking is needed
+        PAGES_PER_CHUNK = 25  # Process 25 pages at a time
+        chunk_count = (total_pages + PAGES_PER_CHUNK - 1) // PAGES_PER_CHUNK
+        use_chunking = chunk_count > 1
+        
+        # Update document with chunk info
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "processing",
+                    "total_pages": total_pages,
+                    "chunk_count": chunk_count,
+                    "chunks_processed": 0,
+                    "processing_progress": 0,
+                    "chunk_results": []
+                }
+            }
+        )
+        
+        # Initialize AI chat
         api_key = os.environ.get('EMERGENT_LLM_KEY')
         if not api_key:
             await db.documents.update_one(
                 {"id": document_id},
-                {"$set": {"status": "failed"}}
+                {"$set": {"status": "failed", "error": "Missing AI API key"}}
             )
             return
-        
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"doc_processing_{document_id}",
-            system_message="You are an expert document analysis AI. Extract structured data from documents based on specific instructions."
-        ).with_model("openai", "gpt-4o")
-        
-        # Create file content for AI processing
-        file_content = FileContentWithMimeType(
-            file_path=document["file_path"],
-            mime_type="application/pdf"
-        )
         
         # Create processing prompt
         semantic_instructions = project.get("semantic_instructions", "")
         if not semantic_instructions:
             semantic_instructions = "Extract all key information, dates, names, amounts, and important details from this document."
+        
+        chunk_results = []
+        
+        if use_chunking:
+            logger.info(f"Processing large PDF ({total_pages} pages) in {chunk_count} chunks")
+            
+            # Process each chunk
+            for chunk_idx in range(chunk_count):
+                start_page = chunk_idx * PAGES_PER_CHUNK
+                end_page = min(start_page + PAGES_PER_CHUNK - 1, total_pages - 1)
+                
+                # Create chunk file
+                chunk_filename = f"{document_id}_chunk_{chunk_idx + 1}.pdf"
+                chunk_path = Path(document["file_path"]).parent / chunk_filename
+                
+                if create_pdf_chunk(document["file_path"], start_page, end_page, str(chunk_path)):
+                    # Process this chunk with AI
+                    chunk_result = await process_single_chunk(
+                        str(chunk_path), 
+                        semantic_instructions, 
+                        api_key,
+                        chunk_idx + 1,
+                        start_page + 1,
+                        end_page + 1
+                    )
+                    
+                    if chunk_result:
+                        chunk_results.append(chunk_result)
+                    
+                    # Clean up chunk file
+                    try:
+                        os.remove(str(chunk_path))
+                    except:
+                        pass
+                else:
+                    logger.error(f"Failed to create chunk {chunk_idx + 1}")
+                
+                # Update progress
+                chunks_processed = chunk_idx + 1
+                progress = int((chunks_processed / chunk_count) * 100)
+                await db.documents.update_one(
+                    {"id": document_id},
+                    {
+                        "$set": {
+                            "chunks_processed": chunks_processed,
+                            "processing_progress": progress,
+                            "chunk_results": chunk_results
+                        }
+                    }
+                )
+            
+            # Combine all chunk results
+            combined_data = combine_chunk_results(chunk_results)
+            
+        else:
+            # Process small document normally
+            logger.info(f"Processing small PDF ({total_pages} pages) normally")
+            combined_data = await process_single_chunk(
+                document["file_path"],
+                semantic_instructions,
+                api_key,
+                1,
+                1,
+                total_pages
+            )
         
         prompt = f"""
         Analyze this PDF document and extract structured data based on these instructions:
