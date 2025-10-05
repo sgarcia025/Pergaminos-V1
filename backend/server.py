@@ -170,6 +170,12 @@ class Document(BaseModel):
     display_order: Optional[int] = None  # For reordering
     reorder_reasoning: Optional[str] = None  # AI reasoning for reorder
     reordered_at: Optional[datetime] = None  # When reordered
+    # Chunk processing fields
+    total_pages: Optional[int] = None
+    chunk_count: Optional[int] = None
+    chunks_processed: Optional[int] = 0
+    chunk_results: Optional[List[Dict[str, Any]]] = None
+    processing_progress: Optional[int] = 0  # 0-100
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     uploaded_by: str  # user id
 
