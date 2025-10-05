@@ -674,6 +674,139 @@ def create_pdf_chunk(source_path: str, start_page: int, end_page: int, output_pa
         logger.error(f"Error creating PDF chunk: {str(e)}")
         return False
 
+async def process_single_chunk(file_path: str, semantic_instructions: str, api_key: str, chunk_number: int, start_page: int, end_page: int) -> dict:
+    """Process a single PDF chunk with AI"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"chunk_processing_{chunk_number}_{start_page}_{end_page}",
+            system_message="You are an expert document analysis AI. Extract structured data from document chunks based on specific instructions."
+        ).with_model("gemini", "gemini-2.0-flash")
+        
+        # Create file content for AI processing
+        file_content = FileContentWithMimeType(
+            file_path=file_path,
+            mime_type="application/pdf"
+        )
+        
+        prompt = f"""
+        Analyze this PDF chunk (pages {start_page} to {end_page}) and extract structured data based on these instructions:
+        
+        {semantic_instructions}
+        
+        Please provide the extracted data in JSON format with clear field names and values.
+        If certain information is not available, mark it as null.
+        Focus on accuracy and completeness.
+        
+        Note: This is chunk {chunk_number} of a larger document. Extract all relevant data from these specific pages.
+        """
+        
+        user_message = UserMessage(
+            text=prompt,
+            file_contents=[file_content]
+        )
+        
+        # Process with AI
+        response = await chat.send_message(user_message)
+        
+        # Try to parse JSON from response
+        import json
+        import re
+        
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if json_match:
+            try:
+                extracted_data = json.loads(json_match.group())
+                return {
+                    "chunk_number": chunk_number,
+                    "start_page": start_page,
+                    "end_page": end_page,
+                    "data": extracted_data,
+                    "status": "success"
+                }
+            except json.JSONDecodeError:
+                return {
+                    "chunk_number": chunk_number,
+                    "start_page": start_page,
+                    "end_page": end_page,
+                    "raw_response": response,
+                    "status": "needs_review"
+                }
+        else:
+            return {
+                "chunk_number": chunk_number,
+                "start_page": start_page,
+                "end_page": end_page,
+                "raw_response": response,
+                "status": "needs_review"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error processing chunk {chunk_number}: {str(e)}")
+        return {
+            "chunk_number": chunk_number,
+            "start_page": start_page,
+            "end_page": end_page,
+            "error": str(e),
+            "status": "failed"
+        }
+
+def combine_chunk_results(chunk_results: list) -> dict:
+    """Combine results from multiple chunks into a single document result"""
+    try:
+        if not chunk_results:
+            return {"error": "No chunks processed", "status": "failed"}
+        
+        combined_data = {
+            "chunk_processing": {
+                "total_chunks": len(chunk_results),
+                "successful_chunks": len([c for c in chunk_results if c.get("status") == "success"]),
+                "failed_chunks": len([c for c in chunk_results if c.get("status") == "failed"]),
+                "chunks": chunk_results
+            }
+        }
+        
+        # Merge successful chunk data
+        merged_content = {}
+        page_ranges = []
+        
+        for chunk in chunk_results:
+            if chunk.get("status") == "success" and chunk.get("data"):
+                page_ranges.append(f"Pages {chunk['start_page']}-{chunk['end_page']}")
+                
+                # Merge chunk data intelligently
+                chunk_data = chunk["data"]
+                for key, value in chunk_data.items():
+                    if key in merged_content:
+                        # If key exists, combine values
+                        if isinstance(merged_content[key], list) and isinstance(value, list):
+                            merged_content[key].extend(value)
+                        elif isinstance(merged_content[key], dict) and isinstance(value, dict):
+                            merged_content[key].update(value)
+                        else:
+                            # Convert to list if different types
+                            if not isinstance(merged_content[key], list):
+                                merged_content[key] = [merged_content[key]]
+                            merged_content[key].append(value)
+                    else:
+                        merged_content[key] = value
+        
+        combined_data["extracted_data"] = merged_content
+        combined_data["page_ranges"] = page_ranges
+        combined_data["status"] = "completed" if merged_content else "needs_review"
+        
+        return combined_data
+        
+    except Exception as e:
+        logger.error(f"Error combining chunk results: {str(e)}")
+        return {
+            "error": f"Failed to combine chunks: {str(e)}",
+            "status": "failed",
+            "chunks": chunk_results
+        }
+
 # AI Document Processing
 async def process_document_with_ai(document_id: str, project: dict):
     """Process document with AI using chunking for large documents"""
