@@ -103,9 +103,29 @@
 #====================================================================================================
 
 user_problem_statement: |
-  El usuario solicita dos mejoras específicas:
-  1. Eliminar la marca de agua "Made with emergent" del frontend
-  2. Dar al rol de admin/staff la opción de eliminar empresas y proyectos
+  El usuario solicita pruebas de la optimización de chunks adaptativos implementada para manejar alto volumen de procesamiento:
+  
+  OPTIMIZACIONES IMPLEMENTADAS:
+  1. CHUNK SIZE ADAPTATIVO:
+     - PDFs ≤50 páginas: 25 páginas/chunk (óptimo para docs pequeños)
+     - PDFs 51-200: 50 páginas/chunk 
+     - PDFs 201-1000: 100 páginas/chunk
+     - PDFs 1001-3000: 150 páginas/chunk  
+     - PDFs >3000: 200 páginas/chunk (máxima eficiencia)
+  
+  2. CONCURRENCIA DINÁMICA:
+     - ≤5 chunks: Todos simultáneos
+     - 6-20 chunks: 10 concurrent
+     - 21-100 chunks: 15 concurrent  
+     - >100 chunks: 20 concurrent (máximo throughput)
+  
+  3. MÉTRICAS DE RENDIMIENTO:
+     - Páginas por segundo
+     - Tiempo de procesamiento total
+     - Eficiencia por worker
+     - Tasa de éxito por chunks
+  
+  OBJETIVO: Validar que puede manejar eficientemente el volumen de 12,000 páginas en 8 horas (1,500 páginas/hora)
 
 backend:
   - task: "Eliminar marca de agua Made with emergent"
