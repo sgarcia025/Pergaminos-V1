@@ -310,6 +310,18 @@ frontend:
         - agent: "main"
         - comment: "Input múltiple, polling de estado batch, indicadores de progreso por archivo, UI para tracking en tiempo real"
 
+  - task: "Procesamiento por chunks PDFs grandes"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Implementado chunking automático para PDFs >25 páginas, funciones auxiliares para dividir/combinar, modelo Document actualizado con tracking de chunks"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
