@@ -797,15 +797,33 @@ async def process_document_with_ai(document_id: str, project: dict):
                 total_pages
             )
         
-        prompt = f"""
-        Analyze this PDF document and extract structured data based on these instructions:
+        # Update final document status
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "completed" if combined_data else "failed",
+                    "extracted_data": combined_data or {"error": "No data extracted"},
+                    "processed_at": datetime.now(timezone.utc),
+                    "processing_progress": 100
+                }
+            }
+        )
         
-        {semantic_instructions}
+        logger.info(f"Document {document_id} processing completed successfully")
         
-        Please provide the extracted data in JSON format with clear field names and values.
-        If certain information is not available, mark it as null.
-        Focus on accuracy and completeness.
-        """
+    except Exception as e:
+        logger.error(f"Error processing document {document_id}: {str(e)}")
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "failed",
+                    "processing_progress": 0,
+                    "error": str(e)
+                }
+            }
+        )
         
         # Note: Switch to Gemini for file processing since it supports file attachments
         gemini_chat = LlmChat(
