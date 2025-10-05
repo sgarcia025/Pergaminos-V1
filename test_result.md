@@ -365,9 +365,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Botón eliminar usuarios para admin"
-    - "Formulario empresa expandido"
-    - "Frontend subida múltiple con progreso"
+    - "Optimización de chunks adaptativos para alto volumen"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
