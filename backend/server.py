@@ -573,19 +573,19 @@ async def process_documents_batch(batch_task_id: str, project: dict):
         completed_documents = 0
         failed_documents = 0
         
-        # Dynamic concurrency based on chunk count for better performance
-        def get_optimal_concurrency(chunk_count):
+        # Dynamic concurrency based on document count for better performance
+        def get_optimal_concurrency(document_count):
             """Determine optimal concurrency for processing efficiency"""
-            if chunk_count <= 5:
-                return chunk_count  # Process all small batches simultaneously
-            elif chunk_count <= 20:
+            if document_count <= 5:
+                return document_count  # Process all small batches simultaneously
+            elif document_count <= 20:
                 return 10          # Standard concurrency for medium batches
-            elif chunk_count <= 100:
+            elif document_count <= 100:
                 return 15          # Higher concurrency for large documents
             else:
                 return 20          # Maximum concurrency for massive documents
         
-        max_concurrency = get_optimal_concurrency(chunk_count)
+        max_concurrency = get_optimal_concurrency(total_documents)
         semaphore = asyncio.Semaphore(max_concurrency)
         
         logger.info(f"Processing with {max_concurrency} concurrent chunks for optimal throughput")
