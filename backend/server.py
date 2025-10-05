@@ -897,7 +897,8 @@ async def process_document_with_ai(document_id: str, project: dict):
         chunk_results = []
         
         if use_chunking:
-            logger.info(f"Processing large PDF ({total_pages} pages) in {chunk_count} chunks")
+            logger.info(f"Processing large PDF ({total_pages} pages) in {chunk_count} chunks of {PAGES_PER_CHUNK} pages each")
+            start_time = datetime.now(timezone.utc)
             
             # Process each chunk
             for chunk_idx in range(chunk_count):
