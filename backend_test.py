@@ -3754,6 +3754,16 @@ def main():
     test_results.append(("Batch Upload with Chunking", tester.test_batch_upload_with_chunking()))
     test_results.append(("Chunk Error Handling", tester.test_chunk_error_handling()))
 
+    # ADAPTIVE CHUNK OPTIMIZATION TESTS (NEW)
+    print("\n🔧 Testing ADAPTIVE CHUNK OPTIMIZATIONS...")
+    test_results.append(("Adaptive Chunk Size Small PDF", tester.test_adaptive_chunk_size_small_pdf()))
+    test_results.append(("Adaptive Chunk Size Medium PDF", tester.test_adaptive_chunk_size_medium_pdf()))
+    test_results.append(("Adaptive Chunk Size Large PDF", tester.test_adaptive_chunk_size_large_pdf()))
+    test_results.append(("Adaptive Chunk Size Massive PDF", tester.test_adaptive_chunk_size_massive_pdf()))
+    test_results.append(("Dynamic Concurrency Batch Processing", tester.test_dynamic_concurrency_batch_processing()))
+    test_results.append(("Performance Metrics Logging", tester.test_performance_metrics_logging()))
+    test_results.append(("High Volume Simulation", tester.test_high_volume_simulation()))
+
     # NEW FEATURE TESTS - DELETE ENDPOINTS (Staff Only)
     print("\n🔍 Testing DELETE Endpoints (Staff Only)...")
     test_results.append(("Delete Company Without Projects", tester.test_delete_company_without_projects()))
