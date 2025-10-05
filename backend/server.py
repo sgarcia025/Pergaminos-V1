@@ -588,7 +588,7 @@ async def process_documents_batch(batch_task_id: str, project: dict):
         max_concurrency = get_optimal_concurrency(total_documents)
         semaphore = asyncio.Semaphore(max_concurrency)
         
-        logger.info(f"Processing with {max_concurrency} concurrent chunks for optimal throughput")
+        logger.info(f"Processing with {max_concurrency} concurrent documents for optimal throughput")
         
         async def process_single_document(doc_id):
             nonlocal completed_documents, failed_documents
