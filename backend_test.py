@@ -3316,6 +3316,7 @@ def main():
         "PHASE 1 - Asesores List": ["Get Asesores List", "Client Cannot Get Asesores"],
         "NEW BATCH PROCESSING": ["Batch Upload Documents", "Batch Upload Limit Exceeded", "Batch Status Check", "Batch Processing Wait Completion"],
         "NEW COMPANY EDITING": ["Update Company All Fields", "Update Company Partial Fields", "Update Non-existent Company", "Client Cannot Update Company"],
+        "NEW CHUNK PROCESSING": ["Small PDF Normal Processing", "Large PDF Chunk Detection", "Chunk Progress Tracking", "Batch Upload with Chunking", "Chunk Error Handling"],
         "QA Agents Module (NEW)": ["Create QA Agent", "Get QA Agents", "Run QA Agent"],
         "User Management Module (NEW)": ["Create Client User", "Get Users List", "Toggle User Status", "Client Login"],
         "Document Processing Module (NEW)": ["Process Documents Rename-Reorder (NEW)", "Get Enhanced Process Status (NEW)", "Download Processed PDF (NEW)", "Process Documents Reorder (Legacy)", "Get Process Status (Legacy)"],
