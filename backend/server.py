@@ -831,10 +831,25 @@ async def process_document_with_ai(document_id: str, project: dict):
             )
             return
         
-        # Determine if chunking is needed
-        PAGES_PER_CHUNK = 25  # Process 25 pages at a time
+        # Determine optimal chunk size based on document size
+        def get_optimal_chunk_size(total_pages):
+            """Determine optimal chunk size for efficient processing"""
+            if total_pages <= 50:
+                return 25      # Small docs: 25 pages per chunk
+            elif total_pages <= 200:
+                return 50      # Medium docs: 50 pages per chunk  
+            elif total_pages <= 1000:
+                return 100     # Large docs: 100 pages per chunk
+            elif total_pages <= 3000:
+                return 150     # Very large docs: 150 pages per chunk
+            else:
+                return 200     # Massive docs: 200 pages per chunk (max efficiency)
+        
+        PAGES_PER_CHUNK = get_optimal_chunk_size(total_pages)
         chunk_count = (total_pages + PAGES_PER_CHUNK - 1) // PAGES_PER_CHUNK
         use_chunking = chunk_count > 1
+        
+        logger.info(f"Document optimization: {total_pages} pages → {chunk_count} chunks of {PAGES_PER_CHUNK} pages each")
         
         # Update document with chunk info
         await db.documents.update_one(
