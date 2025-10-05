@@ -3270,6 +3270,14 @@ def main():
     test_results.append(("Update Non-existent Company", tester.test_update_nonexistent_company()))
     test_results.append(("Client Cannot Update Company", tester.test_client_cannot_update_company()))
 
+    # NEW CHUNK PROCESSING TESTS FOR LARGE PDFs
+    print("\n🔍 Testing NEW CHUNK PROCESSING Features for Large PDFs...")
+    test_results.append(("Small PDF Normal Processing", tester.test_small_pdf_normal_processing()))
+    test_results.append(("Large PDF Chunk Detection", tester.test_large_pdf_chunk_detection()))
+    test_results.append(("Chunk Progress Tracking", tester.test_chunk_progress_tracking()))
+    test_results.append(("Batch Upload with Chunking", tester.test_batch_upload_with_chunking()))
+    test_results.append(("Chunk Error Handling", tester.test_chunk_error_handling()))
+
     # NEW FEATURE TESTS - DELETE ENDPOINTS (Staff Only)
     print("\n🔍 Testing DELETE Endpoints (Staff Only)...")
     test_results.append(("Delete Company Without Projects", tester.test_delete_company_without_projects()))
