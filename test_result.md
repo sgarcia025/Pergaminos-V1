@@ -312,15 +312,18 @@ frontend:
 
   - task: "Procesamiento por chunks PDFs grandes"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: false
         - agent: "main"
         - comment: "Implementado chunking automático para PDFs >25 páginas, funciones auxiliares para dividir/combinar, modelo Document actualizado con tracking de chunks"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CHUNK PROCESSING TESTED SUCCESSFULLY: All chunk processing functionality working perfectly. Tested: (1) Small PDF Normal Processing - PDFs <25 pages processed normally without chunking (1 page PDF correctly processed with chunk_count=1), (2) Large PDF Chunk Detection - PDFs >25 pages automatically activate chunking (28-page PDF correctly detected with chunk_count=2), (3) Chunk Progress Tracking - Progress updates correctly with chunks_processed, processing_progress, and chunk_results fields populated, (4) Batch Upload with Chunking - Mixed batch processing works with both small and large PDFs, (5) Chunk Error Handling - Malformed PDFs handled gracefully. All new Document model fields (total_pages, chunk_count, chunks_processed, chunk_results, processing_progress) working correctly. Chunking activates automatically for PDFs >25 pages with 25 pages per chunk. Chunk results contain proper structure with chunk_number, start_page, end_page, data, and status fields."
 
 metadata:
   created_by: "main_agent"
