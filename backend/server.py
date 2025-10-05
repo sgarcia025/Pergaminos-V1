@@ -641,6 +641,39 @@ async def process_documents_batch(batch_task_id: str, project: dict):
             }
         )
 
+# PDF Chunking Helper Functions
+def get_pdf_page_count(file_path: str) -> int:
+    """Get total number of pages in PDF"""
+    try:
+        import PyPDF2
+        with open(file_path, 'rb') as file:
+            pdf_reader = PyPDF2.PdfReader(file)
+            return len(pdf_reader.pages)
+    except Exception as e:
+        logger.error(f"Error getting PDF page count: {str(e)}")
+        return 0
+
+def create_pdf_chunk(source_path: str, start_page: int, end_page: int, output_path: str) -> bool:
+    """Create a PDF chunk from specific pages"""
+    try:
+        import PyPDF2
+        with open(source_path, 'rb') as source_file:
+            pdf_reader = PyPDF2.PdfReader(source_file)
+            pdf_writer = PyPDF2.PdfWriter()
+            
+            # Add pages to the new PDF
+            for page_num in range(start_page, min(end_page + 1, len(pdf_reader.pages))):
+                pdf_writer.add_page(pdf_reader.pages[page_num])
+            
+            # Write the chunk PDF
+            with open(output_path, 'wb') as output_file:
+                pdf_writer.write(output_file)
+            
+            return True
+    except Exception as e:
+        logger.error(f"Error creating PDF chunk: {str(e)}")
+        return False
+
 # AI Document Processing
 async def process_document_with_ai(document_id: str, project: dict):
     """Process document with AI and extract data based on semantic instructions"""
