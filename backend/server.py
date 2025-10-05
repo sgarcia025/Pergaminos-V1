@@ -768,17 +768,32 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, api_k
         }
 
 def combine_chunk_results(chunk_results: list) -> dict:
-    """Combine results from multiple chunks into a single document result"""
+    """Combine results from multiple chunks into a single document result - Optimized for large documents"""
     try:
         if not chunk_results:
             return {"error": "No chunks processed", "status": "failed"}
         
+        successful_chunks = [c for c in chunk_results if c.get("status") == "success"]
+        failed_chunks = [c for c in chunk_results if c.get("status") == "failed"]
+        
+        # For large documents, store only essential chunk info to save memory
+        chunk_summaries = []
+        for chunk in chunk_results:
+            chunk_summary = {
+                "chunk_number": chunk.get("chunk_number"),
+                "pages": f"{chunk.get('start_page')}-{chunk.get('end_page')}",
+                "status": chunk.get("status"),
+                "data_keys": list(chunk.get("data", {}).keys()) if chunk.get("data") else []
+            }
+            chunk_summaries.append(chunk_summary)
+        
         combined_data = {
             "chunk_processing": {
                 "total_chunks": len(chunk_results),
-                "successful_chunks": len([c for c in chunk_results if c.get("status") == "success"]),
-                "failed_chunks": len([c for c in chunk_results if c.get("status") == "failed"]),
-                "chunks": chunk_results
+                "successful_chunks": len(successful_chunks),
+                "failed_chunks": len(failed_chunks),
+                "success_rate": f"{(len(successful_chunks)/len(chunk_results)*100):.1f}%",
+                "chunk_summaries": chunk_summaries  # Lighter weight than full chunks
             }
         }
         
