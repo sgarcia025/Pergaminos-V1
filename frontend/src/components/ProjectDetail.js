@@ -586,7 +586,7 @@ const ProjectDetail = ({ user }) => {
                     {/* QA Status Indicator */}
                     {document.qa_status && (
                       <div className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded px-2 py-1">
-                        {document.qa_results?.overall_score && (
+                        {document.qa_results && typeof document.qa_results.overall_score === 'number' && (
                           <span className={`font-medium ${
                             document.qa_results.overall_score >= 80 ? 'text-green-600' :
                             document.qa_results.overall_score >= 60 ? 'text-yellow-600' : 'text-red-600'
@@ -594,7 +594,7 @@ const ProjectDetail = ({ user }) => {
                             QA: {document.qa_results.overall_score.toFixed(0)}%
                           </span>
                         )}
-                        {document.qa_findings && document.qa_findings.length > 0 && (
+                        {document.qa_findings && Array.isArray(document.qa_findings) && document.qa_findings.length > 0 && (
                           <span className="text-red-600 ml-1">({document.qa_findings.length} hallazgos)</span>
                         )}
                       </div>
