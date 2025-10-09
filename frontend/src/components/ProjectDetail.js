@@ -354,8 +354,8 @@ const ProjectDetail = ({ user }) => {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {error && <div className="alert alert-error">{typeof error === 'string' ? error : JSON.stringify(error)}</div>}
+      {success && <div className="alert alert-success">{typeof success === 'string' ? success : JSON.stringify(success)}</div>}
 
       {/* Reorder Status */}
       {reorderStatus && reorderStatus.status === 'processing' && (
