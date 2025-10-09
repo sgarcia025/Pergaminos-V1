@@ -101,6 +101,7 @@ function App() {
               <Route path="/qa-agents" element={<QAAgents user={user} />} />
               <Route path="/user-management" element={<UserManagement user={user} />} />
               <Route path="/segmentos" element={<Segmentos user={user} />} />
+              <Route path="/qa-findings" element={<QAFindings user={user} />} />
               <Route path="*" element={user.role === 'client' ? <ClientPortal user={user} /> : <Dashboard user={user} />} />
             </Routes>
           </main>
