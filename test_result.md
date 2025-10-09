@@ -103,29 +103,38 @@
 #====================================================================================================
 
 user_problem_statement: |
-  El usuario solicita pruebas de la optimización de chunks adaptativos implementada para manejar alto volumen de procesamiento:
-  
-  OPTIMIZACIONES IMPLEMENTADAS:
-  1. CHUNK SIZE ADAPTATIVO:
-     - PDFs ≤50 páginas: 25 páginas/chunk (óptimo para docs pequeños)
-     - PDFs 51-200: 50 páginas/chunk 
-     - PDFs 201-1000: 100 páginas/chunk
-     - PDFs 1001-3000: 150 páginas/chunk  
-     - PDFs >3000: 200 páginas/chunk (máxima eficiencia)
-  
-  2. CONCURRENCIA DINÁMICA:
-     - ≤5 chunks: Todos simultáneos
-     - 6-20 chunks: 10 concurrent
-     - 21-100 chunks: 15 concurrent  
-     - >100 chunks: 20 concurrent (máximo throughput)
-  
-  3. MÉTRICAS DE RENDIMIENTO:
-     - Páginas por segundo
-     - Tiempo de procesamiento total
-     - Eficiencia por worker
-     - Tasa de éxito por chunks
-  
-  OBJETIVO: Validar que puede manejar eficientemente el volumen de 12,000 páginas en 8 horas (1,500 páginas/hora)
+  El usuario solicita pruebas de las MEJORAS IMPLEMENTADAS AL MÓDULO QA con estas nuevas funcionalidades:
+
+  NUEVAS FUNCIONALIDADES IMPLEMENTADAS:
+
+  1. EDITAR/ELIMINAR AGENTES QA:
+     - PUT /api/qa-agents/{agent_id} - Actualizar agente QA existente
+     - DELETE /api/qa-agents/{agent_id} - Eliminar agente (con validaciones de uso)
+
+  2. ESTADOS QA MEJORADOS:
+     - Nuevos estados de documento: qa_pending, qa_failed, qa_passed
+     - Transición clara: uploaded → qa_pending → (qa_passed/qa_failed) → processing → completed
+     - Campo qa_results con puntajes y hallazgos detallados
+
+  3. DASHBOARD QA AMPLIADO:
+     - Estadísticas nuevas: qa_passed, qa_failed, qa_pending en endpoint stats
+     - Métricas de control de calidad integradas
+
+  TESTING PRIORITARIO:
+  1. Crear agente QA - Verificar creación exitosa
+  2. Editar agente existente - Modificar configuraciones (thresholds, instrucciones, checks)
+  3. Eliminar agente - Confirmar validaciones (no se puede eliminar si hay docs en uso)
+  4. Flujo completo QA → IA:
+     - Subir documento PDF
+     - Verificar estado inicial: uploaded → qa_pending
+     - Confirmar evaluación QA automática
+     - Validar transición según puntaje:
+       - ≥80: qa_passed → processing automático
+       - 60-79: needs_review (revisión manual)  
+       - <60: qa_failed (rechazado)
+  5. Dashboard stats - Confirmar que incluye métricas QA
+
+  OBJETIVO: Validar que el flujo QA → Extracción IA funciona correctamente y que la gestión de agentes QA es robusta.
 
 backend:
   - task: "Eliminar marca de agua Made with emergent"
