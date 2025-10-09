@@ -2547,6 +2547,102 @@ async def get_asesores(current_user: User = Depends(get_current_user)):
     asesores = await db.users.find({"role": "asesor", "is_active": True}).to_list(1000)
     return [User(**asesor) for asesor in asesores]
 
+# Extracted Data Management Endpoints
+@api_router.get("/companies/{company_id}/extracted-data")
+async def get_company_extracted_data(
+    company_id: str, 
+    project_id: Optional[str] = None,
+    field_name: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all extracted data for a company, optionally filtered by project or field"""
+    # Verify access to company
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check permissions
+    if current_user.role == "client" and current_user.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query
+    query = {"company_id": company_id}
+    if project_id:
+        query["project_id"] = project_id
+    if field_name:
+        query["field_name"] = field_name
+    
+    # Get extracted data
+    extracted_data = await db.extracted_data.find(query).sort("extracted_at", -1).to_list(10000)
+    
+    # Group by document for better organization
+    documents_data = {}
+    for item in extracted_data:
+        doc_id = item["document_id"]
+        if doc_id not in documents_data:
+            documents_data[doc_id] = {
+                "document_id": doc_id,
+                "document_name": item["document_name"],
+                "project_id": item["project_id"],
+                "extracted_at": item["extracted_at"],
+                "fields": []
+            }
+        
+        documents_data[doc_id]["fields"].append({
+            "field_name": item["field_name"],
+            "field_value": item["field_value"],
+            "field_type": item.get("field_type"),
+            "confidence": item.get("confidence"),
+            "page_number": item.get("page_number")
+        })
+    
+    return {
+        "company_id": company_id,
+        "company_name": company["name"],
+        "total_documents": len(documents_data),
+        "total_fields": len(extracted_data),
+        "documents": list(documents_data.values())
+    }
+
+@api_router.get("/companies/{company_id}/data-summary")
+async def get_company_data_summary(
+    company_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get summary of extracted data types and counts for a company"""
+    # Verify access
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if current_user.role == "client" and current_user.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Aggregate data by field types
+    pipeline = [
+        {"$match": {"company_id": company_id}},
+        {"$group": {
+            "_id": "$field_name",
+            "count": {"$sum": 1},
+            "unique_values": {"$addToSet": "$field_value"},
+            "avg_confidence": {"$avg": "$confidence"}
+        }},
+        {"$sort": {"count": -1}}
+    ]
+    
+    field_summary = await db.extracted_data.aggregate(pipeline).to_list(1000)
+    
+    return {
+        "company_id": company_id,
+        "company_name": company["name"],
+        "field_summary": field_summary,
+        "total_unique_fields": len(field_summary)
+    }
+
 # Delete endpoints (only for admin/staff)
 @api_router.delete("/companies/{company_id}")
 async def delete_company(company_id: str, current_user: User = Depends(get_current_user)):
