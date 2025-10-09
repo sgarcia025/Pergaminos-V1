@@ -1367,10 +1367,13 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         }
 
 # Document management endpoints
+class DocumentRename(BaseModel):
+    new_name: str
+
 @api_router.put("/documents/{document_id}/rename", response_model=Document)
 async def rename_document(
     document_id: str,
-    new_name: str = Form(...),
+    rename_data: DocumentRename,
     current_user: User = Depends(get_current_user)
 ):
     # Get document and verify access
