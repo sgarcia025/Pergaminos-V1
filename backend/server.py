@@ -164,7 +164,7 @@ class Document(BaseModel):
     original_filename: str
     project_id: str
     file_path: str
-    status: str = "uploaded"  # uploaded, processing, completed, failed, needs_review
+    status: str = "uploaded"  # uploaded, qa_pending, qa_failed, qa_passed, processing, completed, failed, needs_review
     extracted_data: Optional[Dict[str, Any]] = None
     processed_at: Optional[datetime] = None
     display_order: Optional[int] = None  # For reordering
@@ -176,6 +176,13 @@ class Document(BaseModel):
     chunks_processed: Optional[int] = 0
     chunk_results: Optional[List[Dict[str, Any]]] = None
     processing_progress: Optional[int] = 0  # 0-100
+    # QA fields
+    qa_status: Optional[str] = None  # pending, passed, failed, manual_review
+    qa_results: Optional[Dict[str, Any]] = None  # QA agent results
+    qa_findings: Optional[List[Dict[str, Any]]] = None  # Important findings for manual review
+    qa_processed_at: Optional[datetime] = None
+    qa_approved_by: Optional[str] = None  # Staff user who approved after manual review
+    qa_approved_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     uploaded_by: str  # user id
 
