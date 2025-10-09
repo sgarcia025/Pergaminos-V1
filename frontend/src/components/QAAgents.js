@@ -11,6 +11,10 @@ const QAAgents = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [editingAgent, setEditingAgent] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [agentToDelete, setAgentToDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
