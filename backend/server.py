@@ -109,6 +109,29 @@ class SegmentoCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
 
+class ExtractedData(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str  # Cliente al que pertenecen los datos
+    project_id: str  # Proyecto del que se extrajeron
+    document_id: str  # Documento fuente
+    document_name: str  # Nombre del documento para referencia
+    field_name: str  # Nombre del campo extraído (ej: "nit", "fecha", "valor")
+    field_value: str  # Valor extraído
+    field_type: Optional[str] = None  # Tipo de dato (text, number, date, email, etc.)
+    confidence: Optional[float] = None  # Confianza de la extracción (0-1)
+    page_number: Optional[int] = None  # Página donde se encontró
+    extracted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    processing_method: str = "ai_extraction"  # ai_extraction, manual_input, etc.
+    
+class ExtractedDataSummary(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    project_id: str
+    document_id: str
+    summary_data: Dict[str, Any]  # Resumen consolidado del documento
+    total_fields: int
+    extraction_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class Company(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str  # Nombre comercial
