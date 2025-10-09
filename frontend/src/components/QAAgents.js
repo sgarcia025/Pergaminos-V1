@@ -66,30 +66,94 @@ const QAAgents = ({ user }) => {
     setSuccess('');
 
     try {
-      await axios.post(`${API}/qa-agents`, formData);
-      setSuccess('Agente QA creado exitosamente');
+      if (isEditing && editingAgent) {
+        await axios.put(`${API}/qa-agents/${editingAgent.id}`, formData);
+        setSuccess('Agente QA actualizado exitosamente');
+      } else {
+        await axios.post(`${API}/qa-agents`, formData);
+        setSuccess('Agente QA creado exitosamente');
+      }
+      
       setShowModal(false);
-      setFormData({
-        name: '',
-        description: '',
-        qa_instructions: '',
-        project_ids: [],
-        is_universal: false,
-        auto_process: true,
-        critical_threshold: 80,
-        pass_threshold: 60,
-        quality_checks: {
-          image_clarity: false,
-          document_orientation: false,
-          signature_detection: false,
-          seal_detection: false,
-          text_readability: false,
-          completeness_check: false
-        }
-      });
+      setIsEditing(false);
+      setEditingAgent(null);
+      resetForm();
       fetchAgents();
     } catch (error) {
-      setError(error.response?.data?.detail || 'Error al crear agente QA');
+      setError(error.response?.data?.detail || (isEditing ? 'Error al actualizar agente QA' : 'Error al crear agente QA'));
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      qa_instructions: '',
+      project_ids: [],
+      is_universal: false,
+      auto_process: true,
+      critical_threshold: 80,
+      pass_threshold: 60,
+      quality_checks: {
+        image_clarity: false,
+        document_orientation: false,
+        signature_detection: false,
+        seal_detection: false,
+        text_readability: false,
+        completeness_check: false
+      }
+    });
+  };
+
+  const handleEditClick = (agent) => {
+    setEditingAgent(agent);
+    setIsEditing(true);
+    setFormData({
+      name: agent.name || '',
+      description: agent.description || '',
+      qa_instructions: agent.qa_instructions || '',
+      project_ids: agent.project_ids || [],
+      is_universal: agent.is_universal || false,
+      auto_process: agent.auto_process !== false, // default true
+      critical_threshold: agent.critical_threshold || 80,
+      pass_threshold: agent.pass_threshold || 60,
+      quality_checks: agent.quality_checks || {
+        image_clarity: false,
+        document_orientation: false,
+        signature_detection: false,
+        seal_detection: false,
+        text_readability: false,
+        completeness_check: false
+      }
+    });
+    setShowModal(true);
+  };
+
+  const handleNewClick = () => {
+    setIsEditing(false);
+    setEditingAgent(null);
+    resetForm();
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = (agent) => {
+    setAgentToDelete(agent);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!agentToDelete) return;
+
+    try {
+      await axios.delete(`${API}/qa-agents/${agentToDelete.id}`);
+      setSuccess('Agente QA eliminado exitosamente');
+      setShowDeleteModal(false);
+      setAgentToDelete(null);
+      fetchAgents();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al eliminar agente QA');
+      setShowDeleteModal(false);
+      setAgentToDelete(null);
     }
   };
 
