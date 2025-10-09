@@ -694,6 +694,253 @@ def create_pdf_chunk(source_path: str, start_page: int, end_page: int, output_pa
         logger.error(f"Error creating PDF chunk: {str(e)}")
         return False
 
+# QA Processing Functions
+async def process_document_qa_then_ai(document_id: str, project: dict):
+    """Process document with QA first, then AI extraction if QA passes"""
+    try:
+        # Get document
+        document = await db.documents.find_one({"id": document_id})
+        if not document:
+            return
+        
+        logger.info(f"Starting QA processing for document {document_id}")
+        
+        # Update document status to QA pending
+        await db.documents.update_one(
+            {"id": document_id},
+            {"$set": {"status": "qa_pending", "qa_status": "pending"}}
+        )
+        
+        # Get applicable QA agents for this project
+        qa_agents = await get_applicable_qa_agents(project["id"])
+        
+        if not qa_agents:
+            # No QA agents configured, proceed directly to AI processing
+            logger.info(f"No QA agents found for project {project['id']}, proceeding to AI processing")
+            await db.documents.update_one(
+                {"id": document_id},
+                {"$set": {"status": "processing", "qa_status": "skipped"}}
+            )
+            await process_document_with_ai(document_id, project)
+            return
+        
+        # Run QA checks
+        qa_results = await run_qa_checks(document_id, document, qa_agents)
+        
+        # Determine QA outcome
+        overall_score = qa_results.get("overall_score", 0)
+        critical_findings = qa_results.get("critical_findings", [])
+        
+        if overall_score < 60:  # Failed QA
+            await db.documents.update_one(
+                {"id": document_id},
+                {
+                    "$set": {
+                        "status": "qa_failed",
+                        "qa_status": "failed",
+                        "qa_results": qa_results,
+                        "qa_findings": critical_findings,
+                        "qa_processed_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            logger.info(f"Document {document_id} failed QA with score {overall_score}")
+        
+        elif overall_score < 80 or len(critical_findings) > 0:  # Needs manual review
+            await db.documents.update_one(
+                {"id": document_id},
+                {
+                    "$set": {
+                        "status": "needs_review",
+                        "qa_status": "manual_review",
+                        "qa_results": qa_results,
+                        "qa_findings": critical_findings,
+                        "qa_processed_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            logger.info(f"Document {document_id} needs manual review - score: {overall_score}, findings: {len(critical_findings)}")
+        
+        else:  # Passed QA, proceed to AI processing
+            await db.documents.update_one(
+                {"id": document_id},
+                {
+                    "$set": {
+                        "status": "processing",
+                        "qa_status": "passed",
+                        "qa_results": qa_results,
+                        "qa_processed_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+            logger.info(f"Document {document_id} passed QA with score {overall_score}, proceeding to AI processing")
+            await process_document_with_ai(document_id, project)
+        
+    except Exception as e:
+        logger.error(f"Error in QA processing for document {document_id}: {str(e)}")
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "qa_failed",
+                    "qa_status": "error",
+                    "qa_results": {"error": str(e)},
+                    "qa_processed_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+
+async def get_applicable_qa_agents(project_id: str) -> list:
+    """Get QA agents applicable to a project"""
+    try:
+        # Get universal agents and project-specific agents
+        agents = await db.qa_agents.find({
+            "$or": [
+                {"is_universal": True, "is_active": True, "auto_process": True},
+                {"project_ids": {"$in": [project_id]}, "is_active": True, "auto_process": True}
+            ]
+        }).to_list(1000)
+        
+        return agents
+    except Exception as e:
+        logger.error(f"Error getting QA agents for project {project_id}: {str(e)}")
+        return []
+
+async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> dict:
+    """Run QA checks on document using specified agents"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        
+        # Get API key
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            return {"error": "No API key available", "overall_score": 0}
+        
+        all_results = []
+        critical_findings = []
+        
+        for agent in qa_agents:
+            try:
+                # Create AI chat for QA
+                chat = LlmChat(
+                    api_key=api_key,
+                    session_id=f"qa_{agent['id']}_{document_id}",
+                    system_message="You are a document quality assurance AI. Analyze documents for quality issues and provide detailed assessment."
+                ).with_model("gemini", "gemini-2.0-flash")
+                
+                # Create file content for analysis
+                file_content = FileContentWithMimeType(
+                    file_path=document["file_path"],
+                    mime_type="application/pdf"
+                )
+                
+                # Create QA prompt
+                quality_checks = agent.get("quality_checks", {})
+                active_checks = [check for check, enabled in quality_checks.items() if enabled]
+                
+                prompt = f"""
+                Analyze this document for quality assurance based on the following criteria:
+                
+                QA INSTRUCTIONS: {agent['qa_instructions']}
+                
+                QUALITY CHECKS TO PERFORM:
+                {', '.join(active_checks) if active_checks else 'General document quality assessment'}
+                
+                Please provide a JSON response with:
+                {{
+                    "overall_score": <0-100>,
+                    "quality_assessment": {{
+                        "image_clarity": <0-100>,
+                        "document_orientation": <0-100>,
+                        "text_readability": <0-100>,
+                        "completeness": <0-100>
+                    }},
+                    "findings": [
+                        {{
+                            "type": "critical|warning|info",
+                            "category": "clarity|orientation|text|completeness|other",
+                            "description": "Detailed description",
+                            "location": "page number or area",
+                            "recommendation": "How to fix"
+                        }}
+                    ],
+                    "recommendation": "approve|manual_review|reject",
+                    "summary": "Brief summary of assessment"
+                }}
+                
+                Score 0-100 where:
+                - 80-100: Excellent quality, approve automatically
+                - 60-79: Good quality but may need review
+                - 0-59: Poor quality, likely needs rejection or reprocessing
+                """
+                
+                user_message = UserMessage(
+                    text=prompt,
+                    file_contents=[file_content]
+                )
+                
+                # Get AI response
+                response = await chat.send_message(user_message)
+                
+                # Parse AI response
+                import json, re
+                json_match = re.search(r'\{.*\}', response, re.DOTALL)
+                
+                if json_match:
+                    try:
+                        qa_result = json.loads(json_match.group())
+                        qa_result["agent_id"] = agent["id"]
+                        qa_result["agent_name"] = agent["name"]
+                        all_results.append(qa_result)
+                        
+                        # Collect critical findings
+                        findings = qa_result.get("findings", [])
+                        for finding in findings:
+                            if finding.get("type") == "critical":
+                                critical_findings.append({
+                                    "agent": agent["name"],
+                                    "finding": finding,
+                                    "document_id": document_id
+                                })
+                                
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to parse QA response for agent {agent['id']}")
+                        all_results.append({
+                            "agent_id": agent["id"],
+                            "agent_name": agent["name"],
+                            "error": "Failed to parse response",
+                            "overall_score": 50,
+                            "raw_response": response
+                        })
+                        
+            except Exception as e:
+                logger.error(f"Error running QA agent {agent['id']}: {str(e)}")
+                all_results.append({
+                    "agent_id": agent["id"],
+                    "agent_name": agent["name"],
+                    "error": str(e),
+                    "overall_score": 0
+                })
+        
+        # Calculate overall score (average of all agent scores)
+        scores = [result.get("overall_score", 0) for result in all_results if "overall_score" in result]
+        overall_score = sum(scores) / len(scores) if scores else 0
+        
+        return {
+            "overall_score": overall_score,
+            "agent_results": all_results,
+            "critical_findings": critical_findings,
+            "qa_summary": f"Processed by {len(qa_agents)} QA agents with average score {overall_score:.1f}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in QA checks for document {document_id}: {str(e)}")
+        return {
+            "error": str(e),
+            "overall_score": 0,
+            "critical_findings": []
+        }
+
 async def process_single_chunk(file_path: str, semantic_instructions: str, api_key: str, chunk_number: int, start_page: int, end_page: int) -> dict:
     """Process a single PDF chunk with AI"""
     try:
