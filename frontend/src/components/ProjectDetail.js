@@ -257,6 +257,9 @@ const ProjectDetail = ({ user }) => {
   const getStatusColor = (status) => {
     const colors = {
       'uploaded': 'status-uploaded',
+      'qa_pending': 'status-processing',
+      'qa_failed': 'status-failed',
+      'qa_passed': 'status-completed',
       'processing': 'status-processing',
       'completed': 'status-completed',
       'failed': 'status-failed',
@@ -268,10 +271,13 @@ const ProjectDetail = ({ user }) => {
   const getStatusText = (status) => {
     const texts = {
       'uploaded': 'Subido',
-      'processing': 'Procesando',
+      'qa_pending': 'QA en Proceso',
+      'qa_failed': 'QA Falló',
+      'qa_passed': 'QA ✓ → IA Processing',
+      'processing': 'Extracción IA',
       'completed': 'Completado',
       'failed': 'Fallido',
-      'needs_review': 'Revisión'
+      'needs_review': 'Revisión Manual'
     };
     return texts[status] || status;
   };
