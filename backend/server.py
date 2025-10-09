@@ -1259,6 +1259,10 @@ async def process_document_with_ai(document_id: str, project: dict):
                 total_pages
             )
         
+        # Process and store extracted data in normalized format
+        if combined_data:
+            await store_extracted_data_normalized(document_id, document, project, combined_data)
+        
         # Update final document status
         await db.documents.update_one(
             {"id": document_id},
