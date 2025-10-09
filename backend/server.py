@@ -1642,7 +1642,10 @@ class QAAgentCreate(BaseModel):
     qa_instructions: str
     project_ids: List[str] = []
     is_universal: bool = False
+    auto_process: bool = True
     quality_checks: Dict[str, bool]
+    critical_threshold: Optional[int] = 80
+    pass_threshold: Optional[int] = 60
 
 class DocumentProcessRequest(BaseModel):
     semantic_instructions: str
