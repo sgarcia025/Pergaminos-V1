@@ -583,6 +583,23 @@ const ProjectDetail = ({ user }) => {
                       {getStatusText(document.status)}
                     </span>
                     
+                    {/* QA Status Indicator */}
+                    {document.qa_status && (
+                      <div className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                        {document.qa_results?.overall_score && (
+                          <span className={`font-medium ${
+                            document.qa_results.overall_score >= 80 ? 'text-green-600' :
+                            document.qa_results.overall_score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            QA: {document.qa_results.overall_score.toFixed(0)}%
+                          </span>
+                        )}
+                        {document.qa_findings && document.qa_findings.length > 0 && (
+                          <span className="text-red-600 ml-1">({document.qa_findings.length} hallazgos)</span>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="flex items-center space-x-1">
                       <button
                         onClick={() => {
