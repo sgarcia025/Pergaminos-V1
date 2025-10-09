@@ -604,7 +604,7 @@ const ProjectDetail = ({ user }) => {
                       <button
                         onClick={() => {
                           setRenamingDoc(document.id);
-                          setNewDocName(document.original_filename);
+                          setNewDocName(document.original_filename || '');
                         }}
                         className="text-gray-400 hover:text-gray-600 p-1"
                         title="Renombrar documento"
