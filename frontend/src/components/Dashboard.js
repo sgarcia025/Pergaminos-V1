@@ -76,6 +76,20 @@ const Dashboard = ({ user }) => {
               <div className="stat-number">{stats?.documents_needs_review || 0}</div>
               <div className="stat-label">Revisión</div>
             </div>
+            
+            {/* QA Statistics */}
+            <div className="stat-card bg-green-50 border-green-200">
+              <div className="stat-number text-green-600">{stats?.qa_passed || 0}</div>
+              <div className="stat-label text-green-700">QA Aprobado</div>
+            </div>
+            <div className="stat-card bg-red-50 border-red-200">
+              <div className="stat-number text-red-600">{stats?.qa_failed || 0}</div>
+              <div className="stat-label text-red-700">QA Falló</div>
+            </div>
+            <div className="stat-card bg-yellow-50 border-yellow-200">
+              <div className="stat-number text-yellow-600">{stats?.qa_pending || 0}</div>
+              <div className="stat-label text-yellow-700">QA Pendiente</div>
+            </div>
           </>
         ) : (
           <>
