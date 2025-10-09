@@ -1366,6 +1366,8 @@ class QAAgent(BaseModel):
     qa_instructions: str
     project_ids: List[str] = []  # Empty list means universal
     is_universal: bool = False
+    is_active: bool = True
+    auto_process: bool = True  # If true, runs automatically on upload
     quality_checks: Dict[str, bool] = {
         "image_clarity": False,
         "document_orientation": False,
@@ -1374,6 +1376,9 @@ class QAAgent(BaseModel):
         "text_readability": False,
         "completeness_check": False
     }
+    # QA thresholds
+    critical_threshold: int = 80  # Score below this requires manual review
+    pass_threshold: int = 60      # Score below this fails QA
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: str  # user id
 
