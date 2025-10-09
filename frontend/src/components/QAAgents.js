@@ -513,7 +513,7 @@ const QAAgents = ({ user }) => {
                   type="submit"
                   className="btn-primary"
                 >
-                  Crear Agente QA
+                  {isEditing ? 'Actualizar Agente QA' : 'Crear Agente QA'}
                 </button>
               </div>
             </form>
