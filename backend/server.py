@@ -1329,6 +1329,11 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         documents_processing = await db.documents.count_documents({"status": "processing"})
         documents_needs_review = await db.documents.count_documents({"status": "needs_review"})
         
+        # QA statistics
+        documents_qa_passed = await db.documents.count_documents({"qa_status": {"$in": ["passed", "approved_manual"]}})
+        documents_qa_failed = await db.documents.count_documents({"qa_status": {"$in": ["failed", "rejected_manual"]}})
+        documents_qa_pending = await db.documents.count_documents({"qa_status": {"$in": ["pending", "manual_review"]}})
+        
         return {
             "companies_count": companies_count,
             "projects_count": projects_count,
