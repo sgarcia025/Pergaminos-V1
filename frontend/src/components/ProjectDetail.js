@@ -570,7 +570,7 @@ const ProjectDetail = ({ user }) => {
                           </span>
                         )}
                       </div>
-                      {document.reorder_reasoning && (
+                      {document.reorder_reasoning && typeof document.reorder_reasoning === 'string' && (
                         <div className="mt-2 text-xs text-gray-600 bg-gray-50 rounded p-2">
                           <strong>IA:</strong> {document.reorder_reasoning}
                         </div>
