@@ -17,6 +17,9 @@ const QAAgents = ({ user }) => {
     qa_instructions: '',
     project_ids: [],
     is_universal: false,
+    auto_process: true,
+    critical_threshold: 80,
+    pass_threshold: 60,
     quality_checks: {
       image_clarity: false,
       document_orientation: false,
