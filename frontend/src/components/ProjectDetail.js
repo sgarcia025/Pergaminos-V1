@@ -551,7 +551,7 @@ const ProjectDetail = ({ user }) => {
                               </button>
                             </div>
                           ) : (
-                            <span>{document.original_filename}</span>
+                            <span>{document.original_filename || 'Documento sin nombre'}</span>
                           )}
                         </h4>
                       </div>
