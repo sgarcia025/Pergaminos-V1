@@ -964,6 +964,75 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
             "critical_findings": []
         }
 
+async def store_extracted_data_normalized(document_id: str, document: dict, project: dict, extracted_data: dict):
+    """Store extracted data in normalized format for efficient querying by client"""
+    try:
+        # Get project and company info
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if not company:
+            logger.error(f"Company not found for project {project['id']}")
+            return
+        
+        # Extract the actual data (skip metadata)
+        actual_data = extracted_data.get("extracted_data", extracted_data)
+        if isinstance(actual_data, dict):
+            
+            # Store individual fields
+            extracted_records = []
+            for field_name, field_value in actual_data.items():
+                if field_name not in ["status", "chunk_processing", "page_ranges"]:  # Skip metadata
+                    
+                    # Handle different data types
+                    if isinstance(field_value, (list, dict)):
+                        field_value_str = json.dumps(field_value, ensure_ascii=False)
+                        field_type = "json"
+                    elif isinstance(field_value, (int, float)):
+                        field_value_str = str(field_value)
+                        field_type = "number"
+                    else:
+                        field_value_str = str(field_value)
+                        field_type = "text"
+                    
+                    # Determine confidence (if available from chunk processing)
+                    confidence = None
+                    if "chunk_processing" in extracted_data:
+                        successful_chunks = extracted_data["chunk_processing"].get("successful_chunks", 0)
+                        total_chunks = extracted_data["chunk_processing"].get("total_chunks", 1)
+                        confidence = successful_chunks / total_chunks if total_chunks > 0 else 0.5
+                    
+                    extracted_record = ExtractedData(
+                        company_id=company["id"],
+                        project_id=project["id"],
+                        document_id=document_id,
+                        document_name=document["original_filename"],
+                        field_name=field_name,
+                        field_value=field_value_str,
+                        field_type=field_type,
+                        confidence=confidence,
+                        processing_method="ai_extraction"
+                    )
+                    
+                    extracted_records.append(extracted_record.dict())
+            
+            # Bulk insert extracted data
+            if extracted_records:
+                await db.extracted_data.insert_many(extracted_records)
+                logger.info(f"Stored {len(extracted_records)} extracted fields for document {document_id}")
+            
+            # Store document summary
+            summary = ExtractedDataSummary(
+                company_id=company["id"],
+                project_id=project["id"],
+                document_id=document_id,
+                summary_data=actual_data,
+                total_fields=len(extracted_records)
+            )
+            
+            await db.extracted_data_summaries.insert_one(summary.dict())
+            
+    except Exception as e:
+        logger.error(f"Error storing normalized extracted data for document {document_id}: {str(e)}")
+
 async def process_single_chunk(file_path: str, semantic_instructions: str, api_key: str, chunk_number: int, start_page: int, end_page: int) -> dict:
     """Process a single PDF chunk with AI"""
     try:
