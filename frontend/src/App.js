@@ -14,6 +14,7 @@ import QAAgents from "./components/QAAgents";
 import UserManagement from "./components/UserManagement";
 import ClientPortal from "./components/ClientPortal";
 import Segmentos from "./components/Segmentos";
+import QAFindings from "./components/QAFindings";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
