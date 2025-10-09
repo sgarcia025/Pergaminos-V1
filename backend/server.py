@@ -1818,6 +1818,64 @@ async def create_qa_agent(agent_data: QAAgentCreate, current_user: User = Depend
     await db.qa_agents.insert_one(agent.dict())
     return agent
 
+@api_router.put("/qa-agents/{agent_id}", response_model=QAAgent)
+async def update_qa_agent(agent_id: str, agent_data: QAAgentCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["staff"]:
+        raise HTTPException(status_code=403, detail="Only staff can update QA agents")
+    
+    # Check if agent exists
+    existing_agent = await db.qa_agents.find_one({"id": agent_id})
+    if not existing_agent:
+        raise HTTPException(status_code=404, detail="QA Agent not found")
+    
+    # Update agent
+    update_data = agent_data.dict()
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    result = await db.qa_agents.update_one(
+        {"id": agent_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="QA Agent not found")
+    
+    # Return updated agent
+    updated_agent = await db.qa_agents.find_one({"id": agent_id})
+    return QAAgent(**updated_agent)
+
+@api_router.delete("/qa-agents/{agent_id}")
+async def delete_qa_agent(agent_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["staff"]:
+        raise HTTPException(status_code=403, detail="Only staff can delete QA agents")
+    
+    # Check if agent exists
+    agent = await db.qa_agents.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="QA Agent not found")
+    
+    # Check if agent is being used by any documents currently in QA
+    documents_in_qa = await db.documents.count_documents({
+        "qa_status": {"$in": ["pending", "manual_review"]},
+        "$or": [
+            {"project_id": {"$in": agent.get("project_ids", [])}},
+            {"qa_results.agent_results.agent_id": agent_id}
+        ]
+    })
+    
+    if documents_in_qa > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete QA agent. {documents_in_qa} documents are currently using this agent in QA process."
+        )
+    
+    # Delete the agent
+    result = await db.qa_agents.delete_one({"id": agent_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="QA Agent not found")
+    
+    return {"message": "QA Agent deleted successfully", "agent_id": agent_id}
+
 @api_router.get("/qa-agents", response_model=List[QAAgent])
 async def get_qa_agents(current_user: User = Depends(get_current_user)):
     agents = await db.qa_agents.find().to_list(1000)
