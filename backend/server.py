@@ -1341,7 +1341,10 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
             "documents_completed": documents_completed,
             "documents_failed": documents_failed,
             "documents_processing": documents_processing,
-            "documents_needs_review": documents_needs_review
+            "documents_needs_review": documents_needs_review,
+            "qa_passed": documents_qa_passed,
+            "qa_failed": documents_qa_failed,
+            "qa_pending": documents_qa_pending
         }
     else:
         # Clients see only their company's stats
