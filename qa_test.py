@@ -478,14 +478,39 @@ startxref
 
     def test_client_permissions(self):
         """Test that client users cannot manage QA agents"""
-        # Login as client user
+        # First create a client user for testing
         admin_token = self.token
+        client_user_data = {
+            "email": f"qaclient{datetime.now().strftime('%H%M%S')}@test.com",
+            "name": "QA Test Client User",
+            "password": "qaclient123",
+            "role": "client",
+            "company_id": self.company_id
+        }
+        
+        success, response = self.run_test(
+            "Create Client User for QA Test",
+            "POST",
+            "auth/register",
+            200,
+            data=client_user_data
+        )
+        
+        if not success or 'id' not in response:
+            print("❌ Could not create client user for QA test")
+            return False
+        
+        client_email = client_user_data['email']
+        client_password = client_user_data['password']
+        print(f"   Created client user: {client_email}")
+        
+        # Login as client user
         success_login, login_response = self.run_test(
             "Client Login for QA Agent Management Test",
             "POST",
             "auth/login",
             200,
-            data={"email": "test@test.com", "password": "test123"}
+            data={"email": client_email, "password": client_password}
         )
         
         if not success_login or 'access_token' not in login_response:
