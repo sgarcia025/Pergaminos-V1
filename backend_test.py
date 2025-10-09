@@ -306,7 +306,7 @@ startxref
         return False
 
     def test_document_rename(self):
-        """Test document renaming functionality"""
+        """Test document renaming functionality with JSON (CRITICAL FIX)"""
         if not self.project_id:
             print("❌ No project ID available for document rename test")
             return False
@@ -327,41 +327,26 @@ startxref
         original_name = documents[0]['original_filename']
         new_name = f"Renamed_{datetime.now().strftime('%H%M%S')}.pdf"
         
-        # Test renaming with form data
-        import requests
-        url = f"{self.api_url}/documents/{document_id}/rename"
-        headers = {'Authorization': f'Bearer {self.token}'}
-        data = {'new_name': new_name}
+        # Test renaming with JSON (FIXED - was using form data before)
+        rename_data = {"new_name": new_name}
         
-        print(f"\n🔍 Testing Document Rename...")
-        print(f"   URL: {url}")
-        print(f"   Original name: {original_name}")
-        print(f"   New name: {new_name}")
+        success, response = self.run_test(
+            "Document Rename with JSON",
+            "PUT",
+            f"documents/{document_id}/rename",
+            200,
+            data=rename_data
+        )
         
-        try:
-            response = requests.put(url, headers=headers, data=data)
-            success = response.status_code == 200
-            
-            if success:
-                self.tests_passed += 1
-                print(f"✅ Passed - Status: {response.status_code}")
-                result = response.json()
-                if result.get('original_filename') == new_name:
-                    print(f"   Document successfully renamed to: {new_name}")
-                    return True
-                else:
-                    print(f"❌ Name not updated correctly: {result.get('original_filename')}")
-                    return False
+        if success and isinstance(response, dict):
+            if response.get('original_filename') == new_name:
+                print(f"   Document successfully renamed to: {new_name}")
+                print(f"   Original name: {original_name}")
+                return True
             else:
-                print(f"❌ Failed - Expected 200, got {response.status_code}")
-                print(f"   Response: {response.text}")
+                print(f"❌ Name not updated correctly: {response.get('original_filename')}")
                 return False
-                
-        except Exception as e:
-            print(f"❌ Failed - Error: {str(e)}")
-            return False
-        finally:
-            self.tests_run += 1
+        return False
 
     def test_document_reorder_start(self):
         """Test starting AI document reordering"""
