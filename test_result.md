@@ -103,38 +103,46 @@
 #====================================================================================================
 
 user_problem_statement: |
-  El usuario solicita pruebas de las MEJORAS IMPLEMENTADAS AL MÓDULO QA con estas nuevas funcionalidades:
+  El usuario solicita pruebas de las CORRECCIONES CRÍTICAS implementadas para resolver errores reportados:
 
-  NUEVAS FUNCIONALIDADES IMPLEMENTADAS:
+  CORRECCIONES IMPLEMENTADAS:
 
-  1. EDITAR/ELIMINAR AGENTES QA:
-     - PUT /api/qa-agents/{agent_id} - Actualizar agente QA existente
-     - DELETE /api/qa-agents/{agent_id} - Eliminar agente (con validaciones de uso)
+  1. ENDPOINT RENAME DOCUMENTS ARREGLADO:
+     - Problema: Error "Field required" para `new_name` 
+     - Solución: Cambiado de `Form(...)` a modelo Pydantic `DocumentRename`
+     - Endpoint: PUT `/api/documents/{document_id}/rename`
+     - Cambio: Ahora acepta JSON `{"new_name": "nuevo_nombre.pdf"}` en lugar de FormData
 
-  2. ESTADOS QA MEJORADOS:
-     - Nuevos estados de documento: qa_pending, qa_failed, qa_passed
-     - Transición clara: uploaded → qa_pending → (qa_passed/qa_failed) → processing → completed
-     - Campo qa_results con puntajes y hallazgos detallados
-
-  3. DASHBOARD QA AMPLIADO:
-     - Estadísticas nuevas: qa_passed, qa_failed, qa_pending en endpoint stats
-     - Métricas de control de calidad integradas
+  2. CONFIGURACIÓN UMBRALES QA MEJORADA:
+     - Problema: Los umbrales no eran configurables visiblemente  
+     - Solución: Sección dedicada en formulario con explicaciones claras
+     - Campos: `pass_threshold` (mínimo para aprobar), `critical_threshold` (mínimo para auto-procesar)
+     - Explicación: Visual de rangos 0-59% (rechazado), 60-79% (revisión manual), 80-100% (auto-aprobado)
 
   TESTING PRIORITARIO:
-  1. Crear agente QA - Verificar creación exitosa
-  2. Editar agente existente - Modificar configuraciones (thresholds, instrucciones, checks)
-  3. Eliminar agente - Confirmar validaciones (no se puede eliminar si hay docs en uso)
-  4. Flujo completo QA → IA:
-     - Subir documento PDF
-     - Verificar estado inicial: uploaded → qa_pending
-     - Confirmar evaluación QA automática
-     - Validar transición según puntaje:
-       - ≥80: qa_passed → processing automático
-       - 60-79: needs_review (revisión manual)  
-       - <60: qa_failed (rechazado)
-  5. Dashboard stats - Confirmar que incluye métricas QA
+  1. Rename Document (CRÍTICO):
+     - Subir un PDF cualquiera a un proyecto
+     - Intentar cambiar el nombre del documento
+     - Verificar que se actualice exitosamente sin errores
+     - Confirmar que el nuevo nombre se guarda y muestra correctamente
 
-  OBJETIVO: Validar que el flujo QA → Extracción IA funciona correctamente y que la gestión de agentes QA es robusta.
+  2. Crear QA Agent con Umbrales Personalizados:
+     - Crear nuevo agente QA
+     - Modificar umbrales: ej. pass_threshold=70, critical_threshold=85
+     - Verificar que se guarden correctamente
+     - Confirmar que el comportamiento funciona según los umbrales configurados
+
+  3. Editar QA Agent Existente:
+     - Editar un agente QA creado previamente
+     - Cambiar los umbrales a valores diferentes
+     - Verificar actualización exitosa
+
+  CASOS ESPECÍFICOS:
+  - Renombrar con nombres que incluyan caracteres especiales, espacios, acentos
+  - Configurar umbrales extremos (ej: pass=90, critical=95) y verificar comportamiento
+  - Verificar validación de campos numéricos en formulario
+
+  OBJETIVO: Confirmar que el renombrado funciona sin errores y que la configuración de umbrales QA es intuitiva y funcional.
 
 backend:
   - task: "Eliminar marca de agua Made with emergent"
