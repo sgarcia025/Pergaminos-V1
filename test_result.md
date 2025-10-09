@@ -470,7 +470,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Optimización de chunks adaptativos para alto volumen"
+    - "Módulo QA mejorado - todas las funcionalidades"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
