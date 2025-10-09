@@ -1643,6 +1643,157 @@ class AIQuestionRequest(BaseModel):
     question: str
     include_context: bool = True
 
+# QA Findings and Management endpoints
+@api_router.get("/projects/{project_id}/qa-findings")
+async def get_qa_findings(project_id: str, current_user: User = Depends(get_current_user)):
+    """Get documents with QA findings for manual review"""
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get documents with QA issues
+    documents = await db.documents.find({
+        "project_id": project_id,
+        "qa_status": {"$in": ["failed", "manual_review"]},
+        "qa_findings": {"$exists": True, "$ne": []}
+    }).to_list(1000)
+    
+    qa_findings_summary = []
+    
+    for doc in documents:
+        findings_count = len(doc.get("qa_findings", []))
+        qa_score = doc.get("qa_results", {}).get("overall_score", 0)
+        
+        qa_findings_summary.append({
+            "document_id": doc["id"],
+            "filename": doc["original_filename"],
+            "qa_status": doc["qa_status"],
+            "qa_score": qa_score,
+            "findings_count": findings_count,
+            "critical_findings": doc.get("qa_findings", []),
+            "qa_processed_at": doc.get("qa_processed_at"),
+            "status": doc["status"]
+        })
+    
+    return {
+        "project_id": project_id,
+        "project_name": project["name"],
+        "documents_with_findings": qa_findings_summary,
+        "summary": {
+            "total_documents_with_issues": len(qa_findings_summary),
+            "failed_qa": len([d for d in qa_findings_summary if d["qa_status"] == "failed"]),
+            "manual_review": len([d for d in qa_findings_summary if d["qa_status"] == "manual_review"])
+        }
+    }
+
+@api_router.post("/documents/{document_id}/qa-approve")
+async def approve_document_after_review(
+    document_id: str,
+    approval_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Approve document after manual QA review"""
+    if current_user.role not in ["staff", "asesor"]:
+        raise HTTPException(status_code=403, detail="Only staff can approve documents")
+    
+    document = await db.documents.find_one({"id": document_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    if document.get("qa_status") not in ["manual_review", "failed"]:
+        raise HTTPException(status_code=400, detail="Document is not pending manual review")
+    
+    action = approval_data.get("action")  # "approve", "reject", "request_reupload"
+    comments = approval_data.get("comments", "")
+    
+    if action == "approve":
+        # Get project for AI processing
+        project = await db.projects.find_one({"id": document["project_id"]})
+        
+        # Update document and start AI processing
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "processing",
+                    "qa_status": "approved_manual",
+                    "qa_approved_by": current_user.id,
+                    "qa_approved_at": datetime.now(timezone.utc),
+                    "qa_approval_comments": comments
+                }
+            }
+        )
+        
+        # Start AI processing
+        asyncio.create_task(process_document_with_ai(document_id, project))
+        
+        return {"message": "Document approved and processing started", "status": "processing"}
+        
+    elif action == "reject":
+        await db.documents.update_one(
+            {"id": document_id},
+            {
+                "$set": {
+                    "status": "qa_failed",
+                    "qa_status": "rejected_manual",
+                    "qa_approved_by": current_user.id,
+                    "qa_approved_at": datetime.now(timezone.utc),
+                    "qa_approval_comments": comments
+                }
+            }
+        )
+        return {"message": "Document rejected", "status": "qa_failed"}
+        
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
+@api_router.get("/projects/{project_id}/qa-summary")
+async def get_project_qa_summary(project_id: str, current_user: User = Depends(get_current_user)):
+    """Get QA summary stats for a project"""
+    # Verify access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get QA statistics
+    total_docs = await db.documents.count_documents({"project_id": project_id})
+    qa_passed = await db.documents.count_documents({
+        "project_id": project_id,
+        "qa_status": {"$in": ["passed", "approved_manual"]}
+    })
+    qa_failed = await db.documents.count_documents({
+        "project_id": project_id,
+        "qa_status": {"$in": ["failed", "rejected_manual"]}
+    })
+    manual_review = await db.documents.count_documents({
+        "project_id": project_id,
+        "qa_status": "manual_review"
+    })
+    qa_pending = await db.documents.count_documents({
+        "project_id": project_id,
+        "qa_status": {"$in": ["pending", None]}
+    })
+    
+    return {
+        "project_id": project_id,
+        "project_name": project["name"],
+        "qa_summary": {
+            "total_documents": total_docs,
+            "qa_passed": qa_passed,
+            "qa_failed": qa_failed,
+            "manual_review_needed": manual_review,
+            "qa_pending": qa_pending,
+            "pass_rate": f"{(qa_passed/total_docs*100):.1f}%" if total_docs > 0 else "0%"
+        }
+    }
+
 # QA Agents endpoints
 @api_router.post("/qa-agents", response_model=QAAgent)
 async def create_qa_agent(agent_data: QAAgentCreate, current_user: User = Depends(get_current_user)):
