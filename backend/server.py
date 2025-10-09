@@ -433,9 +433,8 @@ async def upload_document(
     
     await db.documents.insert_one(document.dict())
     
-    # Start AI processing in background
-    import asyncio
-    asyncio.create_task(process_document_with_ai(document.id, project))
+    # Start QA processing first, then AI processing
+    asyncio.create_task(process_document_qa_then_ai(document.id, project))
     
     return document
 
