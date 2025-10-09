@@ -557,7 +557,7 @@ const ProjectDetail = ({ user }) => {
                       </div>
                       <div className="flex items-center mt-1 space-x-4">
                         <span className="text-xs text-gray-500">
-                          Subido {new Date(document.created_at).toLocaleDateString()}
+                          Subido {document.created_at ? new Date(document.created_at).toLocaleDateString() : 'Fecha no disponible'}
                         </span>
                         {document.processed_at && (
                           <span className="text-xs text-gray-500">
