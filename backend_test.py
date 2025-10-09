@@ -4164,11 +4164,17 @@ def main():
     test_results.append(("Document Reorder Start", tester.test_document_reorder_start()))
     test_results.append(("Document Reorder Status", tester.test_document_reorder_status()))
     
-    # NEW FEATURE TESTS - QA Agents Module
-    print("\n🔍 Testing QA Agents Module...")
-    test_results.append(("Create QA Agent", tester.test_create_qa_agent()))
-    test_results.append(("Get QA Agents", tester.test_get_qa_agents()))
-    test_results.append(("Run QA Agent", tester.test_run_qa_agent()))
+    # NEW COMPREHENSIVE QA MODULE TESTS
+    print("\n🔍 Testing NEW QA Module Improvements...")
+    test_results.append(("Create Comprehensive QA Agent", tester.test_create_qa_agent_comprehensive()))
+    test_results.append(("Get QA Agents List", tester.test_get_qa_agents_list()))
+    test_results.append(("Edit QA Agent Thresholds", tester.test_edit_qa_agent_thresholds()))
+    test_results.append(("Delete QA Agent with Validation", tester.test_delete_qa_agent_with_validation()))
+    test_results.append(("Upload Document QA Flow", tester.test_upload_document_qa_flow()))
+    test_results.append(("Verify QA State Transitions", tester.test_verify_qa_state_transitions()))
+    test_results.append(("Dashboard QA Metrics", tester.test_dashboard_qa_metrics()))
+    test_results.append(("Client Cannot Manage QA Agents", tester.test_client_cannot_manage_qa_agents()))
+    test_results.append(("QA Agent Error Handling", tester.test_qa_agent_error_handling()))
     
     # NEW FEATURE TESTS - User Management Module
     print("\n🔍 Testing User Management Module...")
