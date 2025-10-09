@@ -1393,7 +1393,7 @@ async def rename_document(
     # Update document name
     await db.documents.update_one(
         {"id": document_id},
-        {"$set": {"original_filename": new_name}}
+        {"$set": {"original_filename": rename_data.new_name}}
     )
     
     # Return updated document
