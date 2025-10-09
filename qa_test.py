@@ -485,7 +485,7 @@ startxref
             "POST",
             "auth/login",
             200,
-            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+            data={"email": "test@test.com", "password": "test123"}
         )
         
         if not success_login or 'access_token' not in login_response:
