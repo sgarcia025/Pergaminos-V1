@@ -508,7 +508,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Módulo QA mejorado - todas las funcionalidades"
+    - "Endpoint rename documents arreglado"
+    - "Configuración umbrales QA mejorada"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
