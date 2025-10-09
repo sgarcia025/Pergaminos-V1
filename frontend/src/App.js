@@ -103,6 +103,7 @@ function App() {
               <Route path="/user-management" element={<UserManagement user={user} />} />
               <Route path="/segmentos" element={<Segmentos user={user} />} />
               <Route path="/qa-findings" element={<QAFindings user={user} />} />
+              <Route path="/extracted-data" element={<ExtractedData user={user} />} />
               <Route path="*" element={user.role === 'client' ? <ClientPortal user={user} /> : <Dashboard user={user} />} />
             </Routes>
           </main>
