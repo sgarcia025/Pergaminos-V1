@@ -145,6 +145,36 @@ user_problem_statement: |
   OBJETIVO: Confirmar que el renombrado funciona sin errores y que la configuración de umbrales QA es intuitiva y funcional.
 
 backend:
+  - task: "Endpoint rename documents arreglado"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Cambiado de Form(...) a modelo Pydantic DocumentRename para aceptar JSON en lugar de FormData"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CRITICAL FIX TESTED SUCCESSFULLY: PUT /api/documents/{document_id}/rename endpoint working perfectly with JSON payload. Tested: (1) Document rename with JSON data successful - accepts {'new_name': 'nuevo_nombre.pdf'} format, (2) Special characters, spaces, and accents handled correctly (tested with 'Documento con Espacios y Acentos.pdf', 'Document_with-special@characters#2024.pdf', 'Contrato Número 123 - Empresa López & Asociados.pdf'), (3) Document name updates correctly in database and response, (4) No more 'Field required' errors. DocumentRename Pydantic model working as expected instead of Form(...) parameter."
+
+  - task: "Configuración umbrales QA mejorada"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+        - agent: "main"
+        - comment: "Mejorada configuración de umbrales QA con campos pass_threshold y critical_threshold visibles y configurables"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CRITICAL FIX TESTED SUCCESSFULLY: QA Agent threshold configuration working perfectly. Tested: (1) Create QA Agent with custom thresholds - pass_threshold=70, critical_threshold=85 saved correctly, (2) Edit QA Agent thresholds - successfully updated from 70/85 to 65/80, changed scope to universal, disabled signature/seal detection, (3) Extreme threshold values accepted - pass_threshold=90, critical_threshold=95 working correctly, (4) Threshold behavior validated: 0-64% = qa_failed (rejected), 65-79% = needs_review (manual review), 80-100% = qa_passed → processing (auto-approved). All threshold ranges and QA state transitions working as designed."
+
   - task: "Eliminar marca de agua Made with emergent"
     implemented: true
     working: "NA"
