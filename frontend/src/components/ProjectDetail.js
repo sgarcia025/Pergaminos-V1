@@ -170,10 +170,9 @@ const ProjectDetail = ({ user }) => {
 
   const handleRenameDocument = async (documentId, newName) => {
     try {
-      const formData = new FormData();
-      formData.append('new_name', newName);
-      
-      await axios.put(`${API}/documents/${documentId}/rename`, formData);
+      await axios.put(`${API}/documents/${documentId}/rename`, {
+        new_name: newName
+      });
       setSuccess('Documento renombrado exitosamente');
       setRenamingDoc(null);
       setNewDocName('');
