@@ -4293,11 +4293,16 @@ def main():
     test_results.append(("Document Reorder Start", tester.test_document_reorder_start()))
     test_results.append(("Document Reorder Status", tester.test_document_reorder_status()))
     
+    # CRITICAL FIXES TESTING - Document Rename & QA Thresholds
+    print("\n🔍 Testing CRITICAL FIXES - Document Rename & QA Thresholds...")
+    test_results.append(("Create QA Agent with Custom Thresholds (CRITICAL)", tester.test_create_qa_agent_with_custom_thresholds()))
+    test_results.append(("Edit QA Agent Thresholds (CRITICAL)", tester.test_edit_qa_agent_thresholds()))
+    test_results.append(("QA Threshold Behavior Validation", tester.test_qa_threshold_behavior_validation()))
+    
     # NEW COMPREHENSIVE QA MODULE TESTS
     print("\n🔍 Testing NEW QA Module Improvements...")
     test_results.append(("Create Comprehensive QA Agent", tester.test_create_qa_agent_comprehensive()))
     test_results.append(("Get QA Agents List", tester.test_get_qa_agents_list()))
-    test_results.append(("Edit QA Agent Thresholds", tester.test_edit_qa_agent_thresholds()))
     test_results.append(("Delete QA Agent with Validation", tester.test_delete_qa_agent_with_validation()))
     test_results.append(("Upload Document QA Flow", tester.test_upload_document_qa_flow()))
     test_results.append(("Verify QA State Transitions", tester.test_verify_qa_state_transitions()))
