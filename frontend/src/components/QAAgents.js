@@ -354,7 +354,7 @@ const QAAgents = ({ user }) => {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal max-w-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Nuevo Agente QA</h3>
+              <h3 className="modal-title">{isEditing ? 'Editar Agente QA' : 'Nuevo Agente QA'}</h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="modal-close"
