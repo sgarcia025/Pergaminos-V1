@@ -509,6 +509,150 @@ startxref
             return True
         return False
 
+    def test_create_qa_agent_with_custom_thresholds(self):
+        """Test creating QA agent with custom thresholds (CRITICAL FIX)"""
+        qa_agent_data = {
+            "name": f"Custom Threshold QA Agent {datetime.now().strftime('%H%M%S')}",
+            "description": "QA agent with custom threshold configuration",
+            "qa_instructions": "Perform comprehensive quality checks with custom scoring thresholds.",
+            "project_ids": [self.project_id] if self.project_id else [],
+            "is_universal": False,
+            "auto_process": True,
+            "pass_threshold": 70,  # Custom threshold - minimum to pass
+            "critical_threshold": 85,  # Custom threshold - minimum for auto-processing
+            "quality_checks": {
+                "image_clarity": True,
+                "document_orientation": True,
+                "signature_detection": True,
+                "seal_detection": True,
+                "text_readability": True,
+                "completeness_check": True
+            }
+        }
+        
+        success, response = self.run_test(
+            "Create QA Agent with Custom Thresholds",
+            "POST",
+            "qa-agents",
+            200,
+            data=qa_agent_data
+        )
+        
+        if success and 'id' in response:
+            self.custom_qa_agent_id = response['id']
+            print(f"   Created custom threshold QA agent ID: {self.custom_qa_agent_id}")
+            
+            # Verify thresholds were saved correctly
+            if (response.get('pass_threshold') == 70 and
+                response.get('critical_threshold') == 85):
+                print(f"   Custom thresholds saved correctly: pass={response.get('pass_threshold')}, critical={response.get('critical_threshold')}")
+                return True
+            else:
+                print(f"❌ Thresholds not saved correctly: pass={response.get('pass_threshold')}, critical={response.get('critical_threshold')}")
+                return False
+        return False
+
+    def test_edit_qa_agent_thresholds(self):
+        """Test editing QA agent thresholds (CRITICAL FIX)"""
+        if not hasattr(self, 'custom_qa_agent_id'):
+            print("❌ No custom QA agent ID available for threshold edit test")
+            return False
+        
+        # Update thresholds to different values
+        update_data = {
+            "name": f"Updated Threshold QA Agent {datetime.now().strftime('%H%M%S')}",
+            "description": "QA agent with updated threshold configuration",
+            "qa_instructions": "Updated quality checks with modified scoring thresholds.",
+            "project_ids": [self.project_id] if self.project_id else [],
+            "is_universal": True,  # Change to universal
+            "auto_process": True,
+            "pass_threshold": 65,  # Changed from 70 to 65
+            "critical_threshold": 80,  # Changed from 85 to 80
+            "quality_checks": {
+                "image_clarity": True,
+                "document_orientation": True,
+                "signature_detection": False,  # Disabled
+                "seal_detection": False,  # Disabled
+                "text_readability": True,
+                "completeness_check": True
+            }
+        }
+        
+        success, response = self.run_test(
+            "Edit QA Agent Thresholds",
+            "PUT",
+            f"qa-agents/{self.custom_qa_agent_id}",
+            200,
+            data=update_data
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify updated thresholds
+            if (response.get('pass_threshold') == 65 and
+                response.get('critical_threshold') == 80 and
+                response.get('is_universal') == True):
+                print(f"   Thresholds updated successfully: pass={response.get('pass_threshold')}, critical={response.get('critical_threshold')}")
+                print(f"   Agent scope changed to universal: {response.get('is_universal')}")
+                print(f"   Quality checks updated: signature_detection={response.get('quality_checks', {}).get('signature_detection')}")
+                return True
+            else:
+                print(f"❌ Thresholds not updated correctly")
+                return False
+        return False
+
+    def test_qa_threshold_behavior_validation(self):
+        """Test QA threshold behavior with extreme values"""
+        # Test with extreme threshold values
+        extreme_qa_data = {
+            "name": f"Extreme Threshold QA Agent {datetime.now().strftime('%H%M%S')}",
+            "description": "QA agent with extreme threshold values for validation",
+            "qa_instructions": "Test extreme threshold configurations.",
+            "project_ids": [],
+            "is_universal": True,
+            "auto_process": True,
+            "pass_threshold": 90,  # Very high pass threshold
+            "critical_threshold": 95,  # Very high critical threshold
+            "quality_checks": {
+                "image_clarity": True,
+                "document_orientation": True,
+                "signature_detection": True,
+                "seal_detection": True,
+                "text_readability": True,
+                "completeness_check": True
+            }
+        }
+        
+        success, response = self.run_test(
+            "Create QA Agent with Extreme Thresholds",
+            "POST",
+            "qa-agents",
+            200,
+            data=extreme_qa_data
+        )
+        
+        if success and 'id' in response:
+            extreme_qa_agent_id = response['id']
+            print(f"   Created extreme threshold QA agent ID: {extreme_qa_agent_id}")
+            
+            # Verify extreme thresholds were accepted
+            if (response.get('pass_threshold') == 90 and
+                response.get('critical_threshold') == 95):
+                print(f"   Extreme thresholds accepted: pass=90%, critical=95%")
+                print(f"   This means: 0-89% = rejected, 90-94% = manual review, 95-100% = auto-approved")
+                
+                # Clean up extreme agent
+                cleanup_success, cleanup_response = self.run_test(
+                    "Cleanup Extreme QA Agent",
+                    "DELETE",
+                    f"qa-agents/{extreme_qa_agent_id}",
+                    200
+                )
+                return True
+            else:
+                print(f"❌ Extreme thresholds not saved correctly")
+                return False
+        return False
+
     # NEW FEATURE TESTS - User Management
     def test_create_client_user(self):
         """Test creating a client user"""
