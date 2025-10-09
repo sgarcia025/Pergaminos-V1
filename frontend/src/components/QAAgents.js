@@ -487,9 +487,84 @@ const QAAgents = ({ user }) => {
                 </div>
               </div>
 
+              {/* QA Thresholds Configuration */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-yellow-800 mb-3">
+                  📊 Configuración de Umbrales de Calidad
+                </h4>
+                <p className="text-xs text-yellow-700 mb-4">
+                  Define los porcentajes que determinan si un documento pasa automáticamente, requiere revisión manual o es rechazado.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-group">
+                    <label htmlFor="pass_threshold" className="form-label text-sm">
+                      🟢 Umbral Mínimo de Aprobación (%)
+                    </label>
+                    <input
+                      id="pass_threshold"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.pass_threshold}
+                      onChange={(e) => setFormData({ ...formData, pass_threshold: parseInt(e.target.value) || 60 })}
+                      className="form-input text-sm"
+                      placeholder="60"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Puntajes debajo de este valor serán <span className="text-red-600 font-medium">rechazados automáticamente</span>
+                    </p>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="critical_threshold" className="form-label text-sm">
+                      🟡 Umbral de Revisión Manual (%)
+                    </label>
+                    <input
+                      id="critical_threshold"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.critical_threshold}
+                      onChange={(e) => setFormData({ ...formData, critical_threshold: parseInt(e.target.value) || 80 })}
+                      className="form-input text-sm"
+                      placeholder="80"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Puntajes debajo de este valor requerirán <span className="text-yellow-600 font-medium">revisión manual</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-3 bg-white border border-gray-200 rounded text-xs">
+                  <strong>Resumen de Comportamiento:</strong>
+                  <ul className="mt-2 space-y-1 text-gray-600">
+                    <li>• <span className="text-red-600">0% - {formData.pass_threshold - 1}%</span>: Documento rechazado automáticamente</li>
+                    <li>• <span className="text-yellow-600">{formData.pass_threshold}% - {formData.critical_threshold - 1}%</span>: Requiere revisión manual del staff</li>
+                    <li>• <span className="text-green-600">{formData.critical_threshold}% - 100%</span>: Aprobado automáticamente y enviado a procesamiento IA</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="auto_process" className="flex items-center space-x-2">
+                  <input
+                    id="auto_process"
+                    type="checkbox"
+                    checked={formData.auto_process}
+                    onChange={(e) => setFormData({ ...formData, auto_process: e.target.checked })}
+                    className="form-checkbox"
+                  />
+                  <span className="form-label mb-0">Procesamiento Automático</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Si está activado, este agente se ejecutará automáticamente al subir documentos
+                </p>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="qa_instructions" className="form-label">
-                  Instrucciones Específicas para IA
+                  📝 Instrucciones Específicas para IA
                 </label>
                 <textarea
                   id="qa_instructions"
