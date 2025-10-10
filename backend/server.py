@@ -1005,6 +1005,76 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
             "critical_findings": []
         }
 
+async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
+    """Get AI configuration for a specific task type"""
+    try:
+        # Look for company-specific configuration
+        config = await db.ai_configurations.find_one({
+            "company_id": company_id,
+            "config_type": task_type,
+            "is_active": True
+        })
+        
+        if config and config.get("api_key"):
+            # Decrypt API key
+            try:
+                decrypted_key = decrypt_api_key(config["api_key"])
+                return {
+                    "provider": config["provider"],
+                    "api_key": decrypted_key,
+                    "model_name": config["model_name"],
+                    "model_config": config.get("model_config", {}),
+                    "source": "company_config"
+                }
+            except Exception as e:
+                logger.error(f"Failed to decrypt API key for company {company_id}: {str(e)}")
+        
+        # Fallback to Emergent LLM key with recommended models
+        fallback_models = {
+            "data_extraction": "gpt-4o",
+            "qa_processing": "gpt-4o-mini", 
+            "document_processing": "gpt-4o"
+        }
+        
+        return {
+            "provider": "emergent",
+            "api_key": os.environ.get('EMERGENT_LLM_KEY'),
+            "model_name": fallback_models.get(task_type, "gpt-4o"),
+            "model_config": {},
+            "source": "fallback_emergent"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting AI config for company {company_id}, task {task_type}: {str(e)}")
+        return {
+            "provider": "emergent",
+            "api_key": os.environ.get('EMERGENT_LLM_KEY'),
+            "model_name": "gpt-4o",
+            "model_config": {},
+            "source": "error_fallback"
+        }
+
+async def create_ai_chat_with_config(config: dict, session_id: str, system_message: str):
+    """Create AI chat instance with configuration"""
+    from emergentintegrations.llm.chat import LlmChat
+    
+    if config["provider"] == "openai":
+        # Use OpenAI directly with customer's API key
+        chat = LlmChat(
+            api_key=config["api_key"],
+            session_id=session_id,
+            system_message=system_message
+        ).with_model("openai", config["model_name"])
+    else:
+        # Use Emergent integration
+        chat = LlmChat(
+            api_key=config["api_key"],
+            session_id=session_id,
+            system_message=system_message
+        ).with_model("openai", config["model_name"])  # Emergent handles OpenAI models
+    
+    return chat
+
 async def store_extracted_data_normalized(document_id: str, document: dict, project: dict, extracted_data: dict):
     """Store extracted data in normalized format for efficient querying by client"""
     try:
