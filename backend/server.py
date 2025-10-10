@@ -1148,16 +1148,16 @@ async def store_extracted_data_normalized(document_id: str, document: dict, proj
     except Exception as e:
         logger.error(f"Error storing normalized extracted data for document {document_id}: {str(e)}")
 
-async def process_single_chunk(file_path: str, semantic_instructions: str, api_key: str, chunk_number: int, start_page: int, end_page: int) -> dict:
-    """Process a single PDF chunk with AI"""
+async def process_single_chunk(file_path: str, semantic_instructions: str, ai_config: dict, chunk_number: int, start_page: int, end_page: int) -> dict:
+    """Process a single PDF chunk with AI using configured model"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
         
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"chunk_processing_{chunk_number}_{start_page}_{end_page}",
-            system_message="You are an expert document analysis AI. Extract structured data from document chunks based on specific instructions."
-        ).with_model("gemini", "gemini-2.0-flash")
+        chat = await create_ai_chat_with_config(
+            ai_config,
+            f"chunk_processing_{chunk_number}_{start_page}_{end_page}",
+            "You are an expert document analysis AI. Extract structured data from document chunks based on specific instructions."
+        )
         
         # Create file content for AI processing
         file_content = FileContentWithMimeType(
