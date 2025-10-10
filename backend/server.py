@@ -1390,11 +1390,14 @@ async def process_document_with_ai(document_id: str, project: dict):
                 chunk_path = Path(document["file_path"]).parent / chunk_filename
                 
                 if create_pdf_chunk(document["file_path"], start_page, end_page, str(chunk_path)):
+                    # Get AI config for data extraction
+                    extraction_config = await get_ai_config_for_task(company["id"], "data_extraction")
+                    
                     # Process this chunk with AI
                     chunk_result = await process_single_chunk(
                         str(chunk_path), 
                         semantic_instructions, 
-                        ai_config["api_key"],
+                        extraction_config,
                         chunk_idx + 1,
                         start_page + 1,
                         end_page + 1
