@@ -319,14 +319,35 @@ class AIConfigTester:
             print("❌ No company ID available for client AI config test")
             return False
         
-        # Login as client user
+        # First create a client user
         admin_token = self.token
+        client_user_data = {
+            "email": f"testclient{datetime.now().strftime('%H%M%S')}@test.com",
+            "name": "Test Client User",
+            "password": "testpass123",
+            "role": "client",
+            "company_id": self.company_id
+        }
+        
+        success_create, create_response = self.run_test(
+            "Create Client User for AI Config Test",
+            "POST",
+            "auth/register",
+            200,
+            data=client_user_data
+        )
+        
+        if not success_create:
+            print("❌ Could not create client user for AI config test")
+            return False
+        
+        # Login as client user
         success_login, login_response = self.run_test(
             "Client Login for AI Config Test",
             "POST",
             "auth/login",
             200,
-            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+            data={"email": client_user_data["email"], "password": client_user_data["password"]}
         )
         
         if not success_login or 'access_token' not in login_response:
