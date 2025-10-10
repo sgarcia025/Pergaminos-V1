@@ -1478,7 +1478,7 @@ async def process_document_with_ai(document_id: str, project: dict):
         
         # Note: Switch to Gemini for file processing since it supports file attachments
         gemini_chat = LlmChat(
-            api_key=api_key,
+            api_key=ai_config["api_key"],
             session_id=f"doc_processing_gemini_{document_id}",
             system_message="You are an expert document analysis AI. Extract structured data from documents based on specific instructions."
         ).with_model("gemini", "gemini-2.0-flash")
