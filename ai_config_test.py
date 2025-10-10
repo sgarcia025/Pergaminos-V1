@@ -397,7 +397,8 @@ class AIConfigTester:
             "Client Create AI Configuration (Should Fail)",
             "POST",
             f"companies/{client_company_id}/ai-config",
-            403  # Should return 403 Forbidden
+            403,  # Should return 403 Forbidden
+            data=client_config_data
         )
         
         # Restore admin token
