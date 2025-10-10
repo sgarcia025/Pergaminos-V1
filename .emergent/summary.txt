@@ -1,75 +1,75 @@
 <analysis>
-The previous AI engineer successfully developed the Pergaminos digitalización application incrementally, adapting to user feedback. Starting with an MVP of user/company/project management and basic AI document processing, the engineer then refined the AI features for renaming/reordering documents and added robust modules for QA agents, user/role management, and a dedicated client portal. Key technologies like FastAPI, React, MongoDB, JWT, Shadcn UI, and emergentintegrations for LLM (OpenAI GPT-4o) were utilized. The development followed an iterative approach, with frequent testing (manual and automated via ) and direct addressing of user-reported issues, demonstrating a strong focus on delivering functional features while adhering to specific UI/UX and architectural guidelines. The process included fetching  for AI integration and installing necessary libraries like  for PDF generation. The current state is a comprehensive system, awaiting clarification on a user query regarding the  folder.
+The AI engineer successfully built upon an existing MVP, iteratively enhancing the Pergaminos digitalización application based on user feedback. Initial work included fundamental CRUD for companies and projects, basic AI document processing, and user/role management. The engineer then focused on expanding core features: implementing admin deletion for key entities (companies, projects, users), enhancing company data with new fields, and introducing a specialized asesor user role. Significant effort was dedicated to improving document processing, enabling parallel PDF uploads with robust chunking for large files. A crucial pre-extraction QA workflow was integrated, allowing manual review of document quality before AI data extraction. Data storage for extracted information was normalized into a client-specific database. The final major feature delivered was a configurable AI module, empowering clients to manage their OpenAI API keys and models for specific AI tasks securely. Technical challenges included handling large PDF files, ensuring secure API key encryption via Fernet, and resolving specific frontend rendering issues. The engineer consistently validated changes with backend testing and sought user input for frontend verification and next steps.
 </analysis>
 
 <product_requirements>
-The user requested a frontend for Pergaminos digitalización with a modern, minimalist green-toned style.
-Core functionalities included:
-1.  **Company (Client) Management:** Create and manage client companies.
-2.  **Digitization Project Creation:** Create projects linked to each client.
-3.  **PDF Document Upload:** Upload PDFs to projects for AI processing.
-4.  **Semantic Data Extraction:** Semantically instruct AI on data extraction for project database.
-5.  **AI QA Agents:** Create AI QA agents (universal or per-project) with semantic instructions (e.g., image clarity, orientation, signatures).
-6.  **Processed Document Delivery:** Deliver AI-processed documents.
-7.  **Document Reordering/Renaming Agent:** Create an AI agent to semantically reorder and rename processed documents, with a new PDF export option.
-8.  **Processed Document Query Portal:** A portal for querying processed documents by client and project.
-9.  **User Management & Roles:** Create system users (Pergaminos staff or client) with defined permissions. Client roles should only view their projects and query AI on extracted fields.
-10. **Initial Dashboard:** Display KPIs for digitalization management (clients, projects, successful/failed/human review documents).
-11. **Secure Login Screen:** Implement a secure login (test credentials provided).
+The initial request was for a modern, green-toned frontend for Pergaminos digitalización with a robust backend. Key functionalities included:
+1.  **Company/Project Management:** Creation and management of client companies and digitization projects.
+2.  **PDF Document Processing:** Uploading, AI-driven semantic data extraction, renaming, reordering, and PDF export.
+3.  **AI QA Agents:** Creation of agents with semantic instructions for quality checks (e.g., image clarity, orientation).
+4.  **User/Role Management:** System users (staff/client) with permissions, secure login, and a client portal.
+5.  **Dashboard:** Displaying key performance indicators.
 
-The engineer implemented these features, adapting and expanding based on user feedback to create dedicated modules for document processing, QA agents, user management, and a client portal. Test credentials for both staff and client users were provided.
+Recent enhancements include:
+6.  **Admin Deletion:** Ability for administrators to delete companies, projects, and users.
+7.  **Expanded Company Fields:** Addition of detailed company information (Razón Social, NIT, Contacto, Correo, Teléfono, Dirección, Asesor Comercial, Segmento, Estado, Corporación).
+8.  **Asesor Role:** New staff role with restricted access to only assigned companies.
+9.  **Parallel PDF Processing:** Capability to upload and process up to 10 PDFs simultaneously per project, with chunking for very large documents (e.g., 5000+ pages).
+10. **Pre-Extraction QA Workflow:** Implementing QA checks before AI data extraction, including a dashboard for important findings requiring manual review.
+11. **Normalized Extracted Data:** Storing AI-extracted data in a client-specific, normalized database structure for efficient querying.
+12. **AI Configuration Module:** Allowing clients to configure their own OpenAI API keys and specific models for data extraction, QA, and document processing, with secure key encryption.
 </product_requirements>
 
 <key_technical_concepts>
-- FastAPI (Backend API)
-- React (Frontend)
-- MongoDB (Database)
-- JWT (Authentication)
-- Shadcn UI (Component Library)
-- Tailwind CSS (Styling)
-- emergentintegrations (Internal LLM Integration Library)
-- EMERGENT_LLM_KEY (Universal LLM API Key)
-- OpenAI GPT-4o (AI Processing)
-- oCr and Custom Semantic Analysis
-- ReportLab (PDF Generation)
+-   FastAPI (Backend API)
+-   React (Frontend)
+-   MongoDB (Database)
+-   JWT (Authentication)
+-   Shadcn UI & Tailwind CSS (UI/Styling)
+-    (LLM Integration Library)
+-   OpenAI GPT-4o (AI Processing, configurable)
+-   PyPDF2 (PDF handling for chunking)
+-   asyncio & BackgroundTasks (Parallel processing)
+-   Fernet Encryption (Secure API key storage)
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a standard full-stack architecture:
+The application follows a standard full-stack architecture with a React frontend and a FastAPI backend, utilizing MongoDB for data persistence.
 
-- : This is the main FastAPI application file. It defines all API endpoints for authentication (JWT), user management (staff/client roles, creation), company CRUD, project CRUD, document upload and AI processing, QA agent creation/management, and document renaming/reordering with PDF export. It interacts with MongoDB for data persistence and integrates with the  library for AI tasks. This file has been extensively modified throughout the development to add all required backend logic.
-- : Lists all Python dependencies, including To use the fastapi command, please install "fastapi[standard]":
 
-	pip install "fastapi[standard]", , , , , and . It's updated when new libraries are installed.
-- : Contains  (e.g., ) and  for MongoDB connection.
-- : The main React component. It sets up the application's routing using , integrates  and , and includes the  for navigation. Its  have been updated to include all new modules like , , , , , and , often conditionally rendered based on user roles.
--  and : These files define the global styling using Tailwind CSS, implementing the modern, minimalist design with attractive green tones as requested.
-- : This directory houses all custom React components.
-    - : Handles user login and registration.
-    - : Displays key performance indicators.
-    - : Provides navigation, updated to show modules based on user roles.
-    - : Manages client companies.
-    - : Manages digitization projects.
-    - : Displays details of a specific project and previously contained document-related functionalities.
-    - : A dedicated module for selecting projects, inputting semantic instructions for renaming/reordering documents, previewing changes, and exporting processed PDFs. This was created in response to specific user feedback.
-    - : Module for creating and managing AI QA agents.
-    - : Module for creating and assigning roles to system users.
-    - : A specific portal for client users to view their projects and interact with AI for document queries.
-- : Contains  (e.g., ) for API calls.
+
+-   : The main FastAPI application file, containing all API endpoints and business logic.
+    -   **Changes:** Added/modified endpoints for company/project/user deletion, company editing, segment management, multi-PDF batch upload with chunking, QA workflow integration, extracted data management, and AI configuration management with Fernet encryption. Updated Pydantic models for Company, Document, QAAgent, BatchTask, ExtractedDataItem, ExtractedDataSummary, and AIConfiguration. Integrated PyPDF2 for PDF chunking and  for concurrency control.
+-   : Updated to include  and .
+-   : Main HTML entry point.
+    -   **Changes:** Removed Made with emergent watermark and updated meta description.
+-   : Main React component for routing.
+    -   **Changes:** Added routes for , , , and .
+-   : Global styling.
+    -   **Changes:** Modified styles for  to reduce the size of the document upload area.
+-   : Provides application navigation.
+    -   **Changes:** Added navigation links for Segmentos, Hallazgos QA, Datos Extraídos, and Configuración IA (role-based visibility).
+-   : Manages client companies.
+    -   **Changes:** Implemented delete and edit functionalities, updated form to include new company fields,  dropdown, and  selection.
+-   : Manages digitization projects.
+    -   **Changes:** Added delete functionality.
+-   : Manages system users.
+    -   **Changes:** Removed Cliente Prueba button and test credential generation, added user deletion, and updated user creation form to include the asesor role.
+-   : Displays project details and handles document processing.
+    -   **Changes:** Updated file upload to support multiple files and batch processing with progress indicators, adjusted UI for upload area size, fixed document renaming (JSON payload), enhanced status display for new QA workflow, and ensured safe rendering of document data.
+-   : Manages AI QA agents.
+    -   **Changes:** Added fields for  and  to the form, implemented edit and delete functionalities.
+-    (NEW): Frontend component for managing industry segments.
+-    (NEW): Frontend component for reviewing and managing QA findings for documents.
+-    (NEW): Frontend component to display normalized AI-extracted data by client.
+-    (NEW): Frontend component for clients to configure OpenAI API keys and models for AI tasks.
 </code_architecture>
 
 <pending_tasks>
-- Implement a backend endpoint to update a user's company ID (encountered Not Found error).
-- Fully test and confirm the semantic instructions for QA agent functionality.
-- Address the persistent Script error: expected : encountered during manual frontend testing, although automated tests report success for related features.
-</pending_tasks>
-
-<current_work>
-Immediately before this summary request, the AI engineer was responding to the user's explicit requests to view the codebase. The engineer had just presented the contents of the  and  files. The very last interaction was a user query: En donde está la carpeta emergentintegrations. This implies the current task is to clarify the nature and location of the  library. Prior to this, the engineer successfully implemented the enhanced document renaming, reordering, and PDF export functionality, and had provided a final summary of the completed system.
-</current_work>
-
-<optional_next_step>
-Explain that  is a Python library installed via 
+-   Implement a backend endpoint to update a user's company ID (encountered Not Found error previously).
+-   Fully test and confirm the semantic instructions for QA agent functionality (ongoing verification).
+-   Address the persistent Script error: expected : encountered during manual frontend testing (from initial context).
+-   Provide clarification to the user that  is a Python library installed via 
 Usage:   
   pip <command> [options]
 
@@ -146,4 +146,22 @@ General Options:
   --resume-retries <resume_retries>
                               Maximum attempts to resume or restart an
                               incomplete download. (default: 5), not a source code folder.
+</pending_tasks>
+
+<current_work>
+Immediately before this summary request, the AI engineer successfully implemented a comprehensive **AI Configuration module**. This module enables clients to securely manage their OpenAI API keys and select specific AI models (, , ) for data extraction, QA processing, and general document processing. The backend () now includes an  Pydantic model, CRUD endpoints (), and **Fernet encryption** for secure API key storage. A  utility, integrated into  and , fetches and decrypts these keys, with a fallback to a universal Emergent LLM key. A new frontend component, , its route, and a sidebar link provide an intuitive UI for configuration.
+
+Prior to this, the engineer also:
+-   Implemented a **normalized database structure** for AI-extracted data (,  collections) with backend endpoints and a  frontend component.
+-   Enhanced the **QA Agents module**: QA now runs *before* AI data extraction, displaying findings for manual review. This involved updating  and  models, creating , adding QA metrics to the dashboard, and enabling edit/delete functionality for QA agents, alongside clear status transitions.
+-   Addressed a persistent **frontend error in PDF renaming** by adjusting backend/frontend communication to use JSON payloads.
+-   Implemented **parallel PDF processing** for up to 10 documents simultaneously, including **chunking for large PDFs** (5000+ pages with adaptive chunk sizes), batch status tracking, and frontend progress indicators.
+-   Refactored  and  modules to include **admin deletion**, **expanded company fields**, and an asesor user role with restricted viewing. A  component was added for industry segments.
+-   Removed UI elements like the Made with emergent watermark and a Cliente Prueba button.
+
+The last action was successful backend testing of the AI Configuration module, and a prompt for frontend testing.
+</current_work>
+
+<optional_next_step>
+The next step is to proceed with frontend testing of the newly implemented AI Configuration module.
 </optional_next_step>
