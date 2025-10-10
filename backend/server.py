@@ -1442,10 +1442,11 @@ async def process_document_with_ai(document_id: str, project: dict):
         else:
             # Process small document normally
             logger.info(f"Processing small PDF ({total_pages} pages) normally")
+            extraction_config = await get_ai_config_for_task(company["id"], "data_extraction")
             combined_data = await process_single_chunk(
                 document["file_path"],
                 semantic_instructions,
-                ai_config["api_key"],
+                extraction_config,
                 1,
                 1,
                 total_pages
