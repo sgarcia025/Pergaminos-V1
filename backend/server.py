@@ -1351,12 +1351,17 @@ async def process_document_with_ai(document_id: str, project: dict):
             }
         )
         
-        # Initialize AI chat
-        api_key = os.environ.get('EMERGENT_LLM_KEY')
-        if not api_key:
+        # Get AI configuration for QA processing
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if not company:
+            logger.error(f"Company not found for project {project['id']}")
+            return
+        
+        ai_config = await get_ai_config_for_task(company["id"], "qa_processing")
+        if not ai_config.get("api_key"):
             await db.documents.update_one(
                 {"id": document_id},
-                {"$set": {"status": "failed", "error": "Missing AI API key"}}
+                {"$set": {"status": "failed", "error": "No AI configuration available"}}
             )
             return
         
