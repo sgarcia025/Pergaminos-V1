@@ -1438,7 +1438,7 @@ async def process_document_with_ai(document_id: str, project: dict):
             combined_data = await process_single_chunk(
                 document["file_path"],
                 semantic_instructions,
-                api_key,
+                ai_config["api_key"],
                 1,
                 1,
                 total_pages
