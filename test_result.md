@@ -560,7 +560,7 @@ frontend:
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: true
         - agent: "testing"
@@ -571,6 +571,9 @@ frontend:
         - working: true
         - agent: "main"
         - comment: "SEGUNDO PROBLEMA CRÍTICO IDENTIFICADO Y RESUELTO: emergentintegrations solo permite file attachments con Gemini provider, no con OpenAI. Error: 'File attachments are only supported with Gemini provider'. SOLUCIÓN: Modificada función run_qa_checks() para extraer texto del PDF usando PyPDF2 y enviarlo en el prompt en lugar de adjuntar archivo. Ahora procesa primeras 10 páginas del PDF, extrae texto y lo envía en el prompt. Funciona con OpenAI (API keys propias) y Emergent LLM key. Limitación documentada: análisis visual (image_clarity, orientation) no disponible con procesamiento text-only, requeriría Gemini o GPT-4 Vision. Backend reiniciado. Requiere testing completo del flujo QA."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CRITICAL BUG FIX #2 VERIFIED SUCCESSFULLY: QA processing with OpenAI provider is now working correctly. COMPREHENSIVE TESTING COMPLETED: (1) Text extraction from PDF working - no more 'File attachments only supported with Gemini provider' error, (2) AI chat creation successful with both customer OpenAI API keys and Emergent LLM fallback, (3) QA processing pipeline functional - documents transition through qa_pending → processing states, (4) Backend logs confirm: 'Successfully extracted text from PDF', 'AI chat created successfully', no file attachment errors, (5) Error handling improved - invalid API keys properly detected and handled, (6) Fallback to Emergent LLM working when no customer API key configured. LIMITATION DOCUMENTED: Visual analysis (image_clarity, document_orientation) not available with text-only processing - requires Gemini or GPT-4 Vision. The fix successfully resolves the core issue: QA processing now works with OpenAI provider using text extraction instead of file attachments."
 
   - task: "Estados QA mejorados"
     implemented: true
