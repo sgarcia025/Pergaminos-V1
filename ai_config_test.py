@@ -274,7 +274,7 @@ class AIConfigTester:
         update_data = {
             "model_name": "gpt-4o-mini",  # Changed from gpt-4o
             "api_key": "sk-updated-test-api-key-99999",  # New API key
-            "model_config": {
+            "model_parameters": {
                 "temperature": 0.2,  # Changed from 0.1
                 "max_tokens": 1500   # Changed from 2000
             }
