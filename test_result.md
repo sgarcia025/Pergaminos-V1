@@ -612,15 +612,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Crear configuración AI por empresa"
-    - "Obtener configuraciones AI de empresa"
-    - "Actualizar configuración AI existente"
-    - "Eliminar configuración AI"
-    - "Recomendaciones de modelos AI"
-    - "Encriptación segura de API keys"
-    - "Validaciones de permisos AI config"
-    - "Tipos de configuración AI"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
