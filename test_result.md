@@ -160,35 +160,101 @@ user_problem_statement: |
   OBJETIVO: Validar que el sistema permite configuraciones AI personalizadas por cliente con almacenamiento seguro de API keys.
 
 backend:
-  - task: "Endpoint rename documents arreglado"
+  - task: "Crear configuración AI por empresa"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: false
+        - working: "NA"
         - agent: "main"
-        - comment: "Cambiado de Form(...) a modelo Pydantic DocumentRename para aceptar JSON en lugar de FormData"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ CRITICAL FIX TESTED SUCCESSFULLY: PUT /api/documents/{document_id}/rename endpoint working perfectly with JSON payload. Tested: (1) Document rename with JSON data successful - accepts {'new_name': 'nuevo_nombre.pdf'} format, (2) Special characters, spaces, and accents handled correctly (tested with 'Documento con Espacios y Acentos.pdf', 'Document_with-special@characters#2024.pdf', 'Contrato Número 123 - Empresa López & Asociados.pdf'), (3) Document name updates correctly in database and response, (4) No more 'Field required' errors. DocumentRename Pydantic model working as expected instead of Form(...) parameter."
+        - comment: "Implementado endpoint POST /api/companies/{company_id}/ai-config para crear configuraciones AI con encriptación de API keys usando Fernet"
 
-  - task: "Configuración umbrales QA mejorada"
+  - task: "Obtener configuraciones AI de empresa"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: false
+        - working: "NA"
         - agent: "main"
-        - comment: "Mejorada configuración de umbrales QA con campos pass_threshold y critical_threshold visibles y configurables"
-        - working: true
-        - agent: "testing"
-        - comment: "✅ CRITICAL FIX TESTED SUCCESSFULLY: QA Agent threshold configuration working perfectly. Tested: (1) Create QA Agent with custom thresholds - pass_threshold=70, critical_threshold=85 saved correctly, (2) Edit QA Agent thresholds - successfully updated from 70/85 to 65/80, changed scope to universal, disabled signature/seal detection, (3) Extreme threshold values accepted - pass_threshold=90, critical_threshold=95 working correctly, (4) Threshold behavior validated: 0-64% = qa_failed (rejected), 65-79% = needs_review (manual review), 80-100% = qa_passed → processing (auto-approved). All threshold ranges and QA state transitions working as designed."
+        - comment: "Implementado endpoint GET /api/companies/{company_id}/ai-config para listar configuraciones con API keys enmascaradas como ***ENCRYPTED***"
+
+  - task: "Actualizar configuración AI existente"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementado endpoint PUT /api/companies/{company_id}/ai-config/{config_id} para actualizar configuraciones con re-encriptación de API keys"
+
+  - task: "Eliminar configuración AI"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementado endpoint DELETE /api/companies/{company_id}/ai-config/{config_id} con soft delete (is_active = false)"
+
+  - task: "Recomendaciones de modelos AI"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementado endpoint GET /api/ai-models/recommendations con modelos recomendados por tipo de tarea (data_extraction, qa_processing, document_processing)"
+
+  - task: "Encriptación segura de API keys"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementadas funciones encrypt_api_key() y decrypt_api_key() usando Fernet encryption para almacenamiento seguro"
+
+  - task: "Validaciones de permisos AI config"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementadas validaciones para que solo usuarios staff puedan gestionar configuraciones AI"
+
+  - task: "Tipos de configuración AI"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementados tipos de configuración: data_extraction, qa_processing, document_processing con validaciones"
 
   - task: "Eliminar marca de agua Made with emergent"
     implemented: true
