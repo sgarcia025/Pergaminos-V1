@@ -589,8 +589,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Endpoint rename documents arreglado"
-    - "Configuración umbrales QA mejorada"
+    - "Crear configuración AI por empresa"
+    - "Obtener configuraciones AI de empresa"
+    - "Actualizar configuración AI existente"
+    - "Eliminar configuración AI"
+    - "Recomendaciones de modelos AI"
+    - "Encriptación segura de API keys"
+    - "Validaciones de permisos AI config"
+    - "Tipos de configuración AI"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
