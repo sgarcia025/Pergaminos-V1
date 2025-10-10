@@ -1060,24 +1060,42 @@ async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
 
 async def create_ai_chat_with_config(config: dict, session_id: str, system_message: str):
     """Create AI chat instance with configuration"""
-    from emergentintegrations.llm.chat import LlmChat
-    
-    if config["provider"] == "openai":
-        # Use OpenAI directly with customer's API key
-        chat = LlmChat(
-            api_key=config["api_key"],
-            session_id=session_id,
-            system_message=system_message
-        ).with_model("openai", config["model_name"])
-    else:
-        # Use Emergent integration
-        chat = LlmChat(
-            api_key=config["api_key"],
-            session_id=session_id,
-            system_message=system_message
-        ).with_model("openai", config["model_name"])  # Emergent handles OpenAI models
-    
-    return chat
+    try:
+        from emergentintegrations.llm.chat import LlmChat
+        
+        logger.info(f"Creating AI chat with provider: {config['provider']}, model: {config['model_name']}, source: {config.get('source', 'unknown')}")
+        
+        # Validate API key
+        if not config.get("api_key"):
+            raise ValueError("API key is missing from configuration")
+        
+        # Log API key info (first 10 chars for debugging, never log full key)
+        key_preview = config["api_key"][:10] + "..." if len(config["api_key"]) > 10 else "short_key"
+        logger.info(f"Using API key starting with: {key_preview}")
+        
+        if config["provider"] == "openai":
+            # Use OpenAI directly with customer's API key
+            logger.info("Initializing LlmChat with customer's OpenAI API key")
+            chat = LlmChat(
+                api_key=config["api_key"],
+                session_id=session_id,
+                system_message=system_message
+            ).with_model("openai", config["model_name"])
+        else:
+            # Use Emergent integration
+            logger.info("Initializing LlmChat with Emergent LLM key")
+            chat = LlmChat(
+                api_key=config["api_key"],
+                session_id=session_id,
+                system_message=system_message
+            ).with_model("openai", config["model_name"])  # Emergent handles OpenAI models
+        
+        logger.info(f"AI chat created successfully with session_id: {session_id}")
+        return chat
+        
+    except Exception as e:
+        logger.error(f"Failed to create AI chat: {str(e)}", exc_info=True)
+        raise
 
 async def store_extracted_data_normalized(document_id: str, document: dict, project: dict, extracted_data: dict):
     """Store extracted data in normalized format for efficient querying by client"""
