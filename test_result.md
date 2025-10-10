@@ -468,9 +468,9 @@ frontend:
     implemented: true
     working: true
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
@@ -478,6 +478,12 @@ frontend:
         - working: true
         - agent: "testing"
         - comment: "✅ BATCH PROCESSING TESTED SUCCESSFULLY: All batch processing functionality working perfectly. Tested: (1) POST /api/projects/{project_id}/documents/batch-upload - Successfully uploaded 3 PDFs in batch, returned batch_task_id and document_ids, (2) Batch limit enforcement - Correctly rejected 11 files (limit is 10) with 400 status, (3) GET /api/projects/{project_id}/batch-status/{batch_task_id} - Status tracking working correctly, shows progress, completed/failed counts, individual document statuses, (4) Parallel processing - Batch completed successfully with 3/3 documents processed, 0 failed. Semaphore concurrency control and asyncio processing working as expected."
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó error al procesar documento después del QA: 'File attachments are only supported with Gemini provider' en la extracción de datos."
+        - working: true
+        - agent: "main"
+        - comment: "CUARTO PROBLEMA IDENTIFICADO Y RESUELTO: Mismo error de file attachments ocurría en process_single_chunk() para extracción de datos, no solo en QA. Error: 'File attachments are only supported with Gemini provider'. SOLUCIÓN: Aplicado mismo fix a process_single_chunk() - extrae texto del PDF usando PyPDF2 del rango de páginas especificado (start_page a end_page) y lo envía en el prompt en lugar de adjuntar archivo. Ahora toda la pipeline (QA + Extracción de Datos) funciona con OpenAI text-only processing. Backend reiniciado. Necesita testing completo del flujo end-to-end."
 
   - task: "Frontend subida múltiple con progreso"
     implemented: true
