@@ -2781,14 +2781,20 @@ async def get_ai_configurations(
     # Get configurations
     configs = await db.ai_configurations.find(query).to_list(1000)
     
-    # Remove API keys from response for security
+    # Convert to response format and remove API keys for security
+    config_responses = []
     for config in configs:
-        config["api_key"] = "***ENCRYPTED***" if config.get("api_key") else None
+        config_dict = dict(config)
+        config_dict["api_key"] = "***ENCRYPTED***" if config.get("api_key") else None
+        # Remove MongoDB ObjectId if present
+        if "_id" in config_dict:
+            del config_dict["_id"]
+        config_responses.append(config_dict)
     
     return {
         "company_id": company_id,
         "company_name": company["name"],
-        "configurations": configs,
+        "configurations": config_responses,
         "available_types": ["data_extraction", "qa_processing", "document_processing"]
     }
 
