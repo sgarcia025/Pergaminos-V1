@@ -132,6 +132,33 @@ class ExtractedDataSummary(BaseModel):
     total_fields: int
     extraction_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class AIConfiguration(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str  # Configuración por empresa
+    config_type: str  # "data_extraction", "qa_processing", "document_processing"
+    provider: str = "openai"  # openai, emergent
+    api_key: Optional[str] = None  # Encrypted storage recommended
+    model_name: str  # Specific model for the task
+    model_config: Dict[str, Any] = {}  # Additional model parameters
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str  # Staff user who configured
+
+class AIConfigurationCreate(BaseModel):
+    config_type: str
+    provider: str = "openai"
+    api_key: Optional[str] = None
+    model_name: str
+    model_config: Dict[str, Any] = {}
+
+class AIConfigurationUpdate(BaseModel):
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    model_name: Optional[str] = None
+    model_config: Optional[Dict[str, Any]] = None
+    is_active: Optional[bool] = None
+
 class Company(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str  # Nombre comercial
