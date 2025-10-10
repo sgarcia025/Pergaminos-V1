@@ -947,7 +947,8 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                 response = await chat.send_message(user_message)
                 
                 # Parse AI response
-                import json, re
+                import json
+                import re
                 json_match = re.search(r'\{.*\}', response, re.DOTALL)
                 
                 if json_match:
@@ -2726,7 +2727,7 @@ async def create_ai_configuration(
     if config_data.api_key:
         try:
             encrypted_key = encrypt_api_key(config_data.api_key)
-        except Exception as e:
+        except Exception:
             raise HTTPException(status_code=400, detail="Invalid API key format")
     
     # Create configuration
@@ -2811,7 +2812,7 @@ async def update_ai_configuration(
             # Encrypt new API key
             try:
                 update_fields["api_key"] = encrypt_api_key(value)
-            except Exception as e:
+            except Exception:
                 raise HTTPException(status_code=400, detail="Invalid API key format")
         else:
             update_fields[field] = value
