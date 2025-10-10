@@ -4678,6 +4678,20 @@ def main():
     test_results.append(("Existing Admin Login", tester.test_existing_admin_login()))
     test_results.append(("Existing Client Login", tester.test_existing_client_login()))
     
+    # AI CONFIGURATION MODULE TESTS
+    print("\n🔍 Testing AI CONFIGURATION MODULE...")
+    test_results.append(("Get AI Model Recommendations", tester.test_get_ai_model_recommendations()))
+    test_results.append(("Create AI Configuration", tester.test_create_ai_configuration()))
+    test_results.append(("Create Duplicate AI Configuration (Should Fail)", tester.test_create_duplicate_ai_configuration_should_fail()))
+    test_results.append(("Create Different Type AI Configuration", tester.test_create_different_type_ai_configuration()))
+    test_results.append(("Get AI Configurations", tester.test_get_ai_configurations()))
+    test_results.append(("Get AI Configurations Filtered", tester.test_get_ai_configurations_filtered()))
+    test_results.append(("Update AI Configuration", tester.test_update_ai_configuration()))
+    test_results.append(("Delete AI Configuration", tester.test_delete_ai_configuration()))
+    test_results.append(("Client Cannot Manage AI Configurations", tester.test_client_cannot_manage_ai_configurations()))
+    test_results.append(("Non-existent Company AI Config", tester.test_nonexistent_company_ai_config()))
+    test_results.append(("Invalid API Key Format", tester.test_invalid_api_key_format()))
+    
     # Company management tests
     test_results.append(("Create Company", tester.test_create_company()))
     test_results.append(("Get Companies", tester.test_get_companies()))
