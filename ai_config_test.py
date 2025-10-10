@@ -386,6 +386,9 @@ class AIConfigTester:
             "model_name": "gpt-4o"
         }
         
+        print(f"   Attempting to create AI config for company: {client_company_id}")
+        print(f"   Config data: {client_config_data}")
+        
         success, response = self.run_test(
             "Client Create AI Configuration (Should Fail)",
             "POST",
