@@ -874,6 +874,7 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
     """Run QA checks on document using specified agents"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        import PyPDF2
         
         # Get AI configuration for QA
         project = await db.projects.find_one({"id": document["project_id"]})
@@ -882,6 +883,28 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
         ai_config = await get_ai_config_for_task(company["id"], "qa_processing")
         if not ai_config.get("api_key"):
             return {"error": "No AI configuration available", "overall_score": 0}
+        
+        # Extract text from PDF for analysis
+        # Note: emergentintegrations only supports file attachments with Gemini provider
+        # For OpenAI, we extract text and send it in the prompt
+        pdf_text = ""
+        try:
+            with open(document["file_path"], 'rb') as pdf_file:
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                total_pages = len(pdf_reader.pages)
+                # Extract text from first 10 pages for QA (to avoid token limits)
+                pages_to_extract = min(10, total_pages)
+                for page_num in range(pages_to_extract):
+                    page = pdf_reader.pages[page_num]
+                    pdf_text += f"\n--- PAGE {page_num + 1} ---\n"
+                    pdf_text += page.extract_text()
+                
+                if total_pages > pages_to_extract:
+                    pdf_text += f"\n\n[Note: Document has {total_pages} total pages, analyzed first {pages_to_extract} pages]"
+                    
+        except Exception as e:
+            logger.error(f"Error extracting PDF text for QA: {str(e)}")
+            pdf_text = "[Error: Could not extract text from PDF]"
         
         all_results = []
         critical_findings = []
@@ -893,12 +916,6 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                     ai_config,
                     f"qa_{agent['id']}_{document_id}",
                     "You are a document quality assurance AI. Analyze documents for quality issues and provide detailed assessment."
-                )
-                
-                # Create file content for analysis
-                file_content = FileContentWithMimeType(
-                    file_path=document["file_path"],
-                    mime_type="application/pdf"
                 )
                 
                 # Create QA prompt
@@ -913,21 +930,24 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                 QUALITY CHECKS TO PERFORM:
                 {', '.join(active_checks) if active_checks else 'General document quality assessment'}
                 
+                DOCUMENT TEXT CONTENT:
+                {pdf_text[:15000]}
+                
                 Please provide a JSON response with:
                 {{
                     "overall_score": <0-100>,
                     "quality_assessment": {{
-                        "image_clarity": <0-100>,
-                        "document_orientation": <0-100>,
                         "text_readability": <0-100>,
-                        "completeness": <0-100>
+                        "completeness": <0-100>,
+                        "structure": <0-100>,
+                        "content_quality": <0-100>
                     }},
                     "findings": [
                         {{
                             "type": "critical|warning|info",
-                            "category": "clarity|orientation|text|completeness|other",
+                            "category": "readability|completeness|structure|content|other",
                             "description": "Detailed description",
-                            "location": "page number or area",
+                            "location": "page number or section",
                             "recommendation": "How to fix"
                         }}
                     ],
@@ -939,12 +959,12 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                 - 80-100: Excellent quality, approve automatically
                 - 60-79: Good quality but may need review
                 - 0-59: Poor quality, likely needs rejection or reprocessing
+                
+                Note: Visual quality checks (image clarity, orientation) require visual analysis which is not available with text-only processing.
+                Focus on text readability, completeness, structure, and content quality.
                 """
                 
-                user_message = UserMessage(
-                    text=prompt,
-                    file_contents=[file_content]
-                )
+                user_message = UserMessage(text=prompt)
                 
                 # Get AI response
                 response = await chat.send_message(user_message)
