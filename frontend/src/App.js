@@ -16,6 +16,7 @@ import ClientPortal from "./components/ClientPortal";
 import Segmentos from "./components/Segmentos";
 import QAFindings from "./components/QAFindings";
 import ExtractedData from "./components/ExtractedData";
+import AIConfiguration from "./components/AIConfiguration";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
