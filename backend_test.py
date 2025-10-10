@@ -4837,6 +4837,7 @@ def main():
     # Group results by category
     categories = {
         "Authentication & Security": ["Initialize Admin", "Admin Login", "Get Current User", "Invalid Login", "Unauthorized Access", "Existing Admin Login", "Existing Client Login"],
+        "AI Configuration Module": ["Get AI Model Recommendations", "Create AI Configuration", "Create Duplicate AI Configuration (Should Fail)", "Create Different Type AI Configuration", "Get AI Configurations", "Get AI Configurations Filtered", "Update AI Configuration", "Delete AI Configuration", "Client Cannot Manage AI Configurations", "Non-existent Company AI Config", "Invalid API Key Format"],
         "Company Management": ["Create Company", "Get Companies", "Get Company Detail"],
         "Project Management": ["Create Project", "Get Projects", "Get Project Detail", "Get Project Documents"],
         "Document Management": ["Upload Document", "Document Rename", "Document Reorder Start", "Document Reorder Status"],
