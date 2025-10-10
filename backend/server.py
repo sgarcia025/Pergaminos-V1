@@ -1430,7 +1430,7 @@ async def process_document_with_ai(document_id: str, project: dict):
             pages_per_second = total_pages / processing_time if processing_time > 0 else 0
             
             logger.info(f"Chunk processing completed: {total_pages} pages in {processing_time:.1f}s ({pages_per_second:.2f} pages/sec)")
-            logger.info(f"Processing efficiency: {chunk_count} chunks with {max_concurrency} concurrent workers")
+            logger.info(f"Processing efficiency: {chunk_count} chunks processed")
             
         else:
             # Process small document normally
