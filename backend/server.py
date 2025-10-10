@@ -24,6 +24,18 @@ from cryptography.fernet import Fernet
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Encryption for API keys
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', Fernet.generate_key())
+cipher_suite = Fernet(ENCRYPTION_KEY)
+
+def encrypt_api_key(api_key: str) -> str:
+    """Encrypt API key for secure storage"""
+    return base64.b64encode(cipher_suite.encrypt(api_key.encode())).decode()
+
+def decrypt_api_key(encrypted_key: str) -> str:
+    """Decrypt API key for use"""
+    return cipher_suite.decrypt(base64.b64decode(encrypted_key.encode())).decode()
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
