@@ -1898,17 +1898,30 @@ async def get_qa_findings(project_id: str, current_user: User = Depends(get_curr
     if current_user.role == "client" and current_user.company_id != project["company_id"]:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Get documents with QA issues
+    # Get documents with QA issues (manual_review or failed status)
+    # Include ALL documents that need review, not just those with critical findings
     documents = await db.documents.find({
         "project_id": project_id,
         "qa_status": {"$in": ["failed", "manual_review"]},
-        "qa_findings": {"$exists": True, "$ne": []}
+        "qa_results": {"$exists": True}
     }).to_list(1000)
     
     qa_findings_summary = []
     
     for doc in documents:
-        findings_count = len(doc.get("qa_findings", []))
+        # Get ALL findings from agent results, not just critical ones
+        all_findings = []
+        agent_results = doc.get("qa_results", {}).get("agent_results", [])
+        for agent_result in agent_results:
+            agent_name = agent_result.get("agent_name", "Unknown Agent")
+            findings = agent_result.get("findings", [])
+            for finding in findings:
+                all_findings.append({
+                    "agent": agent_name,
+                    "finding": finding,
+                    "document_id": doc["id"]
+                })
+        
         qa_score = doc.get("qa_results", {}).get("overall_score", 0)
         
         qa_findings_summary.append({
@@ -1916,8 +1929,8 @@ async def get_qa_findings(project_id: str, current_user: User = Depends(get_curr
             "filename": doc["original_filename"],
             "qa_status": doc["qa_status"],
             "qa_score": qa_score,
-            "findings_count": findings_count,
-            "critical_findings": doc.get("qa_findings", []),
+            "findings_count": len(all_findings),
+            "critical_findings": all_findings,  # Now includes all findings, not just critical
             "qa_processed_at": doc.get("qa_processed_at"),
             "status": doc["status"]
         })
