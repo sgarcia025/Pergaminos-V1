@@ -1756,6 +1756,414 @@ startxref
             return True
         return False
 
+    # AI CONFIGURATION MODULE TESTS
+    def test_get_ai_model_recommendations(self):
+        """Test getting AI model recommendations"""
+        success, response = self.run_test(
+            "Get AI Model Recommendations",
+            "GET",
+            "ai-models/recommendations",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify structure for each task type
+            expected_types = ["data_extraction", "qa_processing", "document_processing"]
+            for task_type in expected_types:
+                if task_type in response:
+                    recommendations = response[task_type].get("recommended", [])
+                    if recommendations and len(recommendations) > 0:
+                        # Check first recommendation structure
+                        first_rec = recommendations[0]
+                        if all(key in first_rec for key in ["model", "description", "use_case", "cost_level"]):
+                            print(f"   {task_type}: {len(recommendations)} models recommended")
+                        else:
+                            print(f"❌ Missing fields in {task_type} recommendations")
+                            return False
+                    else:
+                        print(f"❌ No recommendations found for {task_type}")
+                        return False
+                else:
+                    print(f"❌ Missing task type: {task_type}")
+                    return False
+            
+            print(f"   All AI model recommendations structured correctly")
+            return True
+        return False
+
+    def test_create_ai_configuration(self):
+        """Test creating AI configuration for a company"""
+        if not self.company_id:
+            print("❌ No company ID available for AI configuration test")
+            return False
+        
+        ai_config_data = {
+            "config_type": "data_extraction",
+            "provider": "openai",
+            "api_key": "sk-test-api-key-for-testing-12345",
+            "model_name": "gpt-4o",
+            "model_config": {
+                "temperature": 0.1,
+                "max_tokens": 2000
+            }
+        }
+        
+        success, response = self.run_test(
+            "Create AI Configuration",
+            "POST",
+            f"companies/{self.company_id}/ai-config",
+            200,
+            data=ai_config_data
+        )
+        
+        if success and 'id' in response:
+            self.ai_config_id = response['id']
+            print(f"   Created AI configuration ID: {self.ai_config_id}")
+            
+            # Verify API key is encrypted in response
+            if response.get('api_key') == "***ENCRYPTED***":
+                print(f"   API key correctly encrypted in response")
+                
+                # Verify other fields
+                if (response.get('config_type') == ai_config_data['config_type'] and
+                    response.get('provider') == ai_config_data['provider'] and
+                    response.get('model_name') == ai_config_data['model_name']):
+                    print(f"   All configuration fields saved correctly")
+                    return True
+                else:
+                    print(f"❌ Configuration fields not saved correctly")
+                    return False
+            else:
+                print(f"❌ API key not encrypted properly: {response.get('api_key')}")
+                return False
+        return False
+
+    def test_create_duplicate_ai_configuration_should_fail(self):
+        """Test creating duplicate AI configuration (should fail)"""
+        if not self.company_id:
+            print("❌ No company ID available for duplicate AI configuration test")
+            return False
+        
+        # Try to create another data_extraction config (should fail)
+        duplicate_config_data = {
+            "config_type": "data_extraction",
+            "provider": "openai",
+            "api_key": "sk-another-test-key-12345",
+            "model_name": "gpt-4o-mini"
+        }
+        
+        success, response = self.run_test(
+            "Create Duplicate AI Configuration (Should Fail)",
+            "POST",
+            f"companies/{self.company_id}/ai-config",
+            400  # Should return 400 Bad Request
+        )
+        
+        if success:
+            print(f"   Correctly prevented duplicate configuration creation")
+            return True
+        return False
+
+    def test_create_different_type_ai_configuration(self):
+        """Test creating AI configuration with different type"""
+        if not self.company_id:
+            print("❌ No company ID available for different type AI configuration test")
+            return False
+        
+        qa_config_data = {
+            "config_type": "qa_processing",
+            "provider": "openai",
+            "api_key": "sk-qa-test-api-key-67890",
+            "model_name": "gpt-4o-mini",
+            "model_config": {
+                "temperature": 0.0,
+                "max_tokens": 1000
+            }
+        }
+        
+        success, response = self.run_test(
+            "Create QA Processing AI Configuration",
+            "POST",
+            f"companies/{self.company_id}/ai-config",
+            200,
+            data=qa_config_data
+        )
+        
+        if success and 'id' in response:
+            self.qa_ai_config_id = response['id']
+            print(f"   Created QA AI configuration ID: {self.qa_ai_config_id}")
+            
+            # Verify different type is allowed
+            if response.get('config_type') == "qa_processing":
+                print(f"   Different configuration type created successfully")
+                return True
+        return False
+
+    def test_get_ai_configurations(self):
+        """Test getting AI configurations for a company"""
+        if not self.company_id:
+            print("❌ No company ID available for get AI configurations test")
+            return False
+        
+        success, response = self.run_test(
+            "Get AI Configurations",
+            "GET",
+            f"companies/{self.company_id}/ai-config",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            # Verify response structure
+            if ('company_id' in response and 
+                'company_name' in response and 
+                'configurations' in response and
+                'available_types' in response):
+                
+                configurations = response['configurations']
+                print(f"   Found {len(configurations)} AI configurations")
+                
+                # Verify API keys are masked
+                all_encrypted = True
+                for config in configurations:
+                    if config.get('api_key') != "***ENCRYPTED***":
+                        all_encrypted = False
+                        break
+                
+                if all_encrypted:
+                    print(f"   All API keys properly encrypted in response")
+                    
+                    # Verify available types
+                    expected_types = ["data_extraction", "qa_processing", "document_processing"]
+                    if response['available_types'] == expected_types:
+                        print(f"   Available types correctly listed")
+                        return True
+                    else:
+                        print(f"❌ Available types incorrect: {response['available_types']}")
+                        return False
+                else:
+                    print(f"❌ Some API keys not encrypted in response")
+                    return False
+            else:
+                print(f"❌ Response structure incorrect")
+                return False
+        return False
+
+    def test_get_ai_configurations_filtered(self):
+        """Test getting AI configurations filtered by type"""
+        if not self.company_id:
+            print("❌ No company ID available for filtered AI configurations test")
+            return False
+        
+        success, response = self.run_test(
+            "Get AI Configurations Filtered by Type",
+            "GET",
+            f"companies/{self.company_id}/ai-config?config_type=data_extraction",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            configurations = response.get('configurations', [])
+            
+            # Should only return data_extraction configs
+            data_extraction_configs = [c for c in configurations if c.get('config_type') == 'data_extraction']
+            
+            if len(configurations) == len(data_extraction_configs) and len(configurations) > 0:
+                print(f"   Filtering by type working correctly: {len(configurations)} data_extraction configs")
+                return True
+            else:
+                print(f"❌ Filtering not working: {len(configurations)} total, {len(data_extraction_configs)} data_extraction")
+                return False
+        return False
+
+    def test_update_ai_configuration(self):
+        """Test updating AI configuration"""
+        if not self.company_id or not hasattr(self, 'ai_config_id'):
+            print("❌ No company ID or AI config ID available for update test")
+            return False
+        
+        update_data = {
+            "model_name": "gpt-4o-mini",  # Changed from gpt-4o
+            "api_key": "sk-updated-test-api-key-99999",  # New API key
+            "model_config": {
+                "temperature": 0.2,  # Changed from 0.1
+                "max_tokens": 1500   # Changed from 2000
+            }
+        }
+        
+        success, response = self.run_test(
+            "Update AI Configuration",
+            "PUT",
+            f"companies/{self.company_id}/ai-config/{self.ai_config_id}",
+            200,
+            data=update_data
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('message') and 'updated successfully' in response.get('message', ''):
+                print(f"   AI configuration updated successfully")
+                
+                # Verify update by getting the configuration again
+                success_get, get_response = self.run_test(
+                    "Get Updated AI Configuration",
+                    "GET",
+                    f"companies/{self.company_id}/ai-config?config_type=data_extraction",
+                    200
+                )
+                
+                if success_get and isinstance(get_response, dict):
+                    configurations = get_response.get('configurations', [])
+                    updated_config = next((c for c in configurations if c.get('id') == self.ai_config_id), None)
+                    
+                    if updated_config and updated_config.get('model_name') == "gpt-4o-mini":
+                        print(f"   Model name updated correctly to: {updated_config.get('model_name')}")
+                        print(f"   API key still encrypted: {updated_config.get('api_key')}")
+                        return True
+                    else:
+                        print(f"❌ Update not reflected in configuration")
+                        return False
+                return True
+        return False
+
+    def test_delete_ai_configuration(self):
+        """Test deleting (deactivating) AI configuration"""
+        if not self.company_id or not hasattr(self, 'qa_ai_config_id'):
+            print("❌ No company ID or QA AI config ID available for delete test")
+            return False
+        
+        success, response = self.run_test(
+            "Delete AI Configuration",
+            "DELETE",
+            f"companies/{self.company_id}/ai-config/{self.qa_ai_config_id}",
+            200
+        )
+        
+        if success and isinstance(response, dict):
+            if response.get('message') and 'deactivated successfully' in response.get('message', ''):
+                print(f"   AI configuration deactivated successfully")
+                
+                # Verify it no longer appears in active configurations
+                success_get, get_response = self.run_test(
+                    "Get AI Configurations After Delete",
+                    "GET",
+                    f"companies/{self.company_id}/ai-config",
+                    200
+                )
+                
+                if success_get and isinstance(get_response, dict):
+                    configurations = get_response.get('configurations', [])
+                    deleted_config = next((c for c in configurations if c.get('id') == self.qa_ai_config_id), None)
+                    
+                    if deleted_config is None:
+                        print(f"   Deleted configuration no longer appears in active list")
+                        return True
+                    else:
+                        print(f"❌ Deleted configuration still appears in active list")
+                        return False
+                return True
+        return False
+
+    def test_client_cannot_manage_ai_configurations(self):
+        """Test that client users cannot manage AI configurations"""
+        if not self.company_id:
+            print("❌ No company ID available for client AI config test")
+            return False
+        
+        # Login as client user
+        admin_token = self.token
+        success_login, login_response = self.run_test(
+            "Client Login for AI Config Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"email": "cliente@empresademo.com", "password": "cliente123"}
+        )
+        
+        if not success_login or 'access_token' not in login_response:
+            print("❌ Could not login as client for AI config test")
+            self.token = admin_token
+            return False
+        
+        # Use client token
+        self.token = login_response['access_token']
+        client_user = login_response['user']
+        client_company_id = client_user.get('company_id')
+        
+        if not client_company_id:
+            print("❌ Client user has no company assigned")
+            self.token = admin_token
+            return False
+        
+        # Try to create AI configuration as client (should fail with 403)
+        client_config_data = {
+            "config_type": "document_processing",
+            "provider": "openai",
+            "api_key": "sk-client-test-key",
+            "model_name": "gpt-4o"
+        }
+        
+        success, response = self.run_test(
+            "Client Create AI Configuration (Should Fail)",
+            "POST",
+            f"companies/{client_company_id}/ai-config",
+            403  # Should return 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if success:
+            print(f"   Correctly prevented client from creating AI configuration")
+            return True
+        return False
+
+    def test_nonexistent_company_ai_config(self):
+        """Test AI configuration operations on non-existent company"""
+        fake_company_id = "nonexistent-company-12345"
+        
+        config_data = {
+            "config_type": "data_extraction",
+            "provider": "openai",
+            "api_key": "sk-test-key",
+            "model_name": "gpt-4o"
+        }
+        
+        success, response = self.run_test(
+            "Create AI Config for Non-existent Company",
+            "POST",
+            f"companies/{fake_company_id}/ai-config",
+            404  # Should return 404 Not Found
+        )
+        
+        if success:
+            print(f"   Correctly returned 404 for non-existent company")
+            return True
+        return False
+
+    def test_invalid_api_key_format(self):
+        """Test creating AI configuration with invalid API key format"""
+        if not self.company_id:
+            print("❌ No company ID available for invalid API key test")
+            return False
+        
+        invalid_config_data = {
+            "config_type": "document_processing",
+            "provider": "openai",
+            "api_key": "invalid-key-format",  # Invalid format
+            "model_name": "gpt-4o"
+        }
+        
+        success, response = self.run_test(
+            "Create AI Config with Invalid API Key",
+            "POST",
+            f"companies/{self.company_id}/ai-config",
+            400  # Should return 400 Bad Request for invalid key
+        )
+        
+        if success:
+            print(f"   Correctly rejected invalid API key format")
+            return True
+        return False
+
     # PHASE 1 NEW FEATURE TESTS - Segment Management
     def test_create_segmento(self):
         """Test creating a segmento"""
