@@ -1204,7 +1204,25 @@ async def store_extracted_data_normalized(document_id: str, document: dict, proj
 async def process_single_chunk(file_path: str, semantic_instructions: str, ai_config: dict, chunk_number: int, start_page: int, end_page: int) -> dict:
     """Process a single PDF chunk with AI using configured model"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import PyPDF2
+        
+        # Extract text from specified pages of the PDF
+        # Note: emergentintegrations only supports file attachments with Gemini provider
+        # For OpenAI, we extract text and send it in the prompt
+        pdf_text = ""
+        try:
+            with open(file_path, 'rb') as pdf_file:
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                # Extract text from the specified page range (0-indexed)
+                for page_num in range(start_page - 1, min(end_page, len(pdf_reader.pages))):
+                    page = pdf_reader.pages[page_num]
+                    pdf_text += f"\n--- PAGE {page_num + 1} ---\n"
+                    pdf_text += page.extract_text()
+                    
+        except Exception as e:
+            logger.error(f"Error extracting PDF text for chunk {chunk_number}: {str(e)}")
+            pdf_text = f"[Error: Could not extract text from PDF chunk {chunk_number}]"
         
         chat = await create_ai_chat_with_config(
             ai_config,
@@ -1212,16 +1230,13 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
             "You are an expert document analysis AI. Extract structured data from document chunks based on specific instructions."
         )
         
-        # Create file content for AI processing
-        file_content = FileContentWithMimeType(
-            file_path=file_path,
-            mime_type="application/pdf"
-        )
-        
         prompt = f"""
         Analyze this PDF chunk (pages {start_page} to {end_page}) and extract structured data based on these instructions:
         
         {semantic_instructions}
+        
+        DOCUMENT TEXT CONTENT:
+        {pdf_text}
         
         Please provide the extracted data in JSON format with clear field names and values.
         If certain information is not available, mark it as null.
@@ -1230,10 +1245,7 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         Note: This is chunk {chunk_number} of a larger document. Extract all relevant data from these specific pages.
         """
         
-        user_message = UserMessage(
-            text=prompt,
-            file_contents=[file_content]
-        )
+        user_message = UserMessage(text=prompt)
         
         # Process with AI
         response = await chat.send_message(user_message)
