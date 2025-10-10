@@ -18,6 +18,8 @@ import glob
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import BackgroundTasks
+import base64
+from cryptography.fernet import Fernet
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
