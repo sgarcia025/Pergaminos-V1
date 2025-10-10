@@ -2661,6 +2661,224 @@ async def get_asesores(current_user: User = Depends(get_current_user)):
     asesores = await db.users.find({"role": "asesor", "is_active": True}).to_list(1000)
     return [User(**asesor) for asesor in asesores]
 
+# AI Configuration Management Endpoints
+@api_router.post("/companies/{company_id}/ai-config", response_model=AIConfiguration)
+async def create_ai_configuration(
+    company_id: str,
+    config_data: AIConfigurationCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create AI configuration for a company"""
+    if current_user.role not in ["staff"]:
+        raise HTTPException(status_code=403, detail="Only staff can manage AI configurations")
+    
+    # Verify company exists
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Check if configuration for this type already exists
+    existing_config = await db.ai_configurations.find_one({
+        "company_id": company_id,
+        "config_type": config_data.config_type,
+        "is_active": True
+    })
+    
+    if existing_config:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Active configuration for {config_data.config_type} already exists"
+        )
+    
+    # Encrypt API key if provided
+    encrypted_key = None
+    if config_data.api_key:
+        try:
+            encrypted_key = encrypt_api_key(config_data.api_key)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail="Invalid API key format")
+    
+    # Create configuration
+    ai_config = AIConfiguration(
+        company_id=company_id,
+        config_type=config_data.config_type,
+        provider=config_data.provider,
+        api_key=encrypted_key,
+        model_name=config_data.model_name,
+        model_config=config_data.model_config,
+        created_by=current_user.id
+    )
+    
+    await db.ai_configurations.insert_one(ai_config.dict())
+    
+    # Return config without API key for security
+    response_config = ai_config.dict()
+    response_config["api_key"] = "***ENCRYPTED***" if encrypted_key else None
+    
+    return AIConfiguration(**response_config)
+
+@api_router.get("/companies/{company_id}/ai-config")
+async def get_ai_configurations(
+    company_id: str,
+    config_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get AI configurations for a company"""
+    # Verify access to company
+    company = await db.companies.find_one({"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if current_user.role == "client" and current_user.company_id != company_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Build query
+    query = {"company_id": company_id, "is_active": True}
+    if config_type:
+        query["config_type"] = config_type
+    
+    # Get configurations
+    configs = await db.ai_configurations.find(query).to_list(1000)
+    
+    # Remove API keys from response for security
+    for config in configs:
+        config["api_key"] = "***ENCRYPTED***" if config.get("api_key") else None
+    
+    return {
+        "company_id": company_id,
+        "company_name": company["name"],
+        "configurations": configs,
+        "available_types": ["data_extraction", "qa_processing", "document_processing"]
+    }
+
+@api_router.put("/companies/{company_id}/ai-config/{config_id}")
+async def update_ai_configuration(
+    company_id: str,
+    config_id: str,
+    update_data: AIConfigurationUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update AI configuration"""
+    if current_user.role not in ["staff"]:
+        raise HTTPException(status_code=403, detail="Only staff can update AI configurations")
+    
+    # Find existing configuration
+    existing_config = await db.ai_configurations.find_one({
+        "id": config_id,
+        "company_id": company_id
+    })
+    
+    if not existing_config:
+        raise HTTPException(status_code=404, detail="Configuration not found")
+    
+    # Prepare update data
+    update_fields = {}
+    for field, value in update_data.dict(exclude_unset=True).items():
+        if field == "api_key" and value:
+            # Encrypt new API key
+            try:
+                update_fields["api_key"] = encrypt_api_key(value)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail="Invalid API key format")
+        else:
+            update_fields[field] = value
+    
+    update_fields["updated_at"] = datetime.now(timezone.utc)
+    
+    # Update configuration
+    result = await db.ai_configurations.update_one(
+        {"id": config_id, "company_id": company_id},
+        {"$set": update_fields}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Configuration not found")
+    
+    return {"message": "Configuration updated successfully", "config_id": config_id}
+
+@api_router.delete("/companies/{company_id}/ai-config/{config_id}")
+async def delete_ai_configuration(
+    company_id: str,
+    config_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete/deactivate AI configuration"""
+    if current_user.role not in ["staff"]:
+        raise HTTPException(status_code=403, detail="Only staff can delete AI configurations")
+    
+    # Soft delete - just deactivate
+    result = await db.ai_configurations.update_one(
+        {"id": config_id, "company_id": company_id},
+        {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Configuration not found")
+    
+    return {"message": "Configuration deactivated successfully", "config_id": config_id}
+
+@api_router.get("/ai-models/recommendations")
+async def get_model_recommendations():
+    """Get recommended models for each AI task type"""
+    return {
+        "data_extraction": {
+            "recommended": [
+                {
+                    "model": "gpt-4o",
+                    "description": "Mejor balance precisión/velocidad para extracción de datos estructurados",
+                    "use_case": "Documentos complejos, múltiples campos",
+                    "cost_level": "medium"
+                },
+                {
+                    "model": "gpt-4o-mini",
+                    "description": "Económico y rápido para extracciones simples",
+                    "use_case": "Documentos simples, pocos campos",
+                    "cost_level": "low"
+                },
+                {
+                    "model": "gpt-4-turbo",
+                    "description": "Máxima precisión para documentos críticos",
+                    "use_case": "Documentos legales, financieros",
+                    "cost_level": "high"
+                }
+            ]
+        },
+        "qa_processing": {
+            "recommended": [
+                {
+                    "model": "gpt-4o-mini",
+                    "description": "Optimal para análisis de calidad rápido",
+                    "use_case": "Control de calidad automático, detección de problemas",
+                    "cost_level": "low"
+                },
+                {
+                    "model": "gpt-4o",
+                    "description": "Análisis de calidad detallado",
+                    "use_case": "Documentos críticos, análisis profundo",
+                    "cost_level": "medium"
+                }
+            ]
+        },
+        "document_processing": {
+            "recommended": [
+                {
+                    "model": "gpt-4o",
+                    "description": "Procesamiento general de documentos",
+                    "use_case": "Reordenamiento, clasificación, resúmenes",
+                    "cost_level": "medium"
+                },
+                {
+                    "model": "gpt-4-turbo",
+                    "description": "Procesamiento de documentos largos",
+                    "use_case": "PDFs de múltiples páginas, análisis complejo",
+                    "cost_level": "high"
+                }
+            ]
+        }
+    }
+
 # Extracted Data Management Endpoints
 @api_router.get("/companies/{company_id}/extracted-data")
 async def get_company_extracted_data(
