@@ -153,7 +153,7 @@ class AIConfiguration(BaseModel):
     provider: str = "openai"  # openai, emergent
     api_key: Optional[str] = None  # Encrypted storage recommended
     model_name: str  # Specific model for the task
-    model_config: Dict[str, Any] = {}  # Additional model parameters
+    model_parameters: Dict[str, Any] = {}  # Additional model parameters
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -164,13 +164,13 @@ class AIConfigurationCreate(BaseModel):
     provider: str = "openai"
     api_key: Optional[str] = None
     model_name: str
-    model_config: Dict[str, Any] = {}
+    model_parameters: Dict[str, Any] = {}
 
 class AIConfigurationUpdate(BaseModel):
     provider: Optional[str] = None
     api_key: Optional[str] = None
     model_name: Optional[str] = None
-    model_config: Optional[Dict[str, Any]] = None
+    model_parameters: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
 class Company(BaseModel):
