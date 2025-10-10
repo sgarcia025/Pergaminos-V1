@@ -1012,6 +1012,8 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
 async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
     """Get AI configuration for a specific task type"""
     try:
+        logger.info(f"Getting AI config for company {company_id}, task type: {task_type}")
+        
         # Look for company-specific configuration
         config = await db.ai_configurations.find_one({
             "company_id": company_id,
@@ -1020,9 +1022,16 @@ async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
         })
         
         if config and config.get("api_key"):
+            logger.info(f"Found company-specific AI config for {company_id}, provider: {config['provider']}, model: {config['model_name']}")
             # Decrypt API key
             try:
                 decrypted_key = decrypt_api_key(config["api_key"])
+                logger.info(f"Successfully decrypted API key for company {company_id}")
+                
+                # Validate decrypted key
+                if not decrypted_key or len(decrypted_key) < 10:
+                    raise ValueError("Decrypted API key is invalid or too short")
+                
                 return {
                     "provider": config["provider"],
                     "api_key": decrypted_key,
@@ -1031,7 +1040,10 @@ async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
                     "source": "company_config"
                 }
             except Exception as e:
-                logger.error(f"Failed to decrypt API key for company {company_id}: {str(e)}")
+                logger.error(f"Failed to decrypt API key for company {company_id}: {str(e)}", exc_info=True)
+                logger.warning(f"Falling back to Emergent LLM key due to decryption error")
+        else:
+            logger.info(f"No company-specific AI config found for {company_id}, using fallback")
         
         # Fallback to Emergent LLM key with recommended models
         fallback_models = {
@@ -1040,16 +1052,19 @@ async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
             "document_processing": "gpt-4o"
         }
         
+        emergent_key = os.environ.get('EMERGENT_LLM_KEY')
+        logger.info(f"Using Emergent LLM key fallback with model: {fallback_models.get(task_type, 'gpt-4o')}")
+        
         return {
             "provider": "emergent",
-            "api_key": os.environ.get('EMERGENT_LLM_KEY'),
+            "api_key": emergent_key,
             "model_name": fallback_models.get(task_type, "gpt-4o"),
             "model_config": {},
             "source": "fallback_emergent"
         }
         
     except Exception as e:
-        logger.error(f"Error getting AI config for company {company_id}, task {task_type}: {str(e)}")
+        logger.error(f"Error getting AI config for company {company_id}, task {task_type}: {str(e)}", exc_info=True)
         return {
             "provider": "emergent",
             "api_key": os.environ.get('EMERGENT_LLM_KEY'),
