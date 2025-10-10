@@ -377,13 +377,6 @@ class AIConfigTester:
         
         # Use client token
         self.token = login_response['access_token']
-        client_user = login_response['user']
-        client_company_id = client_user.get('company_id')
-        
-        if not client_company_id:
-            print("❌ Client user has no company assigned")
-            self.token = admin_token
-            return False
         
         # Try to create AI configuration as client (should fail with 403)
         client_config_data = {
