@@ -192,7 +192,7 @@ class AIConfigTester:
             "provider": "openai",
             "api_key": "sk-qa-test-api-key-67890",
             "model_name": "gpt-4o-mini",
-            "model_config": {
+            "model_parameters": {
                 "temperature": 0.0,
                 "max_tokens": 1000
             }
