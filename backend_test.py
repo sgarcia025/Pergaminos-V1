@@ -4889,6 +4889,11 @@ def main():
     
     return 0 if len(failed_tests) == 0 else 1
 
+# CRITICAL BUG FIX #2 - QA Processing with OpenAI Provider Tests
+# Add these methods to the PergaminosAPITester class
+
+# Let me add the methods to the class properly
+def add_qa_bug_fix_methods():
     # CRITICAL BUG FIX #2 - QA Processing with OpenAI Provider Tests
     def test_qa_processing_openai_bug_fix(self):
         """Test the critical QA processing bug fix for OpenAI provider"""
