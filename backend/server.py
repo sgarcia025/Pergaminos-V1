@@ -2744,7 +2744,7 @@ async def create_ai_configuration(
         provider=config_data.provider,
         api_key=encrypted_key,
         model_name=config_data.model_name,
-        model_config=config_data.model_config,
+        model_parameters=config_data.model_parameters,
         created_by=current_user.id
     )
     
