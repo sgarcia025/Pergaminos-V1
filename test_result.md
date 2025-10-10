@@ -103,46 +103,61 @@
 #====================================================================================================
 
 user_problem_statement: |
-  El usuario solicita pruebas de las CORRECCIONES CRÍTICAS implementadas para resolver errores reportados:
+  El usuario solicita pruebas del MÓDULO DE CONFIGURACIÓN AI implementado para gestionar API keys personalizadas de OpenAI:
 
-  CORRECCIONES IMPLEMENTADAS:
+  FUNCIONALIDADES IMPLEMENTADAS:
 
-  1. ENDPOINT RENAME DOCUMENTS ARREGLADO:
-     - Problema: Error "Field required" para `new_name` 
-     - Solución: Cambiado de `Form(...)` a modelo Pydantic `DocumentRename`
-     - Endpoint: PUT `/api/documents/{document_id}/rename`
-     - Cambio: Ahora acepta JSON `{"new_name": "nuevo_nombre.pdf"}` en lugar de FormData
+  1. GESTIÓN DE CONFIGURACIONES AI POR EMPRESA:
+     - POST `/api/companies/{company_id}/ai-config` - Crear configuración AI
+     - GET `/api/companies/{company_id}/ai-config` - Obtener configuraciones
+     - PUT `/api/companies/{company_id}/ai-config/{config_id}` - Actualizar configuración  
+     - DELETE `/api/companies/{company_id}/ai-config/{config_id}` - Eliminar configuración
 
-  2. CONFIGURACIÓN UMBRALES QA MEJORADA:
-     - Problema: Los umbrales no eran configurables visiblemente  
-     - Solución: Sección dedicada en formulario con explicaciones claras
-     - Campos: `pass_threshold` (mínimo para aprobar), `critical_threshold` (mínimo para auto-procesar)
-     - Explicación: Visual de rangos 0-59% (rechazado), 60-79% (revisión manual), 80-100% (auto-aprobado)
+  2. TIPOS DE CONFIGURACIÓN:
+     - `data_extraction`: Para extracción de datos estructurados
+     - `qa_processing`: Para control de calidad automático
+     - `document_processing`: Para procesamiento general de documentos
+
+  3. ENCRIPTACIÓN DE API KEYS:
+     - Almacenamiento seguro con Fernet encryption
+     - API keys nunca se devuelven en respuestas (***ENCRYPTED***)
+     - Función de desencriptación para uso interno
+
+  4. MODELO RECOMMENDATIONS:
+     - GET `/api/ai-models/recommendations` - Modelos recomendados por tarea
+     - Incluye `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo` con descripciones y casos de uso
 
   TESTING PRIORITARIO:
-  1. Rename Document (CRÍTICO):
-     - Subir un PDF cualquiera a un proyecto
-     - Intentar cambiar el nombre del documento
-     - Verificar que se actualice exitosamente sin errores
-     - Confirmar que el nuevo nombre se guarda y muestra correctamente
+  1. Crear configuración AI:
+     - Empresa existente con configuración `data_extraction`
+     - Proveedor: `openai`, modelo: `gpt-4o`, API key de prueba
+     - Verificar encriptación correcta de API key
 
-  2. Crear QA Agent con Umbrales Personalizados:
-     - Crear nuevo agente QA
-     - Modificar umbrales: ej. pass_threshold=70, critical_threshold=85
-     - Verificar que se guarden correctamente
-     - Confirmar que el comportamiento funciona según los umbrales configurados
+  2. Obtener configuraciones:
+     - Listar configuraciones de empresa
+     - Verificar que API key aparece como ***ENCRYPTED***
+     - Confirmar estructura de respuesta
 
-  3. Editar QA Agent Existente:
-     - Editar un agente QA creado previamente
-     - Cambiar los umbrales a valores diferentes
-     - Verificar actualización exitosa
+  3. Actualizar configuración:
+     - Cambiar modelo de `gpt-4o` a `gpt-4o-mini`  
+     - Actualizar API key
+     - Verificar nueva encriptación
+
+  4. Eliminar configuración:
+     - Soft delete (is_active = false)
+     - Verificar que no aparece en listados
+
+  5. Model Recommendations:
+     - Verificar endpoint de recomendaciones
+     - Confirmar estructura por tipo de tarea
 
   CASOS ESPECÍFICOS:
-  - Renombrar con nombres que incluyan caracteres especiales, espacios, acentos
-  - Configurar umbrales extremos (ej: pass=90, critical=95) y verificar comportamiento
-  - Verificar validación de campos numéricos en formulario
+  - Múltiples configuraciones por empresa (diferentes tipos)
+  - Validaciones: solo staff puede gestionar configuraciones
+  - Encriptación/desencriptación de API keys
+  - Fallback a Emergent LLM cuando no hay configuración
 
-  OBJETIVO: Confirmar que el renombrado funciona sin errores y que la configuración de umbrales QA es intuitiva y funcional.
+  OBJETIVO: Validar que el sistema permite configuraciones AI personalizadas por cliente con almacenamiento seguro de API keys.
 
 backend:
   - task: "Endpoint rename documents arreglado"
