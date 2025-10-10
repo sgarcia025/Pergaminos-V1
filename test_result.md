@@ -558,13 +558,19 @@ frontend:
     implemented: true
     working: true
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: true
         - agent: "testing"
         - comment: "✅ COMPLETE QA → AI FLOW TESTED SUCCESSFULLY: Full document processing pipeline working perfectly. Tested: (1) Document upload starts in 'uploaded' state as expected, (2) Automatic transition to 'qa_pending' state when QA agents are configured, (3) QA evaluation produces proper scores and results, (4) State transitions based on QA scores working correctly: score 76.5 → 'needs_review' with 'manual_review' status (60-79 range), (5) QA results include overall_score, agent_results, and detailed findings, (6) Documents proceed to AI processing after QA approval. Complete QA → AI workflow ready for production use."
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó que QA sigue fallando con estado 'QA FALLÓ' y 'QA: 0%'. Documentos no pueden proceder a extracción de datos."
+        - working: true
+        - agent: "main"
+        - comment: "SEGUNDO PROBLEMA CRÍTICO IDENTIFICADO Y RESUELTO: emergentintegrations solo permite file attachments con Gemini provider, no con OpenAI. Error: 'File attachments are only supported with Gemini provider'. SOLUCIÓN: Modificada función run_qa_checks() para extraer texto del PDF usando PyPDF2 y enviarlo en el prompt en lugar de adjuntar archivo. Ahora procesa primeras 10 páginas del PDF, extrae texto y lo envía en el prompt. Funciona con OpenAI (API keys propias) y Emergent LLM key. Limitación documentada: análisis visual (image_clarity, orientation) no disponible con procesamiento text-only, requeriría Gemini o GPT-4 Vision. Backend reiniciado. Requiere testing completo del flujo QA."
 
   - task: "Estados QA mejorados"
     implemented: true
