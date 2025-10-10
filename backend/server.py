@@ -888,12 +888,12 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
         
         for agent in qa_agents:
             try:
-                # Create AI chat for QA
-                chat = LlmChat(
-                    api_key=api_key,
-                    session_id=f"qa_{agent['id']}_{document_id}",
-                    system_message="You are a document quality assurance AI. Analyze documents for quality issues and provide detailed assessment."
-                ).with_model("gemini", "gemini-2.0-flash")
+                # Create AI chat for QA using configured model
+                chat = await create_ai_chat_with_config(
+                    ai_config,
+                    f"qa_{agent['id']}_{document_id}",
+                    "You are a document quality assurance AI. Analyze documents for quality issues and provide detailed assessment."
+                )
                 
                 # Create file content for analysis
                 file_content = FileContentWithMimeType(
