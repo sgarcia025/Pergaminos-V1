@@ -31,6 +31,8 @@ class AIConfigTester:
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
+        if data:
+            print(f"   Data: {data}")
         
         try:
             if method == 'GET':
