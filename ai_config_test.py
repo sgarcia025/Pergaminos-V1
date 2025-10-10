@@ -319,14 +319,34 @@ class AIConfigTester:
             print("❌ No company ID available for client AI config test")
             return False
         
-        # First create a client user
+        # First create a separate company for the client user
         admin_token = self.token
+        client_company_data = {
+            "name": f"Client Test Company {datetime.now().strftime('%H%M%S')}",
+            "description": "A separate company for client user testing"
+        }
+        
+        success_company, company_response = self.run_test(
+            "Create Client Company for AI Config Test",
+            "POST",
+            "companies",
+            200,
+            data=client_company_data
+        )
+        
+        if not success_company:
+            print("❌ Could not create client company for AI config test")
+            return False
+        
+        client_company_id = company_response['id']
+        
+        # Create a client user assigned to the separate company
         client_user_data = {
             "email": f"testclient{datetime.now().strftime('%H%M%S')}@test.com",
             "name": "Test Client User",
             "password": "testpass123",
             "role": "client",
-            "company_id": self.company_id
+            "company_id": client_company_id
         }
         
         success_create, create_response = self.run_test(
