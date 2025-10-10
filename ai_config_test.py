@@ -33,6 +33,7 @@ class AIConfigTester:
         print(f"   URL: {url}")
         if data:
             print(f"   Data: {data}")
+        print(f"   Headers: {headers}")
         
         try:
             if method == 'GET':
@@ -41,6 +42,7 @@ class AIConfigTester:
                 if files:
                     response = requests.post(url, headers={k: v for k, v in headers.items() if k != 'Content-Type'}, data=data, files=files)
                 else:
+                    print(f"   Sending POST with json={data}")
                     response = requests.post(url, json=data, headers=headers)
             elif method == 'PUT':
                 response = requests.put(url, json=data, headers=headers)
