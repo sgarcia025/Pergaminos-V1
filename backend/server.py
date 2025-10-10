@@ -1390,7 +1390,7 @@ async def process_document_with_ai(document_id: str, project: dict):
                     chunk_result = await process_single_chunk(
                         str(chunk_path), 
                         semantic_instructions, 
-                        api_key,
+                        ai_config["api_key"],
                         chunk_idx + 1,
                         start_page + 1,
                         end_page + 1
