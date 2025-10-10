@@ -558,9 +558,9 @@ frontend:
     implemented: true
     working: true
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: true
         - agent: "testing"
@@ -574,6 +574,12 @@ frontend:
         - working: true
         - agent: "testing"
         - comment: "✅ CRITICAL BUG FIX #2 VERIFIED SUCCESSFULLY: QA processing with OpenAI provider is now working correctly. COMPREHENSIVE TESTING COMPLETED: (1) Text extraction from PDF working - no more 'File attachments only supported with Gemini provider' error, (2) AI chat creation successful with both customer OpenAI API keys and Emergent LLM fallback, (3) QA processing pipeline functional - documents transition through qa_pending → processing states, (4) Backend logs confirm: 'Successfully extracted text from PDF', 'AI chat created successfully', no file attachment errors, (5) Error handling improved - invalid API keys properly detected and handled, (6) Fallback to Emergent LLM working when no customer API key configured. LIMITATION DOCUMENTED: Visual analysis (image_clarity, document_orientation) not available with text-only processing - requires Gemini or GPT-4 Vision. The fix successfully resolves the core issue: QA processing now works with OpenAI provider using text extraction instead of file attachments."
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó que documento muestra 'REVISIÓN MANUAL' con QA: 74% pero no aparecen hallazgos en el módulo de Hallazgos QA. El documento tiene hallazgos pero no se muestran."
+        - working: true
+        - agent: "main"
+        - comment: "TERCER PROBLEMA IDENTIFICADO Y RESUELTO: Endpoint /api/projects/{project_id}/qa-findings filtraba solo documentos con hallazgos CRÍTICOS (qa_findings: {$ne: []}). Documentos con scores 60-79 pueden tener solo hallazgos tipo 'warning' o 'info', no 'critical'. SOLUCIÓN: Modificado endpoint para mostrar TODOS los documentos con qa_status 'manual_review' o 'failed', extrayendo TODOS los hallazgos de qa_results.agent_results[].findings, no solo critical_findings. Ahora incluye warnings, info y critical findings. Backend reiniciado. Necesita verificación en frontend."
 
   - task: "Estados QA mejorados"
     implemented: true
