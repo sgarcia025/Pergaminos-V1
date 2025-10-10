@@ -1027,7 +1027,7 @@ async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
                     "provider": config["provider"],
                     "api_key": decrypted_key,
                     "model_name": config["model_name"],
-                    "model_config": config.get("model_config", {}),
+                    "model_config": config.get("model_parameters", {}),
                     "source": "company_config"
                 }
             except Exception as e:
