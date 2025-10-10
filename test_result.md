@@ -255,6 +255,9 @@ backend:
         - working: true
         - agent: "main"
         - comment: "PROBLEMA CRÍTICO IDENTIFICADO Y RESUELTO: La ENCRYPTION_KEY no estaba en el .env, causando que se generara una nueva clave cada vez que el servidor se reiniciaba. Esto hacía imposible desencriptar API keys previamente almacenadas. SOLUCIÓN IMPLEMENTADA: (1) Agregada ENCRYPTION_KEY permanente al /app/backend/.env, (2) Eliminadas todas las configuraciones AI existentes (12 configs) que fueron encriptadas con claves anteriores, (3) Mejorado logging en get_ai_config_for_task() y create_ai_chat_with_config() para debug detallado, (4) Agregadas validaciones de API key desencriptada, (5) Backend reiniciado con nueva clave persistente. El usuario deberá volver a configurar sus API keys de OpenAI. Sistema de encriptación ahora estable y funcional."
+        - working: true
+        - agent: "testing"
+        - comment: "✅ CRITICAL BUG FIX VERIFIED SUCCESSFULLY: AI Configuration encryption/decryption system is now working perfectly after the fix. COMPREHENSIVE TESTING COMPLETED: (1) ENCRYPTION_KEY verified in .env file (44 chars, persistent), (2) Create AI configurations - API keys properly encrypted and stored as ***ENCRYPTED***, (3) Multiple configurations supported - tested qa_processing and data_extraction types, (4) Update configurations - re-encryption working correctly, (5) Backend restart persistence - encryption/decryption stable after service restart, (6) Real-world scenario - document upload triggers QA processing which successfully uses decrypted API keys (document status: qa_pending), (7) get_ai_config_for_task function working - configurations retrievable and usable. CRITICAL FIX CONFIRMED: The permanent ENCRYPTION_KEY in .env has resolved the issue where API keys became unreadable after server restarts. System is now production-ready for customer OpenAI API keys."
 
   - task: "Validaciones de permisos AI config"
     implemented: true
