@@ -1476,50 +1476,6 @@ async def process_document_with_ai(document_id: str, project: dict):
             }
         )
         
-        # Note: Switch to Gemini for file processing since it supports file attachments
-        gemini_chat = LlmChat(
-            api_key=ai_config["api_key"],
-            session_id=f"doc_processing_gemini_{document_id}",
-            system_message="You are an expert document analysis AI. Extract structured data from documents based on specific instructions."
-        ).with_model("gemini", "gemini-2.0-flash")
-        
-        user_message = UserMessage(
-            text=prompt,
-            file_contents=[file_content]
-        )
-        
-        # Process with AI
-        response = await gemini_chat.send_message(user_message)
-        
-        # Try to parse JSON from response
-        import json
-        import re
-        
-        # Extract JSON from response
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
-        extracted_data = {}
-        
-        if json_match:
-            try:
-                extracted_data = json.loads(json_match.group())
-            except json.JSONDecodeError:
-                # If JSON parsing fails, store raw response
-                extracted_data = {"raw_response": response, "status": "needs_review"}
-        else:
-            extracted_data = {"raw_response": response, "status": "needs_review"}
-        
-        # Update document with extracted data
-        await db.documents.update_one(
-            {"id": document_id},
-            {
-                "$set": {
-                    "status": "completed",
-                    "extracted_data": extracted_data,
-                    "processed_at": datetime.now(timezone.utc)
-                }
-            }
-        )
-        
     except Exception as e:
         logger.error(f"Error processing document {document_id}: {str(e)}")
         # Update document status to failed
