@@ -205,6 +205,7 @@ class CompanyCreate(BaseModel):
     segmento: Optional[str] = None
     estado: Optional[str] = None
     corporacion: Optional[str] = None
+    is_active: Optional[bool] = True
 
 class Project(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
