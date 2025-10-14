@@ -191,9 +191,70 @@ const Projects = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="filterCompany" className="block text-sm font-medium text-gray-700 mb-2">
+              Empresa
+            </label>
+            <select
+              id="filterCompany"
+              value={filterCompany}
+              onChange={(e) => setFilterCompany(e.target.value)}
+              className="form-input w-full"
+            >
+              <option value="">Todas las empresas</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label htmlFor="filterCorporacion" className="block text-sm font-medium text-gray-700 mb-2">
+              Corporación
+            </label>
+            <select
+              id="filterCorporacion"
+              value={filterCorporacion}
+              onChange={(e) => setFilterCorporacion(e.target.value)}
+              className="form-input w-full"
+            >
+              <option value="">Todas las corporaciones</option>
+              {uniqueCorporaciones.map((corp) => (
+                <option key={corp} value={corp}>
+                  {corp}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        {(filterCompany || filterCorporacion) && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Mostrando {filteredProjects.length} de {projects.length} proyectos
+            </p>
+            <button
+              onClick={() => {
+                setFilterCompany('');
+                setFilterCorporacion('');
+              }}
+              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
+        {filteredProjects.map((project) => (
           <Link key={project.id} to={`/projects/${project.id}`}>
             <div className="card hover:shadow-lg transition-all cursor-pointer">
               <div className="flex items-start justify-between mb-4">
