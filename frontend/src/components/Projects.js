@@ -97,6 +97,11 @@ const Projects = ({ user }) => {
     return company ? company.name : 'Empresa desconocida';
   };
 
+  const getCompanyCorporacion = (companyId) => {
+    const company = companies.find(c => c.id === companyId);
+    return company?.corporacion || '';
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       'active': 'status-active',
@@ -105,6 +110,29 @@ const Projects = ({ user }) => {
     };
     return colors[status] || 'status-active';
   };
+
+  const applyFilters = () => {
+    let filtered = [...projects];
+
+    // Filter by company
+    if (filterCompany) {
+      filtered = filtered.filter(p => p.company_id === filterCompany);
+    }
+
+    // Filter by corporacion
+    if (filterCorporacion) {
+      filtered = filtered.filter(p => {
+        const companyCorporacion = getCompanyCorporacion(p.company_id);
+        return companyCorporacion === filterCorporacion;
+      });
+    }
+
+    setFilteredProjects(filtered);
+  };
+
+  const uniqueCorporaciones = [...new Set(
+    companies.map(c => c.corporacion).filter(Boolean)
+  )];
 
   const handleDeleteClick = (e, project) => {
     e.preventDefault(); // Prevenir la navegación del Link
