@@ -77,6 +77,27 @@ const Companies = ({ user }) => {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...companies];
+
+    // Filter by corporacion
+    if (filterCorporacion) {
+      filtered = filtered.filter(c => c.corporacion === filterCorporacion);
+    }
+
+    // Filter by estado (is_active)
+    if (filterEstado !== '') {
+      const isActive = filterEstado === 'true';
+      filtered = filtered.filter(c => (c.is_active !== false) === isActive);
+    }
+
+    setFilteredCompanies(filtered);
+  };
+
+  const uniqueCorporaciones = [...new Set(
+    companies.map(c => c.corporacion).filter(Boolean)
+  )];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
