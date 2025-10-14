@@ -99,7 +99,8 @@ const Companies = ({ user }) => {
         asesor_comercial_id: '',
         segmento: '',
         estado: '',
-        corporacion: ''
+        corporacion: '',
+        is_active: true
       });
       fetchCompanies();
     } catch (error) {
