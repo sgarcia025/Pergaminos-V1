@@ -1,3 +1,13 @@
+# Test Result Document
+
+## Latest Update (2025-10-10)
+### Feature: Filtros en Módulo de Empresas
+- Agregados filtros por Corporación y Estado (Activa/Inactiva) en el módulo de Empresas
+- Similar a los filtros implementados en el módulo de Proyectos
+- Contador de empresas filtradas: "Mostrando X de Y empresas"
+- Botón "Limpiar filtros" para resetear
+- Los filtros se aplican automáticamente al cambiar selección
+
 #====================================================================================================
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
