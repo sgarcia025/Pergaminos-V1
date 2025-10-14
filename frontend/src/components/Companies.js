@@ -245,9 +245,67 @@ const Companies = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="filterCorporacion" className="block text-sm font-medium text-gray-700 mb-2">
+              Corporación
+            </label>
+            <select
+              id="filterCorporacion"
+              value={filterCorporacion}
+              onChange={(e) => setFilterCorporacion(e.target.value)}
+              className="form-input w-full"
+            >
+              <option value="">Todas las corporaciones</option>
+              {uniqueCorporaciones.map((corp) => (
+                <option key={corp} value={corp}>
+                  {corp}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label htmlFor="filterEstado" className="block text-sm font-medium text-gray-700 mb-2">
+              Estado
+            </label>
+            <select
+              id="filterEstado"
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value)}
+              className="form-input w-full"
+            >
+              <option value="">Todas</option>
+              <option value="true">Activas</option>
+              <option value="false">Inactivas</option>
+            </select>
+          </div>
+        </div>
+        
+        {(filterCorporacion || filterEstado !== '') && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Mostrando {filteredCompanies.length} de {companies.length} empresas
+            </p>
+            <button
+              onClick={() => {
+                setFilterCorporacion('');
+                setFilterEstado('');
+              }}
+              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Companies Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companies.map((company) => (
+        {filteredCompanies.map((company) => (
           <div key={company.id} className="card hover:shadow-lg transition-all">
             <div className="flex items-start justify-between">
               <div className="flex-1">
