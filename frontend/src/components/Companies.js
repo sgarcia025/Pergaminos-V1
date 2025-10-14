@@ -8,6 +8,7 @@ const API = `${BACKEND_URL}/api`;
 const Companies = ({ user }) => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
+  const [filteredCompanies, setFilteredCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -33,12 +34,18 @@ const Companies = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [asesores, setAsesores] = useState([]);
   const [segmentos, setSegmentos] = useState([]);
+  const [filterCorporacion, setFilterCorporacion] = useState('');
+  const [filterEstado, setFilterEstado] = useState('');
 
   useEffect(() => {
     fetchCompanies();
     fetchAsesores();
     fetchSegmentos();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [companies, filterCorporacion, filterEstado]);
 
   const fetchCompanies = async () => {
     try {
