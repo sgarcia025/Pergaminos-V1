@@ -507,6 +507,26 @@ const Companies = ({ user }) => {
                 />
               </div>
 
+              <div className="form-group">
+                <label htmlFor="is_active" className="form-label">
+                  Estado de la Empresa *
+                </label>
+                <select
+                  id="is_active"
+                  name="is_active"
+                  value={formData.is_active}
+                  onChange={handleChange}
+                  className="form-input"
+                  required
+                >
+                  <option value={true}>Activa</option>
+                  <option value={false}>Inactiva</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Solo los usuarios de empresas activas pueden acceder al sistema
+                </p>
+              </div>
+
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
