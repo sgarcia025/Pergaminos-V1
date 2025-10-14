@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const Companies = ({ user }) => {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -20,7 +22,8 @@ const Companies = ({ user }) => {
     asesor_comercial_id: '',
     segmento: '',
     estado: '',
-    corporacion: ''
+    corporacion: '',
+    is_active: true
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
