@@ -188,6 +188,11 @@ body {
   color: #065f46;
 }
 
+.status-inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
 .status-completed {
   background: #dbeafe;
   color: #1e40af;
