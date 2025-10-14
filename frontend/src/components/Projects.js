@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const Projects = ({ user }) => {
+  const location = useLocation();
   const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -20,11 +22,26 @@ const Projects = ({ user }) => {
   const [success, setSuccess] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState(null);
+  const [filterCompany, setFilterCompany] = useState('');
+  const [filterCorporacion, setFilterCorporacion] = useState('');
 
   useEffect(() => {
     fetchProjects();
     fetchCompanies();
   }, []);
+
+  useEffect(() => {
+    // Check if there's a company filter in URL params
+    const searchParams = new URLSearchParams(location.search);
+    const companyParam = searchParams.get('company');
+    if (companyParam) {
+      setFilterCompany(companyParam);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [projects, companies, filterCompany, filterCorporacion]);
 
   const fetchProjects = async () => {
     try {
