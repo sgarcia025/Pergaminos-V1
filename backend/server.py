@@ -314,6 +314,15 @@ async def login_user(login_data: UserLogin):
     if not user.is_active:
         raise HTTPException(status_code=401, detail="User account is disabled")
     
+    # Check if user's company is active (for client and asesor users)
+    if user.role in ["client", "asesor"] and user.company_id:
+        company = await db.companies.find_one({"id": user.company_id})
+        if company and not company.get("is_active", True):
+            raise HTTPException(
+                status_code=403, 
+                detail="Su empresa está inactiva. Contacte al administrador para más información."
+            )
+    
     # Create access token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
