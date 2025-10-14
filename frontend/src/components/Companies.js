@@ -250,8 +250,8 @@ const Companies = ({ user }) => {
                   )}
                 </div>
               </div>
-              <span className="status-badge status-active">
-                Activa
+              <span className={`status-badge ${company.is_active !== false ? 'status-active' : 'status-inactive'}`}>
+                {company.is_active !== false ? 'Activa' : 'Inactiva'}
               </span>
             </div>
             
@@ -261,7 +261,10 @@ const Companies = ({ user }) => {
                   Creada {new Date(company.created_at).toLocaleDateString()}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
+                  <button 
+                    onClick={() => handleViewProjects(company.id)}
+                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                  >
                     Ver Proyectos
                   </button>
                   {user.role === 'staff' && (
