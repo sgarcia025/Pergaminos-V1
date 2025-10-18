@@ -71,6 +71,26 @@ const Segmentos = ({ user }) => {
     });
   };
 
+  const handleNewClick = () => {
+    setIsEditing(false);
+    setEditingSegmento(null);
+    setFormData({
+      nombre: '',
+      descripcion: ''
+    });
+    setShowModal(true);
+  };
+
+  const handleEditClick = (segmento) => {
+    setIsEditing(true);
+    setEditingSegmento(segmento);
+    setFormData({
+      nombre: segmento.nombre || '',
+      descripcion: segmento.descripcion || ''
+    });
+    setShowModal(true);
+  };
+
   const handleDeleteClick = (segmento) => {
     setSegmentoToDelete(segmento);
     setShowDeleteModal(true);
