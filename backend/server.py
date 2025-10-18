@@ -148,7 +148,7 @@ class ExtractedDataSummary(BaseModel):
 
 class AIConfiguration(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    company_id: str  # Configuración por empresa
+    project_id: str  # Configuración por proyecto
     config_type: str  # "data_extraction", "qa_processing", "document_processing"
     provider: str = "openai"  # openai, emergent
     api_key: Optional[str] = None  # Encrypted storage recommended
