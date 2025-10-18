@@ -266,6 +266,41 @@ class BatchProcessTask(BaseModel):
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
 
+# PDF Manager Models
+class RenameOperation(BaseModel):
+    from_id: str  # Document ID
+    from_name: str  # Current name
+    to_name: str  # New name
+
+class PlanValidation(BaseModel):
+    confidence: float  # 0.0 to 1.0
+    conflicts: List[str] = []  # List of conflict descriptions
+    warnings: List[str] = []  # Non-blocking warnings
+
+class PDFManagerPlan(BaseModel):
+    rename_operations: List[RenameOperation] = []
+    reorder_ids: List[str] = []  # Ordered list of document IDs
+    validation: PlanValidation
+
+class PDFManagerJob(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    project_id: str
+    instruction: str  # Natural language instruction
+    plan: Optional[PDFManagerPlan] = None
+    status: str = "pending"  # pending, planning, plan_ready, executing, completed, failed
+    result_urls: Optional[Dict[str, Any]] = None  # {files: [{id, name, url}], zip_url}
+    error_message: Optional[str] = None
+    logs: List[Dict[str, Any]] = []
+    created_by: str  # User ID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+
+class PDFManagerPlanRequest(BaseModel):
+    project_id: str
+    instruction: str
+
 # Create uploads directory
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
