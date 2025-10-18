@@ -134,9 +134,14 @@ const AIConfiguration = ({ user }) => {
     setError('');
     setSuccess('');
 
+    if (!selectedProject) {
+      setError('Por favor selecciona un proyecto');
+      return;
+    }
+
     try {
       if (editingConfig) {
-        await axios.put(`${API}/companies/${selectedCompany}/ai-config/${editingConfig.id}`, {
+        await axios.put(`${API}/projects/${selectedProject}/ai-config/${editingConfig.id}`, {
           provider: formData.provider,
           api_key: formData.api_key || undefined,
           model_name: formData.model_name,
@@ -144,7 +149,7 @@ const AIConfiguration = ({ user }) => {
         });
         setSuccess('Configuración actualizada exitosamente');
       } else {
-        await axios.post(`${API}/companies/${selectedCompany}/ai-config`, formData);
+        await axios.post(`${API}/projects/${selectedProject}/ai-config`, formData);
         setSuccess('Configuración creada exitosamente');
       }
       
