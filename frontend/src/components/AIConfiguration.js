@@ -305,10 +305,10 @@ const AIConfiguration = ({ user }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">Configuración por Tarea</h3>
+                <h3 className="text-sm font-medium text-blue-800">Configuración por Proyecto y Tarea</h3>
                 <p className="text-sm text-blue-700 mt-1">
-                  Configure diferentes modelos de IA y API keys para optimizar cada tipo de tarea. 
-                  Si no configura una tarea específica, se usará la clave universal del sistema.
+                  Configure diferentes modelos de IA y API keys para cada proyecto y tipo de tarea. 
+                  Si no configura una tarea específica para este proyecto, se usará la clave universal del sistema.
                 </p>
               </div>
             </div>
