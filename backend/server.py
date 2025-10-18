@@ -3583,7 +3583,7 @@ async def list_pdf_manager_jobs(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.get("/pdf-manager/download/zip/{job_id}", response_class=FileResponse)
+@api_router.get("/pdf-manager/download/zip/{job_id}")
 async def download_zip(
     job_id: str,
     current_user: User = Depends(get_current_user)
