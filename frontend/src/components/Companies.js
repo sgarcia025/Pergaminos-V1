@@ -176,7 +176,6 @@ const Companies = ({ user }) => {
       direccion: company.direccion || '',
       asesor_comercial_id: company.asesor_comercial_id || '',
       segmento: company.segmento || '',
-      estado: company.estado || '',
       corporacion: company.corporacion || '',
       is_active: company.is_active !== undefined ? company.is_active : true
     });
