@@ -1056,7 +1056,7 @@ async def get_ai_config_for_task(project_id: str, task_type: str) -> dict:
             # Decrypt API key
             try:
                 decrypted_key = decrypt_api_key(config["api_key"])
-                logger.info(f"Successfully decrypted API key for company {company_id}")
+                logger.info(f"Successfully decrypted API key for project {project_id}")
                 
                 # Validate decrypted key
                 if not decrypted_key or len(decrypted_key) < 10:
@@ -1067,13 +1067,13 @@ async def get_ai_config_for_task(project_id: str, task_type: str) -> dict:
                     "api_key": decrypted_key,
                     "model_name": config["model_name"],
                     "model_config": config.get("model_parameters", {}),
-                    "source": "company_config"
+                    "source": "project_config"
                 }
             except Exception as e:
-                logger.error(f"Failed to decrypt API key for company {company_id}: {str(e)}", exc_info=True)
+                logger.error(f"Failed to decrypt API key for project {project_id}: {str(e)}", exc_info=True)
                 logger.warning(f"Falling back to Emergent LLM key due to decryption error")
         else:
-            logger.info(f"No company-specific AI config found for {company_id}, using fallback")
+            logger.info(f"No project-specific AI config found for {project_id}, using fallback")
         
         # Fallback to Emergent LLM key with recommended models
         fallback_models = {
@@ -1094,7 +1094,7 @@ async def get_ai_config_for_task(project_id: str, task_type: str) -> dict:
         }
         
     except Exception as e:
-        logger.error(f"Error getting AI config for company {company_id}, task {task_type}: {str(e)}", exc_info=True)
+        logger.error(f"Error getting AI config for project {project_id}, task {task_type}: {str(e)}", exc_info=True)
         return {
             "provider": "emergent",
             "api_key": os.environ.get('EMERGENT_LLM_KEY'),
