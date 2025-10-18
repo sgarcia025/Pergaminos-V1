@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 class AIDecryptionTester:
-    def __init__(self, base_url="https://smart-doc-extract.preview.emergentagent.com"):
+    def __init__(self, base_url="https://docsmart-pdf-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None

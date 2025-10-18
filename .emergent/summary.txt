@@ -1,167 +1,81 @@
 <analysis>
-The AI engineer successfully built upon an existing MVP, iteratively enhancing the Pergaminos digitalización application based on user feedback. Initial work included fundamental CRUD for companies and projects, basic AI document processing, and user/role management. The engineer then focused on expanding core features: implementing admin deletion for key entities (companies, projects, users), enhancing company data with new fields, and introducing a specialized asesor user role. Significant effort was dedicated to improving document processing, enabling parallel PDF uploads with robust chunking for large files. A crucial pre-extraction QA workflow was integrated, allowing manual review of document quality before AI data extraction. Data storage for extracted information was normalized into a client-specific database. The final major feature delivered was a configurable AI module, empowering clients to manage their OpenAI API keys and models for specific AI tasks securely. Technical challenges included handling large PDF files, ensuring secure API key encryption via Fernet, and resolving specific frontend rendering issues. The engineer consistently validated changes with backend testing and sought user input for frontend verification and next steps.
+The AI engineer successfully enhanced the Pergaminos digitalización application by resolving critical bugs and implementing significant features. Key bug fixes included rectifying an  issue that prevented API key decryption and adapting AI document processing to send PDF text for OpenAI integration. The QA findings display was improved by adjusting backend filters. Major feature additions encompassed expanding company/project management with active status validation, improved navigation, and comprehensive filtering. AI configuration was seamlessly migrated to a project-level scope. A robust PDF Manager module was developed, enabling semantic PDF renaming and file reordering, overcoming challenges with LLM plan generation, file paths, and implementing authenticated downloads. The most recent task involves reorganizing the application's sidebar.
 </analysis>
 
 <product_requirements>
-The initial request was for a modern, green-toned frontend for Pergaminos digitalización with a robust backend. Key functionalities included:
-1.  **Company/Project Management:** Creation and management of client companies and digitization projects.
-2.  **PDF Document Processing:** Uploading, AI-driven semantic data extraction, renaming, reordering, and PDF export.
-3.  **AI QA Agents:** Creation of agents with semantic instructions for quality checks (e.g., image clarity, orientation).
-4.  **User/Role Management:** System users (staff/client) with permissions, secure login, and a client portal.
-5.  **Dashboard:** Displaying key performance indicators.
-
-Recent enhancements include:
-6.  **Admin Deletion:** Ability for administrators to delete companies, projects, and users.
-7.  **Expanded Company Fields:** Addition of detailed company information (Razón Social, NIT, Contacto, Correo, Teléfono, Dirección, Asesor Comercial, Segmento, Estado, Corporación).
-8.  **Asesor Role:** New staff role with restricted access to only assigned companies.
-9.  **Parallel PDF Processing:** Capability to upload and process up to 10 PDFs simultaneously per project, with chunking for very large documents (e.g., 5000+ pages).
-10. **Pre-Extraction QA Workflow:** Implementing QA checks before AI data extraction, including a dashboard for important findings requiring manual review.
-11. **Normalized Extracted Data:** Storing AI-extracted data in a client-specific, normalized database structure for efficient querying.
-12. **AI Configuration Module:** Allowing clients to configure their own OpenAI API keys and specific models for data extraction, QA, and document processing, with secure key encryption.
+The Pergaminos digitalización application provides client/project management, AI-driven PDF processing, and user management. Recent enhancements included admin deletion, expanded company details, an asesor role, parallel PDF processing, a pre-extraction QA workflow, and normalized data storage. A configurable AI module allows clients to manage OpenAI keys. New requirements involved: enhancing Empresas (Companies) to link to project cards, adding Empresa and Corporación filters to Proyectos (Projects), introducing an Activa/Inactiva dropdown for company status to control user access, and migrating AI configurations to a project-level scope. A major addition is the PDF Manager module, which processes natural-language instructions to rename and reorder PDFs, generates a plan, executes changes on storage/DB, and provides downloadable ZIPs and individual files, all with multi-tenancy.
 </product_requirements>
 
 <key_technical_concepts>
--   FastAPI (Backend API)
--   React (Frontend)
--   MongoDB (Database)
--   JWT (Authentication)
--   Shadcn UI & Tailwind CSS (UI/Styling)
--    (LLM Integration Library)
--   OpenAI GPT-4o (AI Processing, configurable)
--   PyPDF2 (PDF handling for chunking)
--   asyncio & BackgroundTasks (Parallel processing)
--   Fernet Encryption (Secure API key storage)
+- FastAPI (Backend API)
+- React (Frontend)
+- MongoDB (Database)
+- JWT (Authentication)
+- Tailwind CSS (UI/Styling)
+-  (LLM Integration)
+- OpenAI GPT-4o (AI Processing)
+- PyPDF2 (PDF chunking)
+- asyncio (Concurrency)
+- Fernet Encryption (API key security)
+-  (FastAPI file serving)
+-  (Authenticated downloads)
 </key_technical_concepts>
 
 <code_architecture>
-The application follows a standard full-stack architecture with a React frontend and a FastAPI backend, utilizing MongoDB for data persistence.
+The application utilizes a React frontend and a FastAPI backend, with MongoDB for data persistence.
 
 
 
--   : The main FastAPI application file, containing all API endpoints and business logic.
-    -   **Changes:** Added/modified endpoints for company/project/user deletion, company editing, segment management, multi-PDF batch upload with chunking, QA workflow integration, extracted data management, and AI configuration management with Fernet encryption. Updated Pydantic models for Company, Document, QAAgent, BatchTask, ExtractedDataItem, ExtractedDataSummary, and AIConfiguration. Integrated PyPDF2 for PDF chunking and  for concurrency control.
--   : Updated to include  and .
--   : Main HTML entry point.
-    -   **Changes:** Removed Made with emergent watermark and updated meta description.
--   : Main React component for routing.
-    -   **Changes:** Added routes for , , , and .
+-   : The core FastAPI application.
+    -   **Summary**: Contains all API endpoints, Pydantic models, and business logic for the application's functionality.
+    -   **Changes**:  model updated for . CRUD endpoints for AI config adapted to project scope.  handling fixed.  and  modified to send PDF text for OpenAI. Login validation now checks . A  endpoint was added. New Pydantic models for PDF Manager were added, along with , , and authenticated  endpoints using . File path management and  order were corrected.
+-   : Environment variables.
+    -   **Summary**: Stores critical configurations.
+    -   **Changes**:  was added to ensure consistent API key encryption.
 -   : Global styling.
-    -   **Changes:** Modified styles for  to reduce the size of the document upload area.
--   : Provides application navigation.
-    -   **Changes:** Added navigation links for Segmentos, Hallazgos QA, Datos Extraídos, and Configuración IA (role-based visibility).
+    -   **Summary**: Manages overall application visual styles.
+    -   **Changes**: Added styles for .
 -   : Manages client companies.
-    -   **Changes:** Implemented delete and edit functionalities, updated form to include new company fields,  dropdown, and  selection.
+    -   **Summary**: Handles company creation, editing, and listing.
+    -   **Changes**: Ver Proyectos button now links to company-specific projects. The  field was converted to a dropdown in the form, and filters for Corporación and Estado were added.
 -   : Manages digitization projects.
-    -   **Changes:** Added delete functionality.
--   : Manages system users.
-    -   **Changes:** Removed Cliente Prueba button and test credential generation, added user deletion, and updated user creation form to include the asesor role.
--   : Displays project details and handles document processing.
-    -   **Changes:** Updated file upload to support multiple files and batch processing with progress indicators, adjusted UI for upload area size, fixed document renaming (JSON payload), enhanced status display for new QA workflow, and ensured safe rendering of document data.
--   : Manages AI QA agents.
-    -   **Changes:** Added fields for  and  to the form, implemented edit and delete functionalities.
--    (NEW): Frontend component for managing industry segments.
--    (NEW): Frontend component for reviewing and managing QA findings for documents.
--    (NEW): Frontend component to display normalized AI-extracted data by client.
--    (NEW): Frontend component for clients to configure OpenAI API keys and models for AI tasks.
+    -   **Summary**: Displays and manages projects.
+    -   **Changes**: Filters for Empresa and Corporación were added to the UI.
+-   : Frontend for QA findings.
+    -   **Summary**: Displays documents that require manual QA review.
+    -   **Changes**: Implicitly affected by backend changes to display more documents needing review.
+-   : Manages AI settings.
+    -   **Summary**: Allows users to configure AI models and API keys.
+    -   **Changes**: Refactored to first select a company, then a project, before configuring AI models/keys, making it project-level.
+-   : Manages industry segments.
+    -   **Summary**: Displays and allows management of industry segments.
+    -   **Changes**: Added full editing functionality for segment cards with a dedicated modal and updated form handling.
+-   : Displays project details.
+    -   **Summary**: The main view for a project, including document upload.
+    -   **Changes**: Integrated the new  component as a new tab.
+-    (NEW): PDF Manager module frontend.
+    -   **Summary**: Enables users to provide natural language instructions for renaming/reordering PDFs, preview the AI-generated plan, execute it, and download modified files.
+    -   **Changes**: Implemented UI for instruction input, plan preview, execution, and secure, authenticated file downloads using .
+-   : Application navigation.
+    -   **Summary**: Provides the main navigation links for the application.
+    -   **Changes**: Currently being modified to remove Procesador Docs and reorder existing links.
 </code_architecture>
 
 <pending_tasks>
--   Implement a backend endpoint to update a user's company ID (encountered Not Found error previously).
--   Fully test and confirm the semantic instructions for QA agent functionality (ongoing verification).
--   Address the persistent Script error: expected : encountered during manual frontend testing (from initial context).
--   Provide clarification to the user that  is a Python library installed via 
-Usage:   
-  pip <command> [options]
-
-Commands:
-  install                     Install packages.
-  lock                        Generate a lock file.
-  download                    Download packages.
-  uninstall                   Uninstall packages.
-  freeze                      Output installed packages in requirements format.
-  inspect                     Inspect the python environment.
-  list                        List installed packages.
-  show                        Show information about installed packages.
-  check                       Verify installed packages have compatible dependencies.
-  config                      Manage local and global configuration.
-  search                      Search PyPI for packages.
-  cache                       Inspect and manage pip's wheel cache.
-  index                       Inspect information available from package indexes.
-  wheel                       Build wheels from your requirements.
-  hash                        Compute hashes of package archives.
-  completion                  A helper command used for command completion.
-  debug                       Show information useful for debugging.
-  help                        Show help for commands.
-
-General Options:
-  -h, --help                  Show help.
-  --debug                     Let unhandled exceptions propagate outside the
-                              main subroutine, instead of logging them to
-                              stderr.
-  --isolated                  Run pip in an isolated mode, ignoring
-                              environment variables and user configuration.
-  --require-virtualenv        Allow pip to only run in a virtual environment;
-                              exit with an error otherwise.
-  --python <python>           Run pip with the specified Python interpreter.
-  -v, --verbose               Give more output. Option is additive, and can be
-                              used up to 3 times.
-  -V, --version               Show version and exit.
-  -q, --quiet                 Give less output. Option is additive, and can be
-                              used up to 3 times (corresponding to WARNING,
-                              ERROR, and CRITICAL logging levels).
-  --log <path>                Path to a verbose appending log.
-  --no-input                  Disable prompting for input.
-  --keyring-provider <keyring_provider>
-                              Enable the credential lookup via the keyring
-                              library if user input is allowed. Specify which
-                              mechanism to use [auto, disabled, import,
-                              subprocess]. (default: auto)
-  --proxy <proxy>             Specify a proxy in the form
-                              scheme://[user:passwd@]proxy.server:port.
-  --retries <retries>         Maximum attempts to establish a new HTTP
-                              connection. (default: 5)
-  --timeout <sec>             Set the socket timeout (default 15 seconds).
-  --exists-action <action>    Default action when a path already exists:
-                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
-  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
-                              even though it does not have valid or any HTTPS.
-  --cert <path>               Path to PEM-encoded CA certificate bundle. If
-                              provided, overrides the default. See 'SSL
-                              Certificate Verification' in pip documentation
-                              for more information.
-  --client-cert <path>        Path to SSL client certificate, a single file
-                              containing the private key and the certificate
-                              in PEM format.
-  --cache-dir <dir>           Store the cache data in <dir>.
-  --no-cache-dir              Disable the cache.
-  --disable-pip-version-check
-                              Don't periodically check PyPI to determine
-                              whether a new version of pip is available for
-                              download. Implied with --no-index.
-  --no-color                  Suppress colored output.
-  --use-feature <feature>     Enable new functionality, that may be backward
-                              incompatible.
-  --use-deprecated <feature>  Enable deprecated functionality, that will be
-                              removed in the future.
-  --resume-retries <resume_retries>
-                              Maximum attempts to resume or restart an
-                              incomplete download. (default: 5), not a source code folder.
+- Reorganize the sidebar modules in  to match the user's specified order (Dashboard, Empresas, Proyectos, Agentes QA, Hallazgos QA, Datos Extraídos, Segmentos, Configuración IA, Usuarios).
+- Implement page reordering functionality *within* individual PDFs for the PDF Manager module.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer successfully implemented a comprehensive **AI Configuration module**. This module enables clients to securely manage their OpenAI API keys and select specific AI models (, , ) for data extraction, QA processing, and general document processing. The backend () now includes an  Pydantic model, CRUD endpoints (), and **Fernet encryption** for secure API key storage. A  utility, integrated into  and , fetches and decrypts these keys, with a fallback to a universal Emergent LLM key. A new frontend component, , its route, and a sidebar link provide an intuitive UI for configuration.
+Immediately prior to this summary, the AI engineer successfully resolved critical issues affecting the download functionality of the newly developed PDF Manager module. This involved fixing several problems: incorrect HTTP headers/response types causing JSON downloads,  order issues in FastAPI, and the lack of JWT token inclusion in direct download links.
 
-Prior to this, the engineer also:
--   Implemented a **normalized database structure** for AI-extracted data (,  collections) with backend endpoints and a  frontend component.
--   Enhanced the **QA Agents module**: QA now runs *before* AI data extraction, displaying findings for manual review. This involved updating  and  models, creating , adding QA metrics to the dashboard, and enabling edit/delete functionality for QA agents, alongside clear status transitions.
--   Addressed a persistent **frontend error in PDF renaming** by adjusting backend/frontend communication to use JSON payloads.
--   Implemented **parallel PDF processing** for up to 10 documents simultaneously, including **chunking for large PDFs** (5000+ pages with adaptive chunk sizes), batch status tracking, and frontend progress indicators.
--   Refactored  and  modules to include **admin deletion**, **expanded company fields**, and an asesor user role with restricted viewing. A  component was added for industry segments.
--   Removed UI elements like the Made with emergent watermark and a Cliente Prueba button.
+The solution implemented involved:
+1.  **Backend ():** Switched file serving to  with correct  and  headers for both ZIP and individual PDF downloads. Fixed the order of  calls to occur before .
+2.  **Frontend ():** Modified the download buttons to trigger a JavaScript function that uses  to make authenticated download requests, ensuring the JWT token is sent.
 
-The last action was successful backend testing of the AI Configuration module, and a prompt for frontend testing.
+These changes made the download system fully functional and secure. The user's current request, which the AI engineer has just acknowledged, is to remove the Procesador Docs module and reorder the remaining navigation links in the application's sidebar.
 </current_work>
 
 <optional_next_step>
-The next step is to proceed with frontend testing of the newly implemented AI Configuration module.
+Reorganize the sidebar by removing Procesador Docs and reordering the remaining links as requested by the user.
 </optional_next_step>
