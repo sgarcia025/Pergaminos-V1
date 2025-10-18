@@ -355,6 +355,32 @@ const ProjectDetail = ({ user }) => {
         </div>
       </div>
 
+      {/* Tabs Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('documents')}
+            className={`${
+              activeTab === 'documents'
+                ? 'border-emerald-500 text-emerald-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            📄 Documentos
+          </button>
+          <button
+            onClick={() => setActiveTab('pdf-manager')}
+            className={`${
+              activeTab === 'pdf-manager'
+                ? 'border-emerald-500 text-emerald-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            🤖 PDF Manager IA
+          </button>
+        </nav>
+      </div>
+
       {error && <div className="alert alert-error">{typeof error === 'string' ? error : JSON.stringify(error)}</div>}
       {success && <div className="alert alert-success">{typeof success === 'string' ? success : JSON.stringify(success)}</div>}
 
