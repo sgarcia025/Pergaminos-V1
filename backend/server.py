@@ -3892,7 +3892,7 @@ async def execute_pdf_plan(
             "message": "Plan executed successfully"
         }
         
-    except HTTPException:
+    except HTTPException as e:
         # Update job status to failed if it was being executed
         if 'job_id' in locals() and job_id:
             await db.pdf_manager_jobs.update_one(
@@ -3900,14 +3900,14 @@ async def execute_pdf_plan(
                 {
                     "$set": {
                         "status": "failed",
-                        "error_message": str(e),
+                        "error_message": str(e.detail),
                         "updated_at": datetime.now(timezone.utc)
                     },
                     "$push": {
                         "logs": {
                             "timestamp": datetime.now(timezone.utc).isoformat(),
                             "event": "execution_failed",
-                            "error": str(e)
+                            "error": str(e.detail)
                         }
                     }
                 }
