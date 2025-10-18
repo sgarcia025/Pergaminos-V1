@@ -200,8 +200,8 @@ const Companies = ({ user }) => {
       direccion: '',
       asesor_comercial_id: '',
       segmento: '',
-      estado: '',
-      corporacion: ''
+      corporacion: '',
+      is_active: true
     });
     setShowModal(true);
   };
