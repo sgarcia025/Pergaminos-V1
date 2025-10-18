@@ -199,7 +199,7 @@ const AIConfiguration = ({ user }) => {
 
     if (window.confirm('¿Estás seguro de que deseas eliminar esta configuración?')) {
       try {
-        await axios.delete(`${API}/companies/${selectedCompany}/ai-config/${config.id}`);
+        await axios.delete(`${API}/projects/${selectedProject}/ai-config/${config.id}`);
         setSuccess('Configuración eliminada exitosamente');
         fetchConfigurations();
       } catch (error) {
