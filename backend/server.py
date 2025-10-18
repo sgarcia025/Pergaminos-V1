@@ -3616,13 +3616,11 @@ async def download_zip(
         if not zip_path.exists():
             raise HTTPException(status_code=404, detail=f"ZIP file does not exist: {zip_filename}")
         
-        return FileResponse(
+        from fastapi.responses import FileResponse as FR
+        return FR(
             path=str(zip_path),
             filename=zip_filename,
-            media_type="application/zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{zip_filename}"'
-            }
+            media_type="application/zip"
         )
         
     except HTTPException:
