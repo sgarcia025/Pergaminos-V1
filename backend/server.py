@@ -3272,6 +3272,297 @@ async def create_admin_user():
     
     return {"message": "Admin user created successfully", "email": "admin@pergaminos.com", "password": "admin123"}
 
+# ============================================================================
+# PDF MANAGER ENDPOINTS - PHASE 1: PLANNING
+# ============================================================================
+
+async def generate_pdf_plan_with_ai(
+    project: dict,
+    company: dict,
+    documents: List[dict],
+    instruction: str
+) -> PDFManagerPlan:
+    """
+    Generate a plan for PDF renaming and reordering using AI (GPT-4o).
+    Returns a plan with rename operations, reorder sequence, and validation.
+    """
+    try:
+        # Get AI configuration for document processing
+        ai_config = await get_ai_config_for_task(project["id"], "document_processing")
+        
+        # Prepare documents metadata for LLM (lightweight)
+        docs_metadata = []
+        for doc in documents:
+            # Extract relevant metadata
+            metadata = {
+                "id": doc["id"],
+                "name": doc["original_filename"],
+                "uploaded_at": doc.get("created_at", "").isoformat() if isinstance(doc.get("created_at"), datetime) else str(doc.get("created_at", "")),
+            }
+            
+            # Add extracted data if available
+            if doc.get("extracted_data"):
+                extracted = doc["extracted_data"]
+                if isinstance(extracted, dict):
+                    metadata["extracted_data"] = {
+                        k: v for k, v in extracted.items() 
+                        if k in ["date", "client", "document_type", "amount", "invoice_number", "project_name"]
+                    }
+            
+            docs_metadata.append(metadata)
+        
+        # Build LLM prompt
+        system_prompt = """You are an expert document management AI planner. Your task is to analyze natural language instructions and generate a deterministic plan for renaming and reordering PDF documents.
+
+RULES:
+1. Return ONLY valid JSON, no markdown or explanations.
+2. Use only the metadata provided - do not invent data.
+3. For rename operations, use the document ID in "from_id" and generate a safe filename in "to_name".
+4. Preserve file extensions (.pdf).
+5. For reordering, provide an array of document IDs in the desired order.
+6. Detect conflicts: duplicate names, missing required metadata, ambiguous instructions.
+7. Set confidence (0.0-1.0) based on instruction clarity and metadata availability.
+
+OUTPUT FORMAT:
+{
+  "rename_operations": [
+    {"from_id": "doc_id", "from_name": "current.pdf", "to_name": "new_name.pdf"}
+  ],
+  "reorder_ids": ["doc_id_1", "doc_id_2", ...],
+  "validation": {
+    "confidence": 0.95,
+    "conflicts": ["conflict description if any"],
+    "warnings": ["warning if any"]
+  }
+}"""
+
+        user_prompt = f"""CONTEXT:
+Company: {company.get('name', 'N/A')}
+Project: {project.get('name', 'N/A')}
+
+INSTRUCTION:
+{instruction}
+
+DOCUMENTS METADATA:
+{json.dumps(docs_metadata, indent=2, default=str)}
+
+Generate the plan:"""
+
+        # Create AI chat using configuration
+        chat = await create_ai_chat_with_config(
+            ai_config,
+            f"pdf_plan_{project['id']}_{datetime.now().timestamp()}",
+            system_prompt
+        )
+        
+        from emergentintegrations.llm.chat import UserMessage
+        response = await chat.send_message(UserMessage(text=user_prompt))
+        
+        # Parse response
+        response_text = response.text.strip()
+        
+        # Remove markdown code blocks if present
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+            response_text = response_text.strip()
+        
+        plan_data = json.loads(response_text)
+        
+        # Validate and convert to Pydantic models
+        rename_ops = [
+            RenameOperation(
+                from_id=op["from_id"],
+                from_name=op["from_name"],
+                to_name=op["to_name"]
+            ) for op in plan_data.get("rename_operations", [])
+        ]
+        
+        reorder_ids = plan_data.get("reorder_ids", [doc["id"] for doc in documents])
+        
+        validation = PlanValidation(
+            confidence=plan_data.get("validation", {}).get("confidence", 0.5),
+            conflicts=plan_data.get("validation", {}).get("conflicts", []),
+            warnings=plan_data.get("validation", {}).get("warnings", [])
+        )
+        
+        return PDFManagerPlan(
+            rename_operations=rename_ops,
+            reorder_ids=reorder_ids,
+            validation=validation
+        )
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse LLM response as JSON: {str(e)}")
+        logger.error(f"Response text: {response_text}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI generated invalid response format. Please try rephrasing your instruction."
+        )
+    except Exception as e:
+        logger.error(f"Error generating PDF plan: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate plan: {str(e)}")
+
+
+@api_router.post("/projects/{project_id}/pdf-manager/plan")
+async def create_pdf_plan(
+    project_id: str,
+    plan_request: PDFManagerPlanRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Phase 1: Generate a plan for PDF renaming/reordering using AI.
+    Does not modify files, only returns the plan for preview.
+    """
+    try:
+        # Verify project exists and user has access
+        project = await db.projects.find_one({"id": project_id})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Verify access
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get documents for this project
+        documents = await db.documents.find({
+            "project_id": project_id,
+            "status": {"$in": ["completed", "processed", "qa_passed"]}
+        }).to_list(10000)
+        
+        if not documents:
+            raise HTTPException(
+                status_code=400,
+                detail="No processed documents found in this project"
+            )
+        
+        logger.info(f"Generating PDF plan for project {project_id} with {len(documents)} documents")
+        
+        # Generate plan using AI
+        plan = await generate_pdf_plan_with_ai(
+            project, company, documents, plan_request.instruction
+        )
+        
+        # Create job record
+        job = PDFManagerJob(
+            company_id=project["company_id"],
+            project_id=project_id,
+            instruction=plan_request.instruction,
+            plan=plan,
+            status="plan_ready",
+            created_by=current_user.id,
+            logs=[{
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "plan_generated",
+                "details": f"Generated plan with {len(plan.rename_operations)} rename operations and {len(plan.reorder_ids)} documents to reorder"
+            }]
+        )
+        
+        # Save job to database
+        await db.pdf_manager_jobs.insert_one(job.dict())
+        
+        logger.info(f"PDF plan created successfully. Job ID: {job.id}")
+        
+        return {
+            "job_id": job.id,
+            "status": job.status,
+            "plan": job.plan.dict(),
+            "documents_count": len(documents),
+            "created_at": job.created_at.isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating PDF plan: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/projects/{project_id}/pdf-manager/jobs/{job_id}")
+async def get_pdf_manager_job(
+    project_id: str,
+    job_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get details of a PDF Manager job (plan and execution status)"""
+    try:
+        # Find job
+        job = await db.pdf_manager_jobs.find_one({"id": job_id, "project_id": project_id})
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Verify access
+        project = await db.projects.find_one({"id": project_id})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Convert ObjectId to string if present
+        if "_id" in job:
+            del job["_id"]
+        
+        return job
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching PDF manager job: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/projects/{project_id}/pdf-manager/jobs")
+async def list_pdf_manager_jobs(
+    project_id: str,
+    limit: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """List all PDF Manager jobs for a project"""
+    try:
+        # Verify access
+        project = await db.projects.find_one({"id": project_id})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get jobs
+        jobs = await db.pdf_manager_jobs.find(
+            {"project_id": project_id}
+        ).sort("created_at", -1).limit(limit).to_list(limit)
+        
+        # Clean up jobs
+        for job in jobs:
+            if "_id" in job:
+                del job["_id"]
+        
+        return {
+            "project_id": project_id,
+            "jobs": jobs,
+            "total": len(jobs)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing PDF manager jobs: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
