@@ -2893,9 +2893,9 @@ async def get_ai_configurations(
         "available_types": ["data_extraction", "qa_processing", "document_processing"]
     }
 
-@api_router.put("/companies/{company_id}/ai-config/{config_id}")
+@api_router.put("/projects/{project_id}/ai-config/{config_id}")
 async def update_ai_configuration(
-    company_id: str,
+    project_id: str,
     config_id: str,
     update_data: AIConfigurationUpdate,
     current_user: User = Depends(get_current_user)
@@ -2907,7 +2907,7 @@ async def update_ai_configuration(
     # Find existing configuration
     existing_config = await db.ai_configurations.find_one({
         "id": config_id,
-        "company_id": company_id
+        "project_id": project_id
     })
     
     if not existing_config:
@@ -2929,7 +2929,7 @@ async def update_ai_configuration(
     
     # Update configuration
     result = await db.ai_configurations.update_one(
-        {"id": config_id, "company_id": company_id},
+        {"id": config_id, "project_id": project_id},
         {"$set": update_fields}
     )
     
@@ -2938,9 +2938,9 @@ async def update_ai_configuration(
     
     return {"message": "Configuration updated successfully", "config_id": config_id}
 
-@api_router.delete("/companies/{company_id}/ai-config/{config_id}")
+@api_router.delete("/projects/{project_id}/ai-config/{config_id}")
 async def delete_ai_configuration(
-    company_id: str,
+    project_id: str,
     config_id: str,
     current_user: User = Depends(get_current_user)
 ):
@@ -2950,7 +2950,7 @@ async def delete_ai_configuration(
     
     # Soft delete - just deactivate
     result = await db.ai_configurations.update_one(
-        {"id": config_id, "company_id": company_id},
+        {"id": config_id, "project_id": project_id},
         {"$set": {"is_active": False, "updated_at": datetime.now(timezone.utc)}}
     )
     
