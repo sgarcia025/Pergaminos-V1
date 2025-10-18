@@ -43,16 +43,24 @@ const Segmentos = ({ user }) => {
     setSuccess('');
 
     try {
-      await axios.post(`${API}/segmentos`, formData);
-      setSuccess('Segmento creado exitosamente');
+      if (isEditing && editingSegmento) {
+        await axios.put(`${API}/segmentos/${editingSegmento.id}`, formData);
+        setSuccess('Segmento actualizado exitosamente');
+      } else {
+        await axios.post(`${API}/segmentos`, formData);
+        setSuccess('Segmento creado exitosamente');
+      }
+      
       setShowModal(false);
+      setIsEditing(false);
+      setEditingSegmento(null);
       setFormData({
         nombre: '',
         descripcion: ''
       });
       fetchSegmentos();
     } catch (error) {
-      setError(error.response?.data?.detail || 'Error al crear el segmento');
+      setError(error.response?.data?.detail || (isEditing ? 'Error al actualizar el segmento' : 'Error al crear el segmento'));
     }
   };
 
