@@ -536,21 +536,6 @@ const Companies = ({ user }) => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="estado" className="form-label">
-                    Estado
-                  </label>
-                  <input
-                    id="estado"
-                    name="estado"
-                    type="text"
-                    value={formData.estado}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder="ej: Activa, Potencial, etc."
-                  />
-                </div>
-
-                <div className="form-group">
                   <label htmlFor="corporacion" className="form-label">
                     Corporación
                   </label>
