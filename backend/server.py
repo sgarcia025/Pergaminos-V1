@@ -3620,7 +3620,10 @@ async def download_zip(
         return FileResponse(
             path=str(zip_path),
             filename=zip_filename,
-            media_type="application/zip"
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{zip_filename}"'
+            }
         )
         
     except HTTPException:
