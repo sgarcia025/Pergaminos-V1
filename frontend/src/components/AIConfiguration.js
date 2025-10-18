@@ -78,12 +78,31 @@ const AIConfiguration = ({ user }) => {
     }
   };
 
-  const fetchConfigurations = async () => {
+  const fetchProjects = async () => {
     if (!selectedCompany) return;
+    
+    try {
+      const response = await axios.get(`${API}/projects`);
+      // Filter projects by selected company
+      const companyProjects = response.data.filter(p => p.company_id === selectedCompany);
+      setProjects(companyProjects);
+      
+      // Auto-select if only one project
+      if (companyProjects.length === 1) {
+        setSelectedProject(companyProjects[0].id);
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setError('Error al cargar proyectos');
+    }
+  };
+
+  const fetchConfigurations = async () => {
+    if (!selectedProject) return;
     
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/companies/${selectedCompany}/ai-config`);
+      const response = await axios.get(`${API}/projects/${selectedProject}/ai-config`);
       
       // Organize configurations by type
       const configsByType = {};
