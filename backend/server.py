@@ -3946,10 +3946,7 @@ async def execute_pdf_plan(
         
         raise HTTPException(status_code=500, detail=str(e))
 
-# Include the router in the main app
-app.include_router(api_router)
-
-# Mount static directories for PDF Manager outputs
+# Mount static directories for PDF Manager outputs BEFORE including router
 pdf_manager_temp_dir = UPLOAD_DIR / "pdf_manager_temp"
 pdf_manager_output_dir = UPLOAD_DIR / "pdf_manager_output"
 pdf_manager_temp_dir.mkdir(parents=True, exist_ok=True)
@@ -3957,6 +3954,9 @@ pdf_manager_output_dir.mkdir(parents=True, exist_ok=True)
 
 app.mount("/uploads/pdf_manager_temp", StaticFiles(directory=str(pdf_manager_temp_dir)), name="pdf_manager_temp")
 app.mount("/uploads/pdf_manager_output", StaticFiles(directory=str(pdf_manager_output_dir)), name="pdf_manager_output")
+
+# Include the router in the main app
+app.include_router(api_router)
 
 app.add_middleware(
     CORSMiddleware,
