@@ -186,7 +186,6 @@ class Company(BaseModel):
     direccion: Optional[str] = None
     asesor_comercial_id: Optional[str] = None  # ID del usuario asesor
     segmento: Optional[str] = None  # Industria/segmento
-    estado: Optional[str] = None  # Estado de la empresa (texto libre)
     corporacion: Optional[str] = None  # Corporación (texto libre)
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
