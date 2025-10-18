@@ -3359,8 +3359,18 @@ Generate the plan:"""
         from emergentintegrations.llm.chat import UserMessage
         response = await chat.send_message(UserMessage(text=user_prompt))
         
-        # Parse response
-        response_text = response.text.strip()
+        # Parse response - handle both string and object responses
+        if isinstance(response, str):
+            response_text = response.strip()
+        elif hasattr(response, 'text'):
+            response_text = response.text.strip()
+        elif hasattr(response, 'content'):
+            response_text = response.content.strip()
+        else:
+            # Try to convert to string
+            response_text = str(response).strip()
+        
+        logger.info(f"LLM Response (first 200 chars): {response_text[:200]}")
         
         # Remove markdown code blocks if present
         if response_text.startswith("```"):
