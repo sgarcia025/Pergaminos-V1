@@ -3563,6 +3563,370 @@ async def list_pdf_manager_jobs(
         logger.error(f"Error listing PDF manager jobs: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================================================
+# PDF MANAGER - PHASE 2: EXECUTION
+# ============================================================================
+
+def sanitize_filename(filename: str) -> str:
+    """
+    Sanitize filename to remove invalid characters and ensure safety.
+    Preserves extension.
+    """
+    # Split name and extension
+    if '.' in filename:
+        name_part, ext = filename.rsplit('.', 1)
+        ext = f".{ext}"
+    else:
+        name_part = filename
+        ext = ""
+    
+    # Remove invalid characters
+    import re
+    name_part = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '', name_part)
+    
+    # Collapse multiple spaces
+    name_part = re.sub(r'\s+', ' ', name_part)
+    
+    # Trim whitespace
+    name_part = name_part.strip()
+    
+    # Limit length (max 200 chars for name, keeping extension)
+    if len(name_part) > 200:
+        name_part = name_part[:200]
+    
+    # Ensure not empty
+    if not name_part:
+        name_part = "document"
+    
+    return name_part + ext
+
+
+async def validate_plan_for_execution(
+    plan: PDFManagerPlan,
+    documents: List[dict]
+) -> tuple[bool, List[str]]:
+    """
+    Validate plan before execution.
+    Returns (is_valid, list_of_errors)
+    """
+    errors = []
+    
+    # Create document ID map
+    doc_map = {doc["id"]: doc for doc in documents}
+    
+    # Validate all document IDs exist
+    for op in plan.rename_operations:
+        if op.from_id not in doc_map:
+            errors.append(f"Document ID {op.from_id} not found in project")
+    
+    for doc_id in plan.reorder_ids:
+        if doc_id not in doc_map:
+            errors.append(f"Document ID {doc_id} in reorder list not found in project")
+    
+    # Check for duplicate target names
+    target_names = [op.to_name for op in plan.rename_operations]
+    duplicates = [name for name in target_names if target_names.count(name) > 1]
+    if duplicates:
+        errors.append(f"Duplicate target names found: {', '.join(set(duplicates))}")
+    
+    # Check that all documents are in reorder list
+    if len(plan.reorder_ids) != len(documents):
+        errors.append(f"Reorder list has {len(plan.reorder_ids)} documents but project has {len(documents)}")
+    
+    return len(errors) == 0, errors
+
+
+async def apply_renames_and_generate_zip(
+    job: PDFManagerJob,
+    documents: List[dict],
+    plan: PDFManagerPlan
+) -> Dict[str, Any]:
+    """
+    Apply rename operations to files and database, then generate ordered ZIP.
+    Returns result_urls dict with file URLs and zip URL.
+    """
+    try:
+        import shutil
+        import zipfile
+        from pathlib import Path
+        
+        # Create a temporary directory for processed files
+        temp_dir = Path(f"uploads/pdf_manager_temp/{job.id}")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create output directory for ZIP
+        output_dir = Path(f"uploads/pdf_manager_output")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Map document IDs to documents
+        doc_map = {doc["id"]: doc for doc in documents}
+        
+        # Map of old name to new name from plan
+        rename_map = {op.from_id: op.to_name for op in plan.rename_operations}
+        
+        # Step 1: Copy and rename files to temp directory
+        renamed_files = []
+        for doc_id in documents:
+            doc = doc_map.get(doc_id["id"])
+            if not doc:
+                continue
+            
+            original_path = Path(doc["file_path"])
+            if not original_path.exists():
+                logger.warning(f"File not found: {original_path}")
+                continue
+            
+            # Get new name from plan or keep original
+            new_name = rename_map.get(doc["id"], doc["original_filename"])
+            new_name = sanitize_filename(new_name)
+            
+            # Copy file to temp directory with new name
+            temp_file_path = temp_dir / new_name
+            shutil.copy2(original_path, temp_file_path)
+            
+            renamed_files.append({
+                "id": doc["id"],
+                "original_name": doc["original_filename"],
+                "new_name": new_name,
+                "temp_path": str(temp_file_path),
+                "size": original_path.stat().st_size
+            })
+            
+            # Update document in database with new name
+            await db.documents.update_one(
+                {"id": doc["id"]},
+                {
+                    "$set": {
+                        "original_filename": new_name,
+                        "updated_at": datetime.now(timezone.utc)
+                    },
+                    "$push": {
+                        "processing_history": {
+                            "action": "renamed_by_pdf_manager",
+                            "old_name": doc["original_filename"],
+                            "new_name": new_name,
+                            "job_id": job.id,
+                            "timestamp": datetime.now(timezone.utc).isoformat()
+                        }
+                    }
+                }
+            )
+        
+        # Step 2: Create ordered ZIP according to plan.reorder_ids
+        zip_filename = f"reordered_pdfs_{job.project_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        zip_path = output_dir / zip_filename
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # Add files in the order specified by plan
+            for idx, doc_id in enumerate(plan.reorder_ids, 1):
+                # Find the renamed file info
+                file_info = next((f for f in renamed_files if f["id"] == doc_id), None)
+                if not file_info:
+                    logger.warning(f"Document {doc_id} not found in renamed files")
+                    continue
+                
+                # Add prefix to maintain order when extracted
+                ordered_name = f"{idx:03d}_{file_info['new_name']}"
+                
+                # Add to ZIP
+                zipf.write(file_info["temp_path"], ordered_name)
+        
+        # Step 3: Generate URLs (relative paths for now, can be presigned URLs in production)
+        file_urls = []
+        for file_info in renamed_files:
+            file_urls.append({
+                "id": file_info["id"],
+                "name": file_info["new_name"],
+                "original_name": file_info["original_name"],
+                "url": f"/uploads/pdf_manager_temp/{job.id}/{file_info['new_name']}",
+                "size": file_info["size"]
+            })
+        
+        result_urls = {
+            "files": file_urls,
+            "zip_url": f"/uploads/pdf_manager_output/{zip_filename}",
+            "zip_size": zip_path.stat().st_size,
+            "zip_filename": zip_filename,
+            "total_files": len(file_urls)
+        }
+        
+        # Cleanup: Remove temp directory after a delay (optional, or keep for downloads)
+        # Can implement cleanup job later
+        
+        return result_urls
+        
+    except Exception as e:
+        logger.error(f"Error applying renames and generating ZIP: {str(e)}", exc_info=True)
+        raise
+
+
+@api_router.post("/projects/{project_id}/pdf-manager/execute")
+async def execute_pdf_plan(
+    project_id: str,
+    request_body: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Phase 2: Execute a PDF Manager plan.
+    Applies renames, updates DB, generates ordered ZIP.
+    """
+    try:
+        job_id = request_body.get("job_id")
+        if not job_id:
+            raise HTTPException(status_code=400, detail="job_id is required")
+        
+        # Find job
+        job_doc = await db.pdf_manager_jobs.find_one({"id": job_id, "project_id": project_id})
+        if not job_doc:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        job = PDFManagerJob(**job_doc)
+        
+        # Verify job is in correct state
+        if job.status != "plan_ready":
+            if job.status == "completed":
+                # Idempotent: return existing results
+                return {
+                    "job_id": job.id,
+                    "status": job.status,
+                    "result_urls": job.result_urls,
+                    "message": "Plan already executed"
+                }
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Job is not ready for execution. Current status: {job.status}"
+                )
+        
+        # Verify access
+        project = await db.projects.find_one({"id": project_id})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        # Check permissions - only staff and asesor can execute
+        if current_user.role == "client":
+            raise HTTPException(status_code=403, detail="Clients cannot execute plans. Contact your asesor or admin.")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get current documents
+        documents = await db.documents.find({
+            "project_id": project_id,
+            "status": {"$in": ["completed", "processed", "qa_passed"]}
+        }).to_list(10000)
+        
+        if not documents:
+            raise HTTPException(status_code=400, detail="No documents found in project")
+        
+        # Validate plan against current state
+        is_valid, validation_errors = await validate_plan_for_execution(job.plan, documents)
+        if not is_valid:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Plan validation failed: {'; '.join(validation_errors)}"
+            )
+        
+        # Update job status to executing
+        await db.pdf_manager_jobs.update_one(
+            {"id": job_id},
+            {
+                "$set": {"status": "executing", "updated_at": datetime.now(timezone.utc)},
+                "$push": {
+                    "logs": {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event": "execution_started",
+                        "user": current_user.email,
+                        "details": f"Starting execution of {len(job.plan.rename_operations)} renames and reordering {len(job.plan.reorder_ids)} documents"
+                    }
+                }
+            }
+        )
+        
+        logger.info(f"Executing PDF Manager plan for job {job_id}")
+        
+        # Apply renames and generate ZIP
+        result_urls = await apply_renames_and_generate_zip(job, documents, job.plan)
+        
+        # Update job with results
+        await db.pdf_manager_jobs.update_one(
+            {"id": job_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "result_urls": result_urls,
+                    "completed_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc)
+                },
+                "$push": {
+                    "logs": {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event": "execution_completed",
+                        "user": current_user.email,
+                        "details": f"Successfully processed {result_urls['total_files']} files. ZIP size: {result_urls['zip_size']} bytes"
+                    }
+                }
+            }
+        )
+        
+        logger.info(f"PDF Manager plan executed successfully. Job ID: {job_id}")
+        
+        return {
+            "job_id": job_id,
+            "status": "completed",
+            "result_urls": result_urls,
+            "message": "Plan executed successfully"
+        }
+        
+    except HTTPException:
+        # Update job status to failed if it was being executed
+        if 'job_id' in locals() and job_id:
+            await db.pdf_manager_jobs.update_one(
+                {"id": job_id},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error_message": str(e),
+                        "updated_at": datetime.now(timezone.utc)
+                    },
+                    "$push": {
+                        "logs": {
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "event": "execution_failed",
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
+        raise
+    except Exception as e:
+        logger.error(f"Error executing PDF plan: {str(e)}", exc_info=True)
+        
+        # Update job status to failed
+        if 'job_id' in locals() and job_id:
+            await db.pdf_manager_jobs.update_one(
+                {"id": job_id},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error_message": str(e),
+                        "updated_at": datetime.now(timezone.utc)
+                    },
+                    "$push": {
+                        "logs": {
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "event": "execution_failed",
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
+        
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
