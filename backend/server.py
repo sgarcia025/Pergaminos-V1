@@ -2789,24 +2789,24 @@ async def get_asesores(current_user: User = Depends(get_current_user)):
     return [User(**asesor) for asesor in asesores]
 
 # AI Configuration Management Endpoints
-@api_router.post("/companies/{company_id}/ai-config", response_model=AIConfiguration)
+@api_router.post("/projects/{project_id}/ai-config", response_model=AIConfiguration)
 async def create_ai_configuration(
-    company_id: str,
+    project_id: str,
     config_data: AIConfigurationCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """Create AI configuration for a company"""
+    """Create AI configuration for a project"""
     if current_user.role not in ["staff"]:
         raise HTTPException(status_code=403, detail="Only staff can manage AI configurations")
     
-    # Verify company exists
-    company = await db.companies.find_one({"id": company_id})
-    if not company:
-        raise HTTPException(status_code=404, detail="Company not found")
+    # Verify project exists
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
     
     # Check if configuration for this type already exists
     existing_config = await db.ai_configurations.find_one({
-        "company_id": company_id,
+        "project_id": project_id,
         "config_type": config_data.config_type,
         "is_active": True
     })
@@ -2827,7 +2827,7 @@ async def create_ai_configuration(
     
     # Create configuration
     ai_config = AIConfiguration(
-        company_id=company_id,
+        project_id=project_id,
         config_type=config_data.config_type,
         provider=config_data.provider,
         api_key=encrypted_key,
