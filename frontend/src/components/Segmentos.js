@@ -228,7 +228,9 @@ const Segmentos = ({ user }) => {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Nuevo Segmento de Industria</h3>
+              <h3 className="modal-title">
+                {isEditing ? 'Editar Segmento de Industria' : 'Nuevo Segmento de Industria'}
+              </h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="modal-close"
