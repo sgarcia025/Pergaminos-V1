@@ -3669,12 +3669,12 @@ async def apply_renames_and_generate_zip(
         import zipfile
         from pathlib import Path
         
-        # Create a temporary directory for processed files
-        temp_dir = Path(f"uploads/pdf_manager_temp/{job.id}")
+        # Create a temporary directory for processed files (use UPLOAD_DIR which is already defined)
+        temp_dir = UPLOAD_DIR / "pdf_manager_temp" / job.id
         temp_dir.mkdir(parents=True, exist_ok=True)
         
         # Create output directory for ZIP
-        output_dir = Path(f"uploads/pdf_manager_output")
+        output_dir = UPLOAD_DIR / "pdf_manager_output"
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # Map document IDs to documents
