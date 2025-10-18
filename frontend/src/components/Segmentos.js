@@ -283,7 +283,7 @@ const Segmentos = ({ user }) => {
                   type="submit"
                   className="btn-primary"
                 >
-                  Crear Segmento
+                  {isEditing ? 'Actualizar Segmento' : 'Crear Segmento'}
                 </button>
               </div>
             </form>
