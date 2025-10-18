@@ -748,6 +748,8 @@ const ProjectDetail = ({ user }) => {
           </div>
         </div>
       )}
+        </>
+      )}
     </div>
   );
 };
