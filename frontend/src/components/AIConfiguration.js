@@ -251,27 +251,52 @@ const AIConfiguration = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      {/* Company Selector */}
+      {/* Company and Project Selector */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-        <label htmlFor="company-select" className="block text-sm font-medium text-gray-700 mb-2">
-          Seleccionar Empresa
-        </label>
-        <select
-          id="company-select"
-          value={selectedCompany}
-          onChange={(e) => setSelectedCompany(e.target.value)}
-          className="form-input w-full md:w-1/2"
-        >
-          <option value="">Seleccione una empresa</option>
-          {companies.map((company) => (
-            <option key={company.id} value={company.id}>
-              {company.name}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="company-select" className="block text-sm font-medium text-gray-700 mb-2">
+              1. Seleccionar Empresa
+            </label>
+            <select
+              id="company-select"
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
+              className="form-input w-full"
+            >
+              <option value="">Seleccione una empresa</option>
+              {companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedCompany && (
+            <div>
+              <label htmlFor="project-select" className="block text-sm font-medium text-gray-700 mb-2">
+                2. Seleccionar Proyecto
+              </label>
+              <select
+                id="project-select"
+                value={selectedProject}
+                onChange={(e) => setSelectedProject(e.target.value)}
+                className="form-input w-full"
+              >
+                <option value="">Seleccione un proyecto</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
-      {selectedCompany && (
+      {selectedProject && (
         <>
           {/* Info Banner */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
