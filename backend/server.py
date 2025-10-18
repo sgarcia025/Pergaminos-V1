@@ -3633,70 +3633,60 @@ async def download_zip(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.get("/pdf-manager/download/file/{job_id}/{file_name:path}")
+@api_router.get("/pdf-manager/download/file/{job_id}/{file_name:path}", response_class=FileResponse)
 async def download_file(
     job_id: str,
     file_name: str,
     current_user: User = Depends(get_current_user)
 ):
     """Download individual PDF file from a completed job"""
-    from fastapi.responses import FileResponse
     import urllib.parse
     
-    try:
-        # Decode URL-encoded filename
-        decoded_filename = urllib.parse.unquote(file_name)
-        logger.info(f"Downloading file: {decoded_filename} from job {job_id}")
-        
-        # Find job
-        job = await db.pdf_manager_jobs.find_one({"id": job_id})
-        if not job:
-            logger.error(f"Job not found: {job_id}")
-            raise HTTPException(status_code=404, detail="Job not found")
-        
-        # Verify access to project
-        project = await db.projects.find_one({"id": job["project_id"]})
-        if not project:
-            logger.error(f"Project not found: {job['project_id']}")
-            raise HTTPException(status_code=404, detail="Project not found")
-        
-        company = await db.companies.find_one({"id": project["company_id"]})
-        if current_user.role == "client" and current_user.company_id != project["company_id"]:
-            raise HTTPException(status_code=403, detail="Access denied")
-        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
-            raise HTTPException(status_code=403, detail="Access denied")
-        
-        # Get file path
-        file_path = UPLOAD_DIR / "pdf_manager_temp" / job_id / decoded_filename
-        
-        logger.info(f"Looking for file at: {file_path}")
-        logger.info(f"File exists: {file_path.exists()}")
-        
-        if not file_path.exists():
-            # Try listing directory to see what's there
-            dir_path = UPLOAD_DIR / "pdf_manager_temp" / job_id
-            if dir_path.exists():
-                files = list(dir_path.iterdir())
-                logger.error(f"File not found. Available files in directory: {[f.name for f in files]}")
-            else:
-                logger.error(f"Directory does not exist: {dir_path}")
-            raise HTTPException(status_code=404, detail=f"File does not exist: {decoded_filename}")
-        
-        # Return file with proper headers
-        return FileResponse(
-            path=str(file_path),
-            filename=decoded_filename,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'attachment; filename="{decoded_filename}"'
-            }
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error downloading file: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+    # Decode URL-encoded filename
+    decoded_filename = urllib.parse.unquote(file_name)
+    logger.info(f"Downloading file: {decoded_filename} from job {job_id}")
+    
+    # Find job
+    job = await db.pdf_manager_jobs.find_one({"id": job_id})
+    if not job:
+        logger.error(f"Job not found: {job_id}")
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Verify access to project
+    project = await db.projects.find_one({"id": job["project_id"]})
+    if not project:
+        logger.error(f"Project not found: {job['project_id']}")
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    company = await db.companies.find_one({"id": project["company_id"]})
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get file path
+    file_path = UPLOAD_DIR / "pdf_manager_temp" / job_id / decoded_filename
+    
+    logger.info(f"Looking for file at: {file_path}")
+    logger.info(f"File exists: {file_path.exists()}")
+    
+    if not file_path.exists():
+        # Try listing directory to see what's there
+        dir_path = UPLOAD_DIR / "pdf_manager_temp" / job_id
+        if dir_path.exists():
+            files = list(dir_path.iterdir())
+            logger.error(f"File not found. Available files in directory: {[f.name for f in files]}")
+        else:
+            logger.error(f"Directory does not exist: {dir_path}")
+        raise HTTPException(status_code=404, detail=f"File does not exist: {decoded_filename}")
+    
+    # Return file with proper headers using FileResponse
+    from fastapi.responses import FileResponse as FR
+    return FR(
+        path=str(file_path),
+        filename=decoded_filename,
+        media_type="application/pdf"
+    )
 
 # ============================================================================
 # PDF MANAGER - PHASE 2: EXECUTION
