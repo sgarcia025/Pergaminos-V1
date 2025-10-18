@@ -10,6 +10,8 @@ const Segmentos = ({ user }) => {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [segmentoToDelete, setSegmentoToDelete] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingSegmento, setEditingSegmento] = useState(null);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: ''
