@@ -1436,7 +1436,7 @@ async def process_document_with_ai(document_id: str, project: dict):
             logger.error(f"Company not found for project {project['id']}")
             return
         
-        ai_config = await get_ai_config_for_task(company["id"], "qa_processing")
+        ai_config = await get_ai_config_for_task(project["id"], "qa_processing")
         if not ai_config.get("api_key"):
             await db.documents.update_one(
                 {"id": document_id},
