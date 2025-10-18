@@ -1039,20 +1039,20 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
             "critical_findings": []
         }
 
-async def get_ai_config_for_task(company_id: str, task_type: str) -> dict:
+async def get_ai_config_for_task(project_id: str, task_type: str) -> dict:
     """Get AI configuration for a specific task type"""
     try:
-        logger.info(f"Getting AI config for company {company_id}, task type: {task_type}")
+        logger.info(f"Getting AI config for project {project_id}, task type: {task_type}")
         
-        # Look for company-specific configuration
+        # Look for project-specific configuration
         config = await db.ai_configurations.find_one({
-            "company_id": company_id,
+            "project_id": project_id,
             "config_type": task_type,
             "is_active": True
         })
         
         if config and config.get("api_key"):
-            logger.info(f"Found company-specific AI config for {company_id}, provider: {config['provider']}, model: {config['model_name']}")
+            logger.info(f"Found project-specific AI config for {project_id}, provider: {config['provider']}, model: {config['model_name']}")
             # Decrypt API key
             try:
                 decrypted_key = decrypt_api_key(config["api_key"])
