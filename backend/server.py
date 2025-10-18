@@ -203,7 +203,6 @@ class CompanyCreate(BaseModel):
     direccion: Optional[str] = None
     asesor_comercial_id: Optional[str] = None
     segmento: Optional[str] = None
-    estado: Optional[str] = None
     corporacion: Optional[str] = None
     is_active: Optional[bool] = True
 
