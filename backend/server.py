@@ -2754,6 +2754,36 @@ async def create_segmento(segmento_data: SegmentoCreate, current_user: User = De
     await db.segmentos.insert_one(segmento.dict())
     return segmento
 
+@api_router.put("/segmentos/{segmento_id}", response_model=Segmento)
+async def update_segmento(
+    segmento_id: str, 
+    segmento_data: SegmentoCreate, 
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can update segmentos")
+    
+    # Check if segmento exists
+    existing_segmento = await db.segmentos.find_one({"id": segmento_id})
+    if not existing_segmento:
+        raise HTTPException(status_code=404, detail="Segmento not found")
+    
+    # Update segmento
+    update_data = segmento_data.dict()
+    update_data["updated_at"] = datetime.now(timezone.utc)
+    
+    result = await db.segmentos.update_one(
+        {"id": segmento_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Segmento not found")
+    
+    # Get updated segmento
+    updated_segmento = await db.segmentos.find_one({"id": segmento_id})
+    return Segmento(**updated_segmento)
+
 @api_router.get("/segmentos", response_model=List[Segmento])
 async def get_segmentos():
     # All users can see active segmentos for selection
