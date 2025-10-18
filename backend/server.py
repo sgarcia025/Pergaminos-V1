@@ -3320,22 +3320,25 @@ RULES:
 2. Use only the metadata provided - do not invent data.
 3. For rename operations, use the document ID in "from_id" and generate a safe filename in "to_name".
 4. Preserve file extensions (.pdf).
-5. For reordering, provide an array of document IDs in the desired order.
-6. Detect conflicts: duplicate names, missing required metadata, ambiguous instructions.
-7. Set confidence (0.0-1.0) based on instruction clarity and metadata availability.
+5. For reordering, ALWAYS provide "reorder_ids" array with ALL document IDs in the desired order.
+6. If no specific order is mentioned, maintain current order in reorder_ids.
+7. Detect conflicts: duplicate names, missing required metadata, ambiguous instructions.
+8. Set confidence (0.0-1.0) based on instruction clarity and metadata availability.
 
-OUTPUT FORMAT:
+OUTPUT FORMAT (MANDATORY):
 {
   "rename_operations": [
     {"from_id": "doc_id", "from_name": "current.pdf", "to_name": "new_name.pdf"}
   ],
-  "reorder_ids": ["doc_id_1", "doc_id_2", ...],
+  "reorder_ids": ["doc_id_1", "doc_id_2", "doc_id_3"],
   "validation": {
     "confidence": 0.95,
-    "conflicts": ["conflict description if any"],
-    "warnings": ["warning if any"]
+    "conflicts": [],
+    "warnings": []
   }
-}"""
+}
+
+IMPORTANT: reorder_ids MUST contain ALL document IDs. If instruction doesn't mention ordering, use the same order as provided in DOCUMENTS METADATA."""
 
         user_prompt = f"""CONTEXT:
 Company: {company.get('name', 'N/A')}
