@@ -3582,6 +3582,97 @@ async def list_pdf_manager_jobs(
         logger.error(f"Error listing PDF manager jobs: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@api_router.get("/pdf-manager/download/zip/{job_id}")
+async def download_zip(
+    job_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download ZIP file for a completed job"""
+    from fastapi.responses import FileResponse
+    try:
+        # Find job
+        job = await db.pdf_manager_jobs.find_one({"id": job_id})
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Verify access to project
+        project = await db.projects.find_one({"id": job["project_id"]})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get ZIP path from job
+        if not job.get("result_urls") or not job["result_urls"].get("zip_filename"):
+            raise HTTPException(status_code=404, detail="ZIP file not found for this job")
+        
+        zip_filename = job["result_urls"]["zip_filename"]
+        zip_path = UPLOAD_DIR / "pdf_manager_output" / zip_filename
+        
+        if not zip_path.exists():
+            raise HTTPException(status_code=404, detail=f"ZIP file does not exist: {zip_filename}")
+        
+        return FileResponse(
+            path=str(zip_path),
+            filename=zip_filename,
+            media_type="application/zip"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading ZIP: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/pdf-manager/download/file/{job_id}/{file_name}")
+async def download_file(
+    job_id: str,
+    file_name: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download individual PDF file from a completed job"""
+    from fastapi.responses import FileResponse
+    try:
+        # Find job
+        job = await db.pdf_manager_jobs.find_one({"id": job_id})
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Verify access to project
+        project = await db.projects.find_one({"id": job["project_id"]})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get file path
+        file_path = UPLOAD_DIR / "pdf_manager_temp" / job_id / file_name
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"File does not exist: {file_name}")
+        
+        return FileResponse(
+            path=str(file_path),
+            filename=file_name,
+            media_type="application/pdf"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading file: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ============================================================================
 # PDF MANAGER - PHASE 2: EXECUTION
 # ============================================================================
