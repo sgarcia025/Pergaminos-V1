@@ -22,7 +22,6 @@ const Companies = ({ user }) => {
     direccion: '',
     asesor_comercial_id: '',
     segmento: '',
-    estado: '',
     corporacion: '',
     is_active: true
   });
