@@ -3390,7 +3390,12 @@ Generate the plan:"""
             ) for op in plan_data.get("rename_operations", [])
         ]
         
-        reorder_ids = plan_data.get("reorder_ids", [doc["id"] for doc in documents])
+        # Get reorder_ids from plan or default to all document IDs in current order
+        reorder_ids = plan_data.get("reorder_ids", [])
+        if not reorder_ids:
+            # Default: keep current order or use order from rename operations
+            reorder_ids = [doc["id"] for doc in documents]
+            logger.info(f"No reorder_ids in plan, using default order with {len(reorder_ids)} documents")
         
         validation = PlanValidation(
             confidence=plan_data.get("validation", {}).get("confidence", 0.5),
