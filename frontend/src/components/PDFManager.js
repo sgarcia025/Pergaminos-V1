@@ -106,6 +106,27 @@ const PDFManager = ({ projectId, user }) => {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
+  const handleDownloadFile = async (url, filename) => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}${url}`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link to download
+      const blob = new Blob([response.data]);
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      setError('Error al descargar el archivo. Por favor intenta nuevamente.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
