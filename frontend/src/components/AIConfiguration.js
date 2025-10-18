@@ -6,7 +6,9 @@ const API = `${BACKEND_URL}/api`;
 
 const AIConfiguration = ({ user }) => {
   const [companies, setCompanies] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedProject, setSelectedProject] = useState('');
   const [configurations, setConfigurations] = useState({});
   const [modelRecommendations, setModelRecommendations] = useState({});
   const [loading, setLoading] = useState(false);
