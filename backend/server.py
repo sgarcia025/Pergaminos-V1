@@ -3630,7 +3630,7 @@ async def download_zip(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@api_router.get("/pdf-manager/download/file/{job_id}/{file_name:path}", response_class=FileResponse)
+@api_router.get("/pdf-manager/download/file/{job_id}/{file_name:path}")
 async def download_file(
     job_id: str,
     file_name: str,
