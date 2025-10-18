@@ -890,7 +890,7 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
         project = await db.projects.find_one({"id": document["project_id"]})
         company = await db.companies.find_one({"id": project["company_id"]})
         
-        ai_config = await get_ai_config_for_task(company["id"], "qa_processing")
+        ai_config = await get_ai_config_for_task(document["project_id"], "qa_processing")
         if not ai_config.get("api_key"):
             return {"error": "No AI configuration available", "overall_score": 0}
         
