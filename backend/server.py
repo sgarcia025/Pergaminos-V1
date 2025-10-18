@@ -1466,7 +1466,7 @@ async def process_document_with_ai(document_id: str, project: dict):
                 
                 if create_pdf_chunk(document["file_path"], start_page, end_page, str(chunk_path)):
                     # Get AI config for data extraction
-                    extraction_config = await get_ai_config_for_task(company["id"], "data_extraction")
+                    extraction_config = await get_ai_config_for_task(project["id"], "data_extraction")
                     
                     # Process this chunk with AI
                     chunk_result = await process_single_chunk(
