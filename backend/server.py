@@ -3931,6 +3931,16 @@ async def execute_pdf_plan(
 # Include the router in the main app
 app.include_router(api_router)
 
+# Mount static directories for PDF Manager outputs
+from pathlib import Path
+pdf_manager_temp_dir = Path("uploads/pdf_manager_temp")
+pdf_manager_output_dir = Path("uploads/pdf_manager_output")
+pdf_manager_temp_dir.mkdir(parents=True, exist_ok=True)
+pdf_manager_output_dir.mkdir(parents=True, exist_ok=True)
+
+app.mount("/uploads/pdf_manager_temp", StaticFiles(directory="uploads/pdf_manager_temp"), name="pdf_manager_temp")
+app.mount("/uploads/pdf_manager_output", StaticFiles(directory="uploads/pdf_manager_output"), name="pdf_manager_output")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
