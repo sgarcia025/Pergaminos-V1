@@ -2844,25 +2844,30 @@ async def create_ai_configuration(
     
     return AIConfiguration(**response_config)
 
-@api_router.get("/companies/{company_id}/ai-config")
+@api_router.get("/projects/{project_id}/ai-config")
 async def get_ai_configurations(
-    company_id: str,
+    project_id: str,
     config_type: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Get AI configurations for a company"""
-    # Verify access to company
-    company = await db.companies.find_one({"id": company_id})
+    """Get AI configurations for a project"""
+    # Verify access to project
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Verify access to company that owns the project
+    company = await db.companies.find_one({"id": project["company_id"]})
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    if current_user.role == "client" and current_user.company_id != company_id:
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
         raise HTTPException(status_code=403, detail="Access denied")
     elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
     # Build query
-    query = {"company_id": company_id, "is_active": True}
+    query = {"project_id": project_id, "is_active": True}
     if config_type:
         query["config_type"] = config_type
     
@@ -2880,7 +2885,9 @@ async def get_ai_configurations(
         config_responses.append(config_dict)
     
     return {
-        "company_id": company_id,
+        "project_id": project_id,
+        "project_name": project["name"],
+        "company_id": project["company_id"],
         "company_name": company["name"],
         "configurations": config_responses,
         "available_types": ["data_extraction", "qa_processing", "document_processing"]
