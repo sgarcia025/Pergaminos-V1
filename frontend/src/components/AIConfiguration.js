@@ -49,9 +49,17 @@ const AIConfiguration = ({ user }) => {
 
   useEffect(() => {
     if (selectedCompany) {
-      fetchConfigurations();
+      fetchProjects();
+      setSelectedProject(''); // Reset project selection when company changes
+      setConfigurations({});
     }
   }, [selectedCompany]);
+
+  useEffect(() => {
+    if (selectedProject) {
+      fetchConfigurations();
+    }
+  }, [selectedProject]);
 
   const fetchCompanies = async () => {
     try {
