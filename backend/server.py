@@ -3841,23 +3841,26 @@ async def apply_renames_and_generate_zip(
                 # Add to ZIP
                 zipf.write(file_info["temp_path"], ordered_name)
         
-        # Step 3: Generate URLs (relative paths for now, can be presigned URLs in production)
+        # Step 3: Generate URLs using API endpoints for reliable downloads
+        import urllib.parse
         file_urls = []
         for file_info in renamed_files:
+            encoded_filename = urllib.parse.quote(file_info['new_name'])
             file_urls.append({
                 "id": file_info["id"],
                 "name": file_info["new_name"],
                 "original_name": file_info["original_name"],
-                "url": f"/uploads/pdf_manager_temp/{job.id}/{file_info['new_name']}",
+                "url": f"/api/pdf-manager/download/file/{job.id}/{encoded_filename}",
                 "size": file_info["size"]
             })
         
         result_urls = {
             "files": file_urls,
-            "zip_url": f"/uploads/pdf_manager_output/{zip_filename}",
+            "zip_url": f"/api/pdf-manager/download/zip/{job.id}",
             "zip_size": zip_path.stat().st_size,
             "zip_filename": zip_filename,
-            "total_files": len(file_urls)
+            "total_files": len(file_urls),
+            "job_id": job.id
         }
         
         # Cleanup: Remove temp directory after a delay (optional, or keep for downloads)
