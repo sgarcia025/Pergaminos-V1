@@ -384,8 +384,16 @@ const ProjectDetail = ({ user }) => {
       {error && <div className="alert alert-error">{typeof error === 'string' ? error : JSON.stringify(error)}</div>}
       {success && <div className="alert alert-success">{typeof success === 'string' ? success : JSON.stringify(success)}</div>}
 
-      {/* Reorder Status */}
-      {reorderStatus && reorderStatus.status === 'processing' && (
+      {/* Tab Content: PDF Manager */}
+      {activeTab === 'pdf-manager' && (
+        <PDFManager projectId={projectId} user={user} />
+      )}
+
+      {/* Tab Content: Documents */}
+      {activeTab === 'documents' && (
+        <>
+          {/* Reorder Status */}
+          {reorderStatus && reorderStatus.status === 'processing' && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center">
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-3"></div>
