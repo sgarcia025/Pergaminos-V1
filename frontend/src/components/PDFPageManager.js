@@ -1,0 +1,361 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+const PDFPageManager = ({ projectId, user }) => {
+  const [documents, setDocuments] = useState([]);
+  const [selectedPdf, setSelectedPdf] = useState('');
+  const [instruction, setInstruction] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [currentJob, setCurrentJob] = useState(null);
+  const [plan, setPlan] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [executing, setExecuting] = useState(false);
+
+  useEffect(() => {
+    if (projectId) {
+      fetchDocuments();
+    }
+  }, [projectId]);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await axios.get(`${API}/projects/${projectId}/documents`);
+      // Filter only completed documents
+      const completedDocs = response.data.filter(doc => 
+        ['completed', 'processed', 'qa_passed'].includes(doc.status)
+      );
+      setDocuments(completedDocs);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      setError('Error al cargar los documentos');
+    }
+  };
+
+  const handleGeneratePlan = async () => {
+    if (!selectedPdf) {
+      setError('Por favor selecciona un PDF');
+      return;
+    }
+    if (!instruction.trim()) {
+      setError('Por favor ingresa una instrucción');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    setPlan(null);
+
+    try {
+      const response = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/plan`, {
+        project_id: projectId,
+        pdf_filename: selectedPdf,
+        instruction: instruction
+      });
+
+      setCurrentJob(response.data);
+      setPlan(response.data.plan);
+      setSuccess(`Plan generado: ${response.data.plan.total_pages} páginas serán reordenadas`);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al generar el plan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExecutePlan = async () => {
+    if (!currentJob || !currentJob.job_id) {
+      setError('No hay plan para ejecutar');
+      return;
+    }
+
+    if (user.role === 'client') {
+      setError('Los clientes no pueden ejecutar planes. Contacta a tu asesor o administrador.');
+      return;
+    }
+
+    setExecuting(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute`, {
+        job_id: currentJob.job_id
+      });
+
+      setCurrentJob(response.data);
+      setSuccess('Plan ejecutado exitosamente. El PDF reordenado está listo para descargar.');
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al ejecutar el plan');
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const handleDownloadFile = async (url, filename) => {
+    try {
+      const response = await axios.get(`${BACKEND_URL}${url}`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob link to download
+      const blob = new Blob([response.data]);
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      setError('Error al descargar el archivo. Por favor intenta nuevamente.');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Playfair Display' }}>
+            📄 PDF Manager IA por Página
+          </h2>
+          <p className="text-gray-600 mt-1">
+            Reordena páginas dentro de un PDF usando instrucciones en lenguaje natural
+          </p>
+        </div>
+      </div>
+
+      {/* Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-start">
+          <svg className="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">Cómo funciona</h3>
+            <p className="text-sm text-blue-700 mt-1">
+              1) Selecciona un PDF del proyecto
+              <br />
+              2) Escribe una instrucción (ej: "Mover página 3 al inicio", "Intercambiar páginas 2 y 5")
+              <br />
+              3) Genera el plan con IA para revisar los cambios
+              <br />
+              4) Si estás conforme, ejecuta el plan para generar el PDF reordenado
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-error">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+
+      {/* PDF Selection and Instruction */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
+        {/* PDF Selector */}
+        <div>
+          <label htmlFor="pdf-select" className="block text-sm font-medium text-gray-700 mb-2">
+            Seleccionar PDF *
+          </label>
+          <select
+            id="pdf-select"
+            value={selectedPdf}
+            onChange={(e) => setSelectedPdf(e.target.value)}
+            className="form-select w-full"
+            disabled={loading || executing}
+          >
+            <option value="">-- Selecciona un PDF --</option>
+            {documents.map((doc) => (
+              <option key={doc.id} value={doc.original_filename}>
+                {doc.original_filename}
+              </option>
+            ))}
+          </select>
+          {documents.length === 0 && (
+            <p className="text-xs text-gray-500 mt-1">
+              No hay PDFs procesados en este proyecto
+            </p>
+          )}
+        </div>
+
+        {/* Instruction Input */}
+        <div>
+          <label htmlFor="instruction" className="block text-sm font-medium text-gray-700 mb-2">
+            Instrucción en Lenguaje Natural *
+          </label>
+          <textarea
+            id="instruction"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            className="form-textarea w-full h-32"
+            placeholder="Ejemplo: Mover la página 3 al inicio del documento y la página 5 al final"
+            disabled={loading || executing}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Describe cómo quieres reordenar las páginas del PDF seleccionado
+          </p>
+        </div>
+
+        {/* Generate Plan Button */}
+        <div className="flex items-center justify-end">
+          <button
+            onClick={handleGeneratePlan}
+            disabled={loading || !selectedPdf || !instruction.trim()}
+            className="btn-primary"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generando Plan...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                Generar Plan con IA
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Plan Preview */}
+      {plan && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">📋 Vista Previa del Plan</h3>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">
+                Confianza: {(plan.confidence * 100).toFixed(0)}%
+              </span>
+              <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${plan.confidence > 0.8 ? 'bg-green-500' : plan.confidence > 0.6 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                  style={{ width: `${plan.confidence * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Plan Info */}
+          <div className="mb-4 space-y-3">
+            <div className="p-3 bg-gray-50 rounded">
+              <p className="text-sm text-gray-700">
+                <strong>PDF:</strong> {plan.pdf_filename}
+              </p>
+              <p className="text-sm text-gray-700 mt-1">
+                <strong>Total de páginas:</strong> {plan.total_pages}
+              </p>
+            </div>
+
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-900">
+                <strong>Razonamiento de IA:</strong>
+              </p>
+              <p className="text-sm text-blue-800 mt-1">
+                {plan.reasoning}
+              </p>
+            </div>
+
+            {/* New Page Sequence */}
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
+              <p className="text-sm text-emerald-900 mb-2">
+                <strong>Nuevo orden de páginas:</strong>
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {plan.new_page_sequence.map((pageNum, idx) => (
+                  <span
+                    key={idx}
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      pageNum === idx + 1
+                        ? 'bg-gray-200 text-gray-700'
+                        : 'bg-emerald-100 text-emerald-800'
+                    }`}
+                  >
+                    {idx + 1}: Pág {pageNum}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end pt-4 border-t border-gray-200 space-x-3">
+            <button
+              onClick={() => {
+                setPlan(null);
+                setCurrentJob(null);
+              }}
+              className="btn-secondary"
+              disabled={executing}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleExecutePlan}
+              disabled={executing || currentJob?.status === 'completed'}
+              className="btn-primary"
+            >
+              {executing ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Ejecutando...
+                </>
+              ) : currentJob?.status === 'completed' ? (
+                '✓ Ya Ejecutado'
+              ) : (
+                <>
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Aplicar Reordenamiento
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Results - Download Link */}
+      {currentJob?.result_url && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">✅ Resultado</h3>
+          
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-emerald-900">📄 PDF Reordenado</h4>
+                <p className="text-sm text-emerald-700 mt-1">
+                  {currentJob.result_filename}
+                </p>
+              </div>
+              <button
+                onClick={() => handleDownloadFile(currentJob.result_url, currentJob.result_filename)}
+                className="btn-primary"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Descargar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PDFPageManager;
