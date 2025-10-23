@@ -302,6 +302,41 @@ class PDFManagerPlanRequest(BaseModel):
     project_id: str
     instruction: str
 
+# PDF Page Manager Models
+class PageReorderOperation(BaseModel):
+    page_number: int  # Original page number
+    new_position: int  # New position
+
+class PDFPagePlan(BaseModel):
+    pdf_filename: str  # The PDF file being reordered
+    total_pages: int
+    reorder_operations: List[PageReorderOperation] = []
+    new_page_sequence: List[int] = []  # Final page order
+    confidence: float  # 0.0 to 1.0
+    reasoning: str  # AI explanation of the reordering logic
+
+class PDFPageManagerJob(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    project_id: str
+    pdf_filename: str  # The specific PDF being processed
+    instruction: str  # Natural language instruction
+    plan: Optional[PDFPagePlan] = None
+    status: str = "pending"  # pending, plan_ready, executing, completed, failed
+    result_url: Optional[str] = None  # URL to download reordered PDF
+    result_filename: Optional[str] = None
+    error_message: Optional[str] = None
+    logs: List[Dict[str, Any]] = []
+    created_by: str  # User ID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+
+class PDFPageManagerPlanRequest(BaseModel):
+    project_id: str
+    pdf_filename: str
+    instruction: str
+
 # Create uploads directory
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
