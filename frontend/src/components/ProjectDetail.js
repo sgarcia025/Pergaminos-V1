@@ -25,7 +25,7 @@ const ProjectDetail = ({ user }) => {
   const [batchTaskId, setBatchTaskId] = useState(null);
   const [batchProgress, setBatchProgress] = useState({});
   const [uploadProgress, setUploadProgress] = useState([]);
-  const [activeTab, setActiveTab] = useState('documents'); // documents or pdf-manager
+  const [activeTab, setActiveTab] = useState('documents'); // documents, pdf-manager, or pdf-page-manager
 
   useEffect(() => {
     fetchProject();
