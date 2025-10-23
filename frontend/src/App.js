@@ -17,6 +17,7 @@ import Segmentos from "./components/Segmentos";
 import QAFindings from "./components/QAFindings";
 import ExtractedData from "./components/ExtractedData";
 import AIConfiguration from "./components/AIConfiguration";
+import UserManual from "./components/UserManual";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
