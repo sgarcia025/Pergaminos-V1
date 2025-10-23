@@ -4087,6 +4087,454 @@ async def execute_pdf_plan(
         
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ========== PDF PAGE MANAGER ENDPOINTS ==========
+
+async def generate_pdf_page_plan_with_ai(
+    project: dict,
+    pdf_filename: str,
+    pdf_path: str,
+    instruction: str
+) -> PDFPagePlan:
+    """
+    Generate a plan for reordering pages within a single PDF using AI.
+    """
+    try:
+        # Get AI configuration
+        ai_config = await get_ai_config_for_task(project["id"], "document_processing")
+        
+        # Get PDF metadata (page count)
+        from PyPDF2 import PdfReader
+        reader = PdfReader(pdf_path)
+        total_pages = len(reader.pages)
+        
+        # Build LLM prompt
+        system_prompt = """You are an expert PDF page management AI. Your task is to analyze natural language instructions and generate a plan for reordering pages within a PDF document.
+
+RULES:
+1. Return ONLY valid JSON, no markdown or explanations.
+2. Page numbers are 1-indexed (first page is 1, not 0).
+3. Generate a complete new page sequence that includes ALL pages.
+4. Provide clear reasoning for the reordering logic.
+5. Set confidence (0.0-1.0) based on instruction clarity.
+
+OUTPUT FORMAT (MANDATORY):
+{
+  "new_page_sequence": [3, 1, 2, 4, 5],
+  "confidence": 0.95,
+  "reasoning": "Moving page 3 to the beginning as requested, keeping other pages in original order"
+}
+
+IMPORTANT: new_page_sequence MUST contain ALL page numbers (1 to total_pages) exactly once."""
+
+        user_prompt = f"""PDF FILE: {pdf_filename}
+TOTAL PAGES: {total_pages}
+CURRENT PAGE ORDER: {list(range(1, total_pages + 1))}
+
+INSTRUCTION:
+{instruction}
+
+Generate the reordering plan:"""
+
+        # Create AI chat
+        chat = await create_ai_chat_with_config(
+            ai_config,
+            f"pdf_page_plan_{project['id']}_{datetime.now().timestamp()}",
+            system_prompt
+        )
+        
+        from emergentintegrations.llm.chat import UserMessage
+        response = await chat.send_message(UserMessage(text=user_prompt))
+        
+        # Parse response
+        if isinstance(response, str):
+            response_text = response.strip()
+        elif hasattr(response, 'text'):
+            response_text = response.text.strip()
+        elif hasattr(response, 'content'):
+            response_text = response.content.strip()
+        else:
+            response_text = str(response).strip()
+        
+        logger.info(f"LLM Page Reorder Response: {response_text[:200]}")
+        
+        # Remove markdown code blocks if present
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+            response_text = response_text.strip()
+        
+        plan_data = json.loads(response_text)
+        
+        # Validate the plan
+        new_sequence = plan_data.get("new_page_sequence", [])
+        if len(new_sequence) != total_pages:
+            raise ValueError(f"Plan must include all {total_pages} pages. Got {len(new_sequence)} pages.")
+        
+        if set(new_sequence) != set(range(1, total_pages + 1)):
+            raise ValueError("Plan must contain each page number exactly once.")
+        
+        # Create page reorder operations
+        reorder_operations = []
+        for idx, page_num in enumerate(new_sequence):
+            if page_num != idx + 1:  # Only add if position changed
+                reorder_operations.append(PageReorderOperation(
+                    page_number=page_num,
+                    new_position=idx + 1
+                ))
+        
+        # Create plan
+        plan = PDFPagePlan(
+            pdf_filename=pdf_filename,
+            total_pages=total_pages,
+            reorder_operations=reorder_operations,
+            new_page_sequence=new_sequence,
+            confidence=plan_data.get("confidence", 0.8),
+            reasoning=plan_data.get("reasoning", "Page reordering based on instructions")
+        )
+        
+        return plan
+        
+    except Exception as e:
+        logger.error(f"Error generating PDF page plan: {str(e)}", exc_info=True)
+        raise
+
+
+async def execute_pdf_page_reorder(
+    job: PDFPageManagerJob,
+    source_pdf_path: str
+) -> str:
+    """
+    Execute page reordering on a PDF and save the result.
+    Returns the path to the new PDF.
+    """
+    try:
+        from PyPDF2 import PdfReader, PdfWriter
+        
+        # Create output directory
+        output_dir = UPLOAD_DIR / "pdf_page_reorder_output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Read source PDF
+        reader = PdfReader(source_pdf_path)
+        writer = PdfWriter()
+        
+        # Add pages in new order
+        for page_num in job.plan.new_page_sequence:
+            # PyPDF2 uses 0-indexed pages internally
+            writer.add_page(reader.pages[page_num - 1])
+        
+        # Generate output filename
+        base_name = Path(job.pdf_filename).stem
+        output_filename = f"{base_name}_reordered_{job.id[:8]}.pdf"
+        output_path = output_dir / output_filename
+        
+        # Write output PDF
+        with open(output_path, 'wb') as output_file:
+            writer.write(output_file)
+        
+        logger.info(f"PDF page reordering completed: {output_path}")
+        
+        return str(output_path)
+        
+    except Exception as e:
+        logger.error(f"Error executing PDF page reorder: {str(e)}", exc_info=True)
+        raise
+
+
+@api_router.post("/projects/{project_id}/pdf-page-manager/plan")
+async def create_pdf_page_plan(
+    project_id: str,
+    plan_request: PDFPageManagerPlanRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a plan for reordering pages within a specific PDF.
+    """
+    try:
+        # Verify project exists and user has access
+        project = await db.projects.find_one({"id": project_id})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Verify access
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Find the document
+        document = await db.documents.find_one({
+            "project_id": project_id,
+            "original_filename": plan_request.pdf_filename,
+            "status": {"$in": ["completed", "processed", "qa_passed"]}
+        })
+        
+        if not document:
+            raise HTTPException(
+                status_code=404,
+                detail=f"PDF '{plan_request.pdf_filename}' not found in project"
+            )
+        
+        # Get PDF file path
+        pdf_path = UPLOAD_DIR / document["file_path"]
+        if not pdf_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail="PDF file not found on server"
+            )
+        
+        logger.info(f"Generating PDF page plan for {plan_request.pdf_filename}")
+        
+        # Generate plan using AI
+        plan = await generate_pdf_page_plan_with_ai(
+            project,
+            plan_request.pdf_filename,
+            str(pdf_path),
+            plan_request.instruction
+        )
+        
+        # Create job record
+        job = PDFPageManagerJob(
+            company_id=project["company_id"],
+            project_id=project_id,
+            pdf_filename=plan_request.pdf_filename,
+            instruction=plan_request.instruction,
+            plan=plan,
+            status="plan_ready",
+            created_by=current_user.id,
+            logs=[{
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "event": "plan_generated",
+                "details": f"Generated plan to reorder {plan.total_pages} pages"
+            }]
+        )
+        
+        # Save job to database
+        await db.pdf_page_manager_jobs.insert_one(job.dict())
+        
+        logger.info(f"PDF page plan created successfully. Job ID: {job.id}")
+        
+        return {
+            "job_id": job.id,
+            "status": job.status,
+            "plan": job.plan.dict(),
+            "created_at": job.created_at.isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating PDF page plan: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/projects/{project_id}/pdf-page-manager/execute")
+async def execute_pdf_page_plan(
+    project_id: str,
+    request_body: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Execute a PDF page reordering plan.
+    """
+    try:
+        job_id = request_body.get("job_id")
+        if not job_id:
+            raise HTTPException(status_code=400, detail="job_id is required")
+        
+        # Find job
+        job_doc = await db.pdf_page_manager_jobs.find_one({"id": job_id, "project_id": project_id})
+        if not job_doc:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        job = PDFPageManagerJob(**job_doc)
+        
+        # Verify job is in correct state
+        if job.status != "plan_ready":
+            if job.status == "completed":
+                return {
+                    "job_id": job.id,
+                    "status": job.status,
+                    "result_url": job.result_url,
+                    "result_filename": job.result_filename,
+                    "message": "Plan already executed"
+                }
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Job is not ready for execution. Current status: {job.status}"
+                )
+        
+        # Verify access
+        project = await db.projects.find_one({"id": project_id})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        # Check permissions - only staff and asesor can execute
+        if current_user.role == "client":
+            raise HTTPException(status_code=403, detail="Clients cannot execute plans. Contact your asesor or admin.")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Find source document
+        document = await db.documents.find_one({
+            "project_id": project_id,
+            "original_filename": job.pdf_filename
+        })
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Source PDF not found")
+        
+        pdf_path = UPLOAD_DIR / document["file_path"]
+        if not pdf_path.exists():
+            raise HTTPException(status_code=404, detail="PDF file not found on server")
+        
+        # Update job status to executing
+        await db.pdf_page_manager_jobs.update_one(
+            {"id": job_id},
+            {
+                "$set": {"status": "executing", "updated_at": datetime.now(timezone.utc)},
+                "$push": {
+                    "logs": {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event": "execution_started",
+                        "user": current_user.email
+                    }
+                }
+            }
+        )
+        
+        logger.info(f"Executing PDF page reordering for job {job_id}")
+        
+        # Execute reordering
+        output_path = await execute_pdf_page_reorder(job, str(pdf_path))
+        
+        # Generate download URL
+        output_filename = Path(output_path).name
+        result_url = f"/api/pdf-page-manager/download/{job_id}/{output_filename}"
+        
+        # Update job with results
+        await db.pdf_page_manager_jobs.update_one(
+            {"id": job_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "result_url": result_url,
+                    "result_filename": output_filename,
+                    "completed_at": datetime.now(timezone.utc),
+                    "updated_at": datetime.now(timezone.utc)
+                },
+                "$push": {
+                    "logs": {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event": "execution_completed",
+                        "user": current_user.email
+                    }
+                }
+            }
+        )
+        
+        logger.info(f"PDF page reordering completed successfully. Job ID: {job_id}")
+        
+        return {
+            "job_id": job_id,
+            "status": "completed",
+            "result_url": result_url,
+            "result_filename": output_filename,
+            "message": "Page reordering completed successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Update job status to failed
+        if 'job_id' in locals() and job_id:
+            await db.pdf_page_manager_jobs.update_one(
+                {"id": job_id},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error_message": str(e),
+                        "updated_at": datetime.now(timezone.utc)
+                    },
+                    "$push": {
+                        "logs": {
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "event": "execution_failed",
+                            "error": str(e)
+                        }
+                    }
+                }
+            )
+        
+        logger.error(f"Error executing PDF page plan: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/pdf-page-manager/download/{job_id}/{file_name:path}")
+async def download_reordered_pdf(
+    job_id: str,
+    file_name: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Download a reordered PDF file (authenticated).
+    """
+    try:
+        # Find job
+        job = await db.pdf_page_manager_jobs.find_one({"id": job_id})
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        # Verify access
+        project = await db.projects.find_one({"id": job["project_id"]})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        company = await db.companies.find_one({"id": project["company_id"]})
+        if current_user.role == "client" and current_user.company_id != project["company_id"]:
+            raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get file path
+        output_dir = UPLOAD_DIR / "pdf_page_reorder_output"
+        file_path = output_dir / file_name
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Stream file
+        def iterfile():
+            with open(file_path, mode="rb") as file:
+                yield from file
+        
+        return StreamingResponse(
+            iterfile(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={file_name}",
+                "Content-Type": "application/pdf"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading reordered PDF: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Mount static directories for PDF Manager outputs BEFORE including router
 pdf_manager_temp_dir = UPLOAD_DIR / "pdf_manager_temp"
 pdf_manager_output_dir = UPLOAD_DIR / "pdf_manager_output"
