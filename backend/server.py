@@ -2263,6 +2263,13 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Protect admin account
+    if user.get("email") == "admin@pergaminos.com":
+        raise HTTPException(
+            status_code=403, 
+            detail="No se puede eliminar el usuario administrador principal"
+        )
+    
     # Prevent self-deletion
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own user account")
