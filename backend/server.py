@@ -4573,6 +4573,286 @@ async def download_reordered_pdf(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ========== USER MANUAL ENDPOINTS ==========
+
+async def get_first_active_project_ai_config():
+    """Get AI configuration from the first active project that has one"""
+    try:
+        # Find first active project with AI configuration
+        projects = await db.projects.find({"status": "active"}).to_list(100)
+        
+        for project in projects:
+            # Try to get data_extraction config
+            config = await db.ai_configurations.find_one({
+                "project_id": project["id"],
+                "config_type": "data_extraction",
+                "is_active": True
+            })
+            
+            if config and config.get("api_key"):
+                logger.info(f"Found AI config from project {project['id']}")
+                try:
+                    decrypted_key = decrypt_api_key(config["api_key"])
+                    if decrypted_key and len(decrypted_key) > 10:
+                        return {
+                            "provider": config["provider"],
+                            "api_key": decrypted_key,
+                            "model_name": config["model_name"],
+                            "model_config": config.get("model_parameters", {}),
+                            "source": f"project_{project['id']}"
+                        }
+                except Exception as e:
+                    logger.warning(f"Failed to decrypt key from project {project['id']}: {str(e)}")
+                    continue
+        
+        # Fallback to Emergent LLM key
+        logger.info("No project AI config found, using Emergent LLM key")
+        return {
+            "provider": "emergent",
+            "api_key": os.environ.get('EMERGENT_LLM_KEY'),
+            "model_name": "gpt-4o",
+            "model_config": {},
+            "source": "fallback_emergent"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting AI config: {str(e)}", exc_info=True)
+        return {
+            "provider": "emergent",
+            "api_key": os.environ.get('EMERGENT_LLM_KEY'),
+            "model_name": "gpt-4o",
+            "model_config": {},
+            "source": "error_fallback"
+        }
+
+
+@api_router.post("/manual/chat")
+async def manual_chat(
+    request_body: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Chat endpoint for user manual assistance.
+    Only accessible by staff and asesor roles.
+    """
+    try:
+        # Check permissions
+        if current_user.role not in ["staff", "asesor"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Solo staff y asesores pueden acceder al asistente del manual"
+            )
+        
+        question = request_body.get("question", "").strip()
+        if not question:
+            raise HTTPException(status_code=400, detail="La pregunta es requerida")
+        
+        # Get AI configuration
+        ai_config = await get_first_active_project_ai_config()
+        
+        # System prompt with manual context
+        system_prompt = """Eres un asistente experto del sistema "Pergaminos - Sistema de Digitalización Inteligente". Tu trabajo es ayudar a los usuarios a entender y usar la plataforma.
+
+MÓDULOS DEL SISTEMA:
+
+1. **Dashboard**: Vista general con estadísticas de empresas, proyectos, documentos procesados, QA aprobados/fallidos, etc.
+
+2. **Empresas**: Gestión de empresas cliente. Puedes crear, editar y filtrar empresas por corporación y estado (Activa/Inactiva). Campos: nombre, email, teléfono, asesor comercial, segmento/industria, corporación, dirección.
+
+3. **Proyectos**: Gestión de proyectos de digitalización por empresa. Cada proyecto tiene nombre, descripción, estado (activo/completado) e instrucciones semánticas para la IA.
+
+4. **Documentos (dentro de Proyectos)**: Sube PDFs para procesamiento. El sistema realiza QA automático y extracción de datos con IA. Estados: subido, QA en proceso, QA aprobado/fallado, procesando, completado.
+
+5. **PDF Manager IA**: Renombra y reordena PDFs de un proyecto usando lenguaje natural. Genera un plan, lo previsualizas, y lo ejecutas. Descarga ZIP con archivos renombrados y reordenados.
+
+6. **PDF Manager IA por Página**: Reordena páginas DENTRO de un PDF específico. Seleccionas un PDF, das instrucciones ("mover página 3 al inicio"), la IA analiza el contenido y genera el nuevo PDF.
+
+7. **Agentes QA**: Configura reglas de calidad para validar PDFs antes de procesarlos. Ejemplo: "verificar que tenga fecha", "debe contener palabra clave X".
+
+8. **Hallazgos QA**: Visualiza documentos que fallaron QA y requieren revisión manual.
+
+9. **Datos Extraídos**: Consulta toda la información extraída por IA de los PDFs procesados (fechas, montos, nombres, etc.).
+
+10. **Segmentos**: Define segmentos de industria para clasificar empresas (Tecnología, Salud, Finanzas, etc.).
+
+11. **Configuración IA**: Configura API keys de OpenAI por proyecto para los tres procesos: Extracción de datos, Agente QA, y Reordenamiento/Renombrado.
+
+12. **Usuarios**: Gestión de usuarios del sistema. Roles: staff (administrador), asesor (asignado a empresas), cliente (acceso limitado a su empresa).
+
+INSTRUCCIONES:
+- Responde SIEMPRE en español
+- Sé claro, conciso y útil
+- Si no sabes algo, admítelo
+- Proporciona ejemplos cuando sea posible
+- Si la pregunta es ambigua, pide aclaración"""
+
+        user_prompt = f"""Pregunta del usuario: {question}
+
+Por favor, proporciona una respuesta clara y útil."""
+
+        # Create AI chat
+        chat = await create_ai_chat_with_config(
+            ai_config,
+            f"manual_chat_{current_user.id}_{datetime.now().timestamp()}",
+            system_prompt
+        )
+        
+        from emergentintegrations.llm.chat import UserMessage
+        response = await chat.send_message(UserMessage(text=user_prompt))
+        
+        # Parse response
+        if isinstance(response, str):
+            response_text = response.strip()
+        elif hasattr(response, 'text'):
+            response_text = response.text.strip()
+        elif hasattr(response, 'content'):
+            response_text = response.content.strip()
+        else:
+            response_text = str(response).strip()
+        
+        logger.info(f"Manual chat - User: {current_user.email}, Question: {question[:50]}")
+        
+        return {
+            "answer": response_text,
+            "question": question
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in manual chat: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/manual/download-pdf")
+async def download_manual_pdf(current_user: User = Depends(get_current_user)):
+    """
+    Generate and download the user manual as PDF.
+    Only accessible by staff and asesor roles.
+    """
+    try:
+        # Check permissions
+        if current_user.role not in ["staff", "asesor"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Solo staff y asesores pueden descargar el manual"
+            )
+        
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+        from io import BytesIO
+        
+        # Create PDF in memory
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter,
+                                rightMargin=72, leftMargin=72,
+                                topMargin=72, bottomMargin=18)
+        
+        # Container for the 'Flowable' objects
+        elements = []
+        
+        # Define styles
+        styles = getSampleStyleSheet()
+        styles.add(ParagraphStyle(name='Centered', alignment=TA_CENTER, fontSize=24, spaceAfter=30))
+        styles.add(ParagraphStyle(name='SectionTitle', fontSize=16, spaceAfter=12, spaceBefore=12, textColor='darkblue'))
+        styles.add(ParagraphStyle(name='Subsection', fontSize=14, spaceAfter=8, spaceBefore=8, textColor='darkgreen'))
+        
+        # Title
+        elements.append(Paragraph("Manual de Usuario", styles['Centered']))
+        elements.append(Paragraph("Sistema Pergaminos", styles['Centered']))
+        elements.append(Paragraph("Digitalización Inteligente", styles['Centered']))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Content sections
+        manual_content = [
+            {
+                "title": "1. Dashboard",
+                "content": "Vista general del sistema que muestra estadísticas clave: número total de empresas, proyectos, documentos procesados, documentos en proceso, documentos fallidos, revisión de QA, QA aprobados, QA fallidos y QA pendientes. Proporciona accesos rápidos a las funciones principales del sistema."
+            },
+            {
+                "title": "2. Empresas",
+                "content": "Módulo de gestión de empresas cliente. Permite crear nuevas empresas, editarlas, ver sus proyectos y aplicar filtros por corporación y estado (Activa/Inactiva). Campos disponibles: nombre, email, teléfono, asesor comercial asignado, segmento/industria, corporación y dirección. Las empresas inactivas no permiten login de sus usuarios."
+            },
+            {
+                "title": "3. Proyectos",
+                "content": "Gestión de proyectos de digitalización asociados a cada empresa. Cada proyecto contiene documentos PDF que serán procesados. Puedes crear proyectos con nombre, descripción, estado (activo/completado) e instrucciones semánticas para guiar a la IA en el procesamiento. Incluye tres pestañas: Documentos, PDF Manager IA y PDF Manager IA por Página."
+            },
+            {
+                "title": "4. Subir y Procesar Documentos",
+                "content": "Dentro de cada proyecto, sube archivos PDF (hasta 10 simultáneos). El sistema ejecuta automáticamente: 1) Control de calidad (QA) según las reglas configuradas, 2) Extracción de datos con IA si pasa QA. Estados del documento: subido, QA en proceso, QA aprobado/fallido, procesando con IA, completado o necesita revisión manual."
+            },
+            {
+                "title": "5. PDF Manager IA",
+                "content": "Herramienta para renombrar y reordenar múltiples PDFs de un proyecto usando lenguaje natural. Proceso: 1) Escribe instrucción (ej: 'Renombrar con formato Empresa-Fecha-Tipo'), 2) La IA genera un plan, 3) Previsualizas los cambios, 4) Ejecutas el plan, 5) Descargas ZIP con archivos procesados y archivos individuales."
+            },
+            {
+                "title": "6. PDF Manager IA por Página",
+                "content": "Reordena páginas DENTRO de un PDF específico. Proceso: 1) Selecciona un PDF del proyecto, 2) Escribe instrucción (ej: 'Mover página con notas importantes al inicio'), 3) La IA analiza el contenido de cada página, 4) Genera plan con nuevo orden, 5) Ejecutas y descargas el PDF reordenado."
+            },
+            {
+                "title": "7. Agentes QA",
+                "content": "Configura reglas de control de calidad para validar PDFs antes del procesamiento con IA. Define condiciones que los documentos deben cumplir, como presencia de fechas, palabras clave, formato correcto, etc. Evita procesar documentos de baja calidad."
+            },
+            {
+                "title": "8. Hallazgos QA",
+                "content": "Visualiza todos los documentos que fallaron el control de calidad automático y requieren revisión manual. Muestra los hallazgos específicos detectados por los agentes QA para cada documento."
+            },
+            {
+                "title": "9. Datos Extraídos",
+                "content": "Consulta centralizada de toda la información extraída por IA de los PDFs procesados. Incluye fechas, montos, nombres de clientes, tipos de documento, números de factura, etc. Permite búsqueda y filtrado de datos."
+            },
+            {
+                "title": "10. Segmentos",
+                "content": "Define y gestiona segmentos de industria para clasificar empresas. Ejemplos: Tecnología Avanzada, Salud, Finanzas, Retail, etc. Útil para organizar clientes y generar reportes segmentados."
+            },
+            {
+                "title": "11. Configuración IA",
+                "content": "Configura las API keys de OpenAI a nivel de proyecto. Tres tipos de configuración independientes: 1) Extracción de datos, 2) Agente QA, 3) Reordenamiento y renombrado. Selecciona empresa → proyecto → modelo → API key. Las claves se encriptan antes de almacenarse."
+            },
+            {
+                "title": "12. Usuarios",
+                "content": "Gestión de usuarios del sistema. Tres roles disponibles: Staff (administrador con acceso completo), Asesor (asignado a empresas específicas, acceso limitado a sus clientes), Cliente (acceso solo a su empresa y proyectos). El usuario admin@pergaminos.com no puede ser eliminado."
+            },
+            {
+                "title": "Notas Importantes",
+                "content": "- Las empresas inactivas bloquean el acceso de sus usuarios. - Los PDFs deben pasar QA antes de procesarse con IA. - Las API keys se encriptan para seguridad. - El sistema soporta procesamiento paralelo de múltiples documentos. - Usa el chat del manual para preguntas específicas sobre el uso del sistema."
+            }
+        ]
+        
+        # Add content
+        for section in manual_content:
+            elements.append(Paragraph(section["title"], styles['SectionTitle']))
+            elements.append(Paragraph(section["content"], styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Get PDF value
+        pdf_value = buffer.getvalue()
+        buffer.close()
+        
+        # Return as streaming response
+        return StreamingResponse(
+            iter([pdf_value]),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": "attachment; filename=Manual_Pergaminos.pdf",
+                "Content-Type": "application/pdf"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating manual PDF: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 # Mount static directories for PDF Manager outputs BEFORE including router
 pdf_manager_temp_dir = UPLOAD_DIR / "pdf_manager_temp"
 pdf_manager_output_dir = UPLOAD_DIR / "pdf_manager_output"
