@@ -4396,7 +4396,8 @@ async def execute_pdf_page_plan(
         if not document:
             raise HTTPException(status_code=404, detail="Source PDF not found")
         
-        pdf_path = UPLOAD_DIR / document["file_path"]
+        # file_path is stored as absolute path, so use it directly
+        pdf_path = Path(document["file_path"])
         if not pdf_path.exists():
             raise HTTPException(status_code=404, detail="PDF file not found on server")
         
