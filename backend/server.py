@@ -4129,41 +4129,41 @@ async def generate_pdf_page_plan_with_ai(
                 })
         
         # Build LLM prompt
-        system_prompt = """You are an expert PDF page management AI. Your task is to analyze the content of PDF pages and generate a plan for reordering them based on natural language instructions.
+        system_prompt = """Eres un experto en gestión de páginas PDF con IA. Tu tarea es analizar el contenido de las páginas de un PDF y generar un plan para reordenarlas según instrucciones en lenguaje natural.
 
-RULES:
-1. Return ONLY valid JSON, no markdown or explanations.
-2. Page numbers are 1-indexed (first page is 1, not 0).
-3. Analyze the text content of each page to make informed decisions.
-4. Generate a complete new page sequence that includes ALL pages.
-5. Provide clear reasoning explaining which pages you identified and why.
-6. Set confidence (0.0-1.0) based on how well you found the content mentioned in instructions.
+REGLAS:
+1. Devuelve SOLO JSON válido, sin markdown ni explicaciones.
+2. Los números de página empiezan en 1 (la primera página es 1, no 0).
+3. Analiza el contenido de texto de cada página para tomar decisiones informadas.
+4. Genera una secuencia completa que incluya TODAS las páginas.
+5. Proporciona un razonamiento claro EN ESPAÑOL explicando qué páginas identificaste y por qué.
+6. Establece la confianza (0.0-1.0) basándote en qué tan bien encontraste el contenido mencionado en las instrucciones.
 
-OUTPUT FORMAT (MANDATORY):
+FORMATO DE SALIDA (OBLIGATORIO):
 {
   "new_page_sequence": [3, 1, 2, 4, 5],
   "confidence": 0.95,
-  "reasoning": "Found 'notas importantes' on page 3, moved it to second position as requested. Page 1 remains first, page 2 moved to third position."
+  "reasoning": "Encontré 'notas importantes' en la página 3, la moví a la segunda posición como se solicitó. La página 1 permanece primero, la página 2 se movió a la tercera posición."
 }
 
-IMPORTANT: new_page_sequence MUST contain ALL page numbers (1 to total_pages) exactly once."""
+IMPORTANTE: new_page_sequence DEBE contener TODOS los números de página (1 a total_pages) exactamente una vez."""
 
         # Build pages content section
         pages_info = "\n\n".join([
-            f"PAGE {page['page_number']}:\n{page['text_preview']}"
+            f"PÁGINA {page['page_number']}:\n{page['text_preview']}"
             for page in pages_content
         ])
 
-        user_prompt = f"""PDF FILE: {pdf_filename}
-TOTAL PAGES: {total_pages}
+        user_prompt = f"""ARCHIVO PDF: {pdf_filename}
+TOTAL DE PÁGINAS: {total_pages}
 
-PAGES CONTENT:
+CONTENIDO DE LAS PÁGINAS:
 {pages_info}
 
-INSTRUCTION:
+INSTRUCCIÓN:
 {instruction}
 
-Analyze the content above and generate the reordering plan:"""
+Analiza el contenido anterior y genera el plan de reordenamiento:"""
 
         # Create AI chat
         chat = await create_ai_chat_with_config(
