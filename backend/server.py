@@ -4101,8 +4101,8 @@ async def generate_pdf_page_plan_with_ai(
     Generate a plan for reordering pages within a single PDF using AI.
     """
     try:
-        # Get AI configuration
-        ai_config = await get_ai_config_for_task(project["id"], "document_processing")
+        # Get AI configuration - use data_extraction config since it's the same for document processing
+        ai_config = await get_ai_config_for_task(project["id"], "data_extraction")
         
         # Get PDF metadata and extract text from each page
         from PyPDF2 import PdfReader
