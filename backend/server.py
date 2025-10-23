@@ -4104,38 +4104,66 @@ async def generate_pdf_page_plan_with_ai(
         # Get AI configuration
         ai_config = await get_ai_config_for_task(project["id"], "document_processing")
         
-        # Get PDF metadata (page count)
+        # Get PDF metadata and extract text from each page
         from PyPDF2 import PdfReader
         reader = PdfReader(pdf_path)
         total_pages = len(reader.pages)
         
+        # Extract text from each page
+        pages_content = []
+        for page_num in range(total_pages):
+            try:
+                page = reader.pages[page_num]
+                text = page.extract_text()
+                # Truncate text to first 500 characters to keep prompt manageable
+                text_preview = text[:500] if text else "[No text extracted]"
+                pages_content.append({
+                    "page_number": page_num + 1,
+                    "text_preview": text_preview
+                })
+            except Exception as e:
+                logger.warning(f"Error extracting text from page {page_num + 1}: {str(e)}")
+                pages_content.append({
+                    "page_number": page_num + 1,
+                    "text_preview": "[Error extracting text]"
+                })
+        
         # Build LLM prompt
-        system_prompt = """You are an expert PDF page management AI. Your task is to analyze natural language instructions and generate a plan for reordering pages within a PDF document.
+        system_prompt = """You are an expert PDF page management AI. Your task is to analyze the content of PDF pages and generate a plan for reordering them based on natural language instructions.
 
 RULES:
 1. Return ONLY valid JSON, no markdown or explanations.
 2. Page numbers are 1-indexed (first page is 1, not 0).
-3. Generate a complete new page sequence that includes ALL pages.
-4. Provide clear reasoning for the reordering logic.
-5. Set confidence (0.0-1.0) based on instruction clarity.
+3. Analyze the text content of each page to make informed decisions.
+4. Generate a complete new page sequence that includes ALL pages.
+5. Provide clear reasoning explaining which pages you identified and why.
+6. Set confidence (0.0-1.0) based on how well you found the content mentioned in instructions.
 
 OUTPUT FORMAT (MANDATORY):
 {
   "new_page_sequence": [3, 1, 2, 4, 5],
   "confidence": 0.95,
-  "reasoning": "Moving page 3 to the beginning as requested, keeping other pages in original order"
+  "reasoning": "Found 'notas importantes' on page 3, moved it to second position as requested. Page 1 remains first, page 2 moved to third position."
 }
 
 IMPORTANT: new_page_sequence MUST contain ALL page numbers (1 to total_pages) exactly once."""
 
+        # Build pages content section
+        pages_info = "\n\n".join([
+            f"PAGE {page['page_number']}:\n{page['text_preview']}"
+            for page in pages_content
+        ])
+
         user_prompt = f"""PDF FILE: {pdf_filename}
 TOTAL PAGES: {total_pages}
-CURRENT PAGE ORDER: {list(range(1, total_pages + 1))}
+
+PAGES CONTENT:
+{pages_info}
 
 INSTRUCTION:
 {instruction}
 
-Generate the reordering plan:"""
+Analyze the content above and generate the reordering plan:"""
 
         # Create AI chat
         chat = await create_ai_chat_with_config(
