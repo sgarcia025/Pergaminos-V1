@@ -400,6 +400,11 @@ const ProjectDetail = ({ user }) => {
         <PDFManager projectId={projectId} user={user} />
       )}
 
+      {/* Tab Content: PDF Page Manager */}
+      {activeTab === 'pdf-page-manager' && (
+        <PDFPageManager projectId={projectId} user={user} />
+      )}
+
       {/* Tab Content: Documents */}
       {activeTab === 'documents' && (
         <>
