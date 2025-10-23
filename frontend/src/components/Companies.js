@@ -70,7 +70,11 @@ const Companies = ({ user }) => {
   const fetchSegmentos = async () => {
     try {
       const response = await axios.get(`${API}/segmentos`);
-      setSegmentos(response.data);
+      // Remove duplicates based on segment name
+      const uniqueSegmentos = response.data.filter((segmento, index, self) =>
+        index === self.findIndex((s) => s.nombre === segmento.nombre)
+      );
+      setSegmentos(uniqueSegmentos);
     } catch (error) {
       console.error('Error fetching segmentos:', error);
     }
