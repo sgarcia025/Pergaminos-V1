@@ -103,6 +103,7 @@ function App() {
               <Route path="/document-processor" element={<DocumentProcessor user={user} />} />
               <Route path="/qa-agents" element={<QAAgents user={user} />} />
               <Route path="/user-management" element={<UserManagement user={user} />} />
+              <Route path="/manual" element={<UserManual user={user} />} />
               <Route path="/segmentos" element={<Segmentos user={user} />} />
               <Route path="/qa-findings" element={<QAFindings user={user} />} />
               <Route path="/extracted-data" element={<ExtractedData user={user} />} />
