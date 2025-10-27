@@ -423,9 +423,13 @@ const Projects = ({ user }) => {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Nuevo Proyecto</h3>
+              <h3 className="modal-title">{isEditing ? 'Editar Proyecto' : 'Nuevo Proyecto'}</h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setIsEditing(false);
+                  setEditingProject(null);
+                }}
                 className="modal-close"
               >
                 ×
@@ -433,6 +437,24 @@ const Projects = ({ user }) => {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="form-group">
+                <label htmlFor="project_code" className="form-label">
+                  ID del Proyecto
+                </label>
+                <input
+                  id="project_code"
+                  name="project_code"
+                  type="text"
+                  value={formData.project_code}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Ej: PROJ-2024-001, ABC123, etc."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Identificador personalizado (alfanumérico, puede incluir símbolos)
+                </p>
+              </div>
+
               <div className="form-group">
                 <label htmlFor="name" className="form-label">
                   Nombre del Proyecto *
