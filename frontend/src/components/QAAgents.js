@@ -190,6 +190,7 @@ const QAAgents = ({ user }) => {
         completeness_check: false
       }
     });
+    setProjectSearchTerm(''); // Reset project search when editing
     setShowModal(true);
   };
 
