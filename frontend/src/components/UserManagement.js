@@ -106,6 +106,46 @@ const UserManagement = ({ user }) => {
     }
   };
 
+
+  const handleResetPasswordClick = (selectedUser) => {
+    setUserToResetPassword(selectedUser);
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowResetPasswordModal(true);
+  };
+
+  const handleResetPasswordConfirm = async () => {
+    if (!userToResetPassword) return;
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    // Validate password length
+    if (newPassword.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/users/${userToResetPassword.id}/reset-password`, {
+        new_password: newPassword
+      });
+      setSuccess(`Contraseña reiniciada exitosamente para ${userToResetPassword.email}`);
+      setShowResetPasswordModal(false);
+      setUserToResetPassword(null);
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al reiniciar contraseña');
+      setShowResetPasswordModal(false);
+      setUserToResetPassword(null);
+    }
+  };
+
+
   if (user.role !== 'staff') {
     return (
       <div className="text-center py-12">
