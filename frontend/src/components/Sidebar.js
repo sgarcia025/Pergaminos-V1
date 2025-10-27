@@ -78,7 +78,7 @@ const Sidebar = ({ user }) => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a4 4 0 01-4-4V5a4 4 0 014-4h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a4 4 0 01-4 4z" />
         </svg>
       ),
-      available: ['staff', 'asesor', 'client']
+      available: ['staff', 'asesor'] // Removed 'client'
     },
     {
       name: 'Segmentos',
