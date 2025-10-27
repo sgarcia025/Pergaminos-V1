@@ -640,10 +640,37 @@ async def batch_upload_documents(
     if len(files) > 10:
         raise HTTPException(status_code=400, detail="Maximum 10 files allowed per batch")
     
-    # Validate all files are PDFs
+    # Validate all files are PDFs and check sizes
+    total_size = 0
+    file_sizes = {}
+    
     for file in files:
         if not file.filename.lower().endswith('.pdf'):
             raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF. Only PDF files are supported")
+        
+        # Read file to check size
+        content = await file.read()
+        file_size = len(content)
+        file_sizes[file.filename] = content
+        
+        # Check individual file size
+        if file_size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"El archivo {file.filename} excede el límite de 500 MB. Tamaño: {file_size / (1024*1024):.2f} MB"
+            )
+        
+        total_size += file_size
+        
+        # Reset file pointer
+        await file.seek(0)
+    
+    # Check total batch size
+    if total_size > MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El tamaño total del lote excede 1 GB. Tamaño total: {total_size / (1024*1024*1024):.2f} GB. Por favor, suba los archivos en múltiples lotes."
+        )
     
     document_ids = []
     
@@ -655,8 +682,9 @@ async def batch_upload_documents(
         filename = f"{file_id}{file_extension}"
         file_path = UPLOAD_DIR / filename
         
+        # Use the already-read content
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+            buffer.write(file_sizes[file.filename])
         
         # Create document record
         document = Document(
@@ -683,10 +711,11 @@ async def batch_upload_documents(
     background_tasks.add_task(process_documents_batch, batch_task.id, project)
     
     return {
-        "message": f"Batch upload successful. {len(files)} documents uploaded.",
+        "message": f"Batch upload successful. {len(files)} documents uploaded. Total size: {total_size / (1024*1024):.2f} MB",
         "batch_task_id": batch_task.id,
         "document_ids": document_ids,
-        "files_uploaded": len(files)
+        "files_uploaded": len(files),
+        "total_size_mb": round(total_size / (1024*1024), 2)
     }
 
 # Batch Processing Status Endpoint
