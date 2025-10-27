@@ -67,6 +67,35 @@ const QAAgents = ({ user }) => {
     }
   };
 
+  const applyFilters = () => {
+    let filtered = [...agents];
+
+    // Filter by project
+    if (filterProject) {
+      filtered = filtered.filter(agent => {
+        if (agent.is_universal) return true; // Universal agents always shown
+        return agent.project_ids && agent.project_ids.includes(filterProject);
+      });
+    }
+
+    // Filter by search term (name or description)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(agent =>
+        agent.name.toLowerCase().includes(term) ||
+        (agent.description && agent.description.toLowerCase().includes(term))
+      );
+    }
+
+    setFilteredAgents(filtered);
+  };
+
+  const getProjectName = (projectId) => {
+    const project = projects.find(p => p.id === projectId);
+    return project ? project.name : 'Proyecto desconocido';
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
