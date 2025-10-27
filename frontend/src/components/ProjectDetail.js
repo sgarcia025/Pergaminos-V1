@@ -454,7 +454,12 @@ const ProjectDetail = ({ user }) => {
               <p className="file-upload-text mb-1">
                 Arrastra archivos PDF o <span className="text-emerald-600 font-medium">haz clic</span>
               </p>
-              <p className="file-upload-hint">Máximo 10 archivos simultáneos</p>
+              <p className="file-upload-hint">
+                Máximo 10 archivos simultáneos • 500 MB por archivo • 1 GB por lote
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Para proyectos grandes (+1GB), sube en múltiples lotes
+              </p>
             </div>
           )}
         </div>
