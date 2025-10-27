@@ -8,6 +8,7 @@ const QAAgents = ({ user }) => {
   const [agents, setAgents] = useState([]);
   const [filteredAgents, setFilteredAgents] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,6 +19,7 @@ const QAAgents = ({ user }) => {
   const [agentToDelete, setAgentToDelete] = useState(null);
   const [filterProject, setFilterProject] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [projectSearchTerm, setProjectSearchTerm] = useState(''); // For modal project search
   const [formData, setFormData] = useState({
     name: '',
     description: '',
