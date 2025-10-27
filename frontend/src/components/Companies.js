@@ -232,7 +232,8 @@ const Companies = ({ user }) => {
       asesor_comercial_id: '',
       segmento: '',
       corporacion: '',
-      is_active: true
+      is_active: true,
+      contactos: []
     });
     setShowModal(true);
   };
