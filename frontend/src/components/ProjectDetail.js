@@ -421,49 +421,51 @@ const ProjectDetail = ({ user }) => {
         </div>
       )}
 
-      {/* File Upload Area */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Subir Documentos</h2>
-        
-        <div
-          className={`file-upload ${dragOver ? 'active' : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById('file-input').click()}
-        >
-          <input
-            id="file-input"
-            type="file"
-            accept=".pdf"
-            multiple
-            onChange={(e) => handleFileUpload(e.target.files)}
-            className="hidden"
-          />
+      {/* File Upload Area - Only for staff and asesor */}
+      {user && (user.role === 'staff' || user.role === 'asesor') && (
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Subir Documentos</h2>
           
-          {uploading ? (
-            <div className="flex flex-col items-center">
-              <div className="spinner mb-4"></div>
-              <p className="text-gray-600">Subiendo documento...</p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center">
-              <svg className="file-upload-icon mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <p className="file-upload-text mb-1">
-                Arrastra archivos PDF o <span className="text-emerald-600 font-medium">haz clic</span>
-              </p>
-              <p className="file-upload-hint">
-                Máximo 10 archivos simultáneos • 500 MB por archivo • 1 GB por lote
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Para proyectos grandes (+1GB), sube en múltiples lotes
-              </p>
-            </div>
-          )}
+          <div
+            className={`file-upload ${dragOver ? 'active' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById('file-input').click()}
+          >
+            <input
+              id="file-input"
+              type="file"
+              accept=".pdf"
+              multiple
+              onChange={(e) => handleFileUpload(e.target.files)}
+              className="hidden"
+            />
+            
+            {uploading ? (
+              <div className="flex flex-col items-center">
+                <div className="spinner mb-4"></div>
+                <p className="text-gray-600">Subiendo documento...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center">
+                <svg className="file-upload-icon mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="file-upload-text mb-1">
+                  Arrastra archivos PDF o <span className="text-emerald-600 font-medium">haz clic</span>
+                </p>
+                <p className="file-upload-hint">
+                  Máximo 10 archivos simultáneos • 500 MB por archivo • 1 GB por lote
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Para proyectos grandes (+1GB), sube en múltiples lotes
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Batch Upload Progress */}
       {(batchUploading || uploadProgress.length > 0) && (
