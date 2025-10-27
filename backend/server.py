@@ -175,6 +175,11 @@ class AIConfigurationUpdate(BaseModel):
     model_parameters: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
+# Contact model for companies
+class Contact(BaseModel):
+    email: EmailStr
+    telefono: str
+
 class Company(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str  # Nombre comercial
@@ -183,8 +188,9 @@ class Company(BaseModel):
     nit: Optional[str] = None
     description: Optional[str] = None
     contacto: Optional[str] = None  # Nombre del contacto
-    contact_email: Optional[EmailStr] = None
-    telefono: Optional[str] = None
+    contact_email: Optional[EmailStr] = None  # Keep for backward compatibility
+    telefono: Optional[str] = None  # Keep for backward compatibility
+    contactos: List[Contact] = []  # New: multiple contacts
     direccion: Optional[str] = None
     asesor_comercial_id: Optional[str] = None  # ID del usuario asesor
     segmento: Optional[str] = None  # Industria/segmento
@@ -201,6 +207,7 @@ class CompanyCreate(BaseModel):
     contacto: Optional[str] = None
     contact_email: Optional[EmailStr] = None
     telefono: Optional[str] = None
+    contactos: Optional[List[Contact]] = []  # New: multiple contacts
     direccion: Optional[str] = None
     asesor_comercial_id: Optional[str] = None
     segmento: Optional[str] = None
