@@ -339,6 +339,11 @@ const Projects = ({ user }) => {
             <div className="card hover:shadow-lg transition-all cursor-pointer">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
+                  {project.project_code && (
+                    <div className="inline-block bg-emerald-100 text-emerald-700 text-xs font-medium px-2 py-1 rounded mb-2">
+                      ID: {project.project_code}
+                    </div>
+                  )}
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
                     {project.name}
                   </h3>
@@ -348,10 +353,21 @@ const Projects = ({ user }) => {
                     </p>
                   )}
                 </div>
-                <span className={`status-badge ${getStatusColor(project.status)}`}>
-                  {project.status === 'active' ? 'Activo' : 
-                   project.status === 'completed' ? 'Completado' : 'Pausado'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => handleEditClick(e, project)}
+                    className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                    title="Editar proyecto"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <span className={`status-badge ${getStatusColor(project.status)}`}>
+                    {project.status === 'active' ? 'Activo' : 
+                     project.status === 'completed' ? 'Completado' : 'Pausado'}
+                  </span>
+                </div>
               </div>
               
               <div className="space-y-2 mb-4">
