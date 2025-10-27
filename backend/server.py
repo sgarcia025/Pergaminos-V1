@@ -2341,6 +2341,57 @@ async def toggle_user_status(user_id: str, status_data: dict, current_user: User
     
     return {"message": "User status updated"}
 
+
+@api_router.post("/users/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: str,
+    password_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Reset password for a user. Only staff can reset passwords.
+    """
+    # Only staff can reset passwords
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Solo el staff puede reiniciar contraseñas")
+    
+    # Check if user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Prevent resetting own password through this endpoint
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="No puedes reiniciar tu propia contraseña a través de este método. Usa 'Cambiar Contraseña'")
+    
+    # Get new password from request
+    new_password = password_data.get("new_password")
+    if not new_password:
+        raise HTTPException(status_code=400, detail="La nueva contraseña es requerida")
+    
+    # Validate password length
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+    
+    # Hash the new password
+    hashed_password = get_password_hash(new_password)
+    
+    # Update user password
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"password_hash": hashed_password}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=500, detail="Error al actualizar la contraseña")
+    
+    return {
+        "message": "Contraseña reiniciada exitosamente",
+        "user_id": user_id,
+        "user_email": user.get("email")
+    }
+
+
 @api_router.delete("/users/{user_id}")
 async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
     # Only staff can delete users
