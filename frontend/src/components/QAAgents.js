@@ -286,6 +286,65 @@ const QAAgents = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {/* Filters Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="filterProject" className="block text-sm font-medium text-gray-700 mb-2">
+              Proyecto
+            </label>
+            <select
+              id="filterProject"
+              value={filterProject}
+              onChange={(e) => setFilterProject(e.target.value)}
+              className="form-input w-full"
+            >
+              <option value="">Todos los proyectos</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.project_code ? `[${project.project_code}] ` : ''}{project.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="searchTerm" className="block text-sm font-medium text-gray-700 mb-2">
+              Buscar por nombre
+            </label>
+            <input
+              id="searchTerm"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar agente..."
+              className="form-input w-full"
+            />
+          </div>
+        </div>
+
+        {(filterProject || searchTerm) && (
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600">
+              Mostrando {filteredAgents.length} de {agents.length} agentes
+            </p>
+            <button
+              onClick={() => {
+                setFilterProject('');
+                setSearchTerm('');
+              }}
+              className="btn-secondary text-sm"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Limpiar Filtros
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* QA Agents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredAgents.map((agent) => (
