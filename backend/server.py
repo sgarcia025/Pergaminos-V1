@@ -54,6 +54,10 @@ security = HTTPBearer()
 # Create the main app without a prefix
 app = FastAPI(title="Pergaminos Digitalization API")
 
+# File upload limits
+MAX_FILE_SIZE = 500 * 1024 * 1024  # 500 MB per file
+MAX_BATCH_SIZE = 1024 * 1024 * 1024  # 1 GB per batch
+
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
