@@ -375,10 +375,22 @@ const QAAgents = ({ user }) => {
               
               {!agent.is_universal && agent.project_ids && agent.project_ids.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-1">Proyectos:</h4>
-                  <p className="text-xs text-gray-600">
-                    {agent.project_ids.length} proyecto(s) asignado(s)
-                  </p>
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">Proyectos asignados:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {agent.project_ids.slice(0, 3).map((projectId) => (
+                      <span
+                        key={projectId}
+                        className="inline-block bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded"
+                      >
+                        {getProjectName(projectId)}
+                      </span>
+                    ))}
+                    {agent.project_ids.length > 3 && (
+                      <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                        +{agent.project_ids.length - 3} más
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
 
