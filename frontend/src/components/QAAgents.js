@@ -101,6 +101,27 @@ const QAAgents = ({ user }) => {
     return project ? project.name : 'Proyecto desconocido';
   };
 
+  const filterProjectsInModal = () => {
+    let filtered = [...projects];
+
+    if (projectSearchTerm.trim()) {
+      const term = projectSearchTerm.toLowerCase();
+      filtered = filtered.filter(project => {
+        const matchesSearch = 
+          project.name.toLowerCase().includes(term) ||
+          (project.project_code && project.project_code.toLowerCase().includes(term)) ||
+          (project.description && project.description.toLowerCase().includes(term));
+        
+        // Always show selected projects
+        const isSelected = formData.project_ids.includes(project.id);
+        
+        return matchesSearch || isSelected;
+      });
+    }
+
+    setFilteredProjects(filtered);
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
