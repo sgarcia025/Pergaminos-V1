@@ -216,6 +216,7 @@ class CompanyCreate(BaseModel):
 
 class Project(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    project_code: Optional[str] = None  # Custom alphanumeric ID defined by user
     name: str
     description: Optional[str] = None
     company_id: str
@@ -225,6 +226,7 @@ class Project(BaseModel):
     created_by: str  # user id
 
 class ProjectCreate(BaseModel):
+    project_code: Optional[str] = None  # Custom alphanumeric ID
     name: str
     description: Optional[str] = None
     company_id: str
