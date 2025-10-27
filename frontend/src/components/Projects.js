@@ -13,6 +13,7 @@ const Projects = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
+    project_code: '',
     name: '',
     description: '',
     company_id: '',
@@ -25,6 +26,8 @@ const Projects = ({ user }) => {
   const [filterCompany, setFilterCompany] = useState('');
   const [filterCorporacion, setFilterCorporacion] = useState('');
   const [dashboardFilters, setDashboardFilters] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
 
   useEffect(() => {
     fetchProjects();
