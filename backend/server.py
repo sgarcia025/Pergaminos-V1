@@ -1639,21 +1639,37 @@ async def process_document_with_ai(document_id: str, project: dict):
 
 # Dashboard stats endpoint
 @api_router.get("/dashboard/stats")
-async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
+async def get_dashboard_stats(
+    start_date: str = None,
+    end_date: str = None,
+    current_user: User = Depends(get_current_user)
+):
+    # Build date filter
+    date_filter = {}
+    if start_date or end_date:
+        date_filter["created_at"] = {}
+        if start_date:
+            date_filter["created_at"]["$gte"] = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+        if end_date:
+            # Add one day to include the end date
+            end_datetime = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            end_datetime = end_datetime.replace(hour=23, minute=59, second=59)
+            date_filter["created_at"]["$lte"] = end_datetime
+    
     if current_user.role == "staff":
         # Staff sees all stats
         companies_count = await db.companies.count_documents({})
         projects_count = await db.projects.count_documents({})
-        documents_total = await db.documents.count_documents({})
-        documents_completed = await db.documents.count_documents({"status": "completed"})
-        documents_failed = await db.documents.count_documents({"status": "failed"})
-        documents_processing = await db.documents.count_documents({"status": "processing"})
-        documents_needs_review = await db.documents.count_documents({"status": "needs_review"})
+        documents_total = await db.documents.count_documents(date_filter)
+        documents_completed = await db.documents.count_documents({**date_filter, "status": "completed"})
+        documents_failed = await db.documents.count_documents({**date_filter, "status": "failed"})
+        documents_processing = await db.documents.count_documents({**date_filter, "status": "processing"})
+        documents_needs_review = await db.documents.count_documents({**date_filter, "status": "needs_review"})
         
         # QA statistics
-        documents_qa_passed = await db.documents.count_documents({"qa_status": {"$in": ["passed", "approved_manual"]}})
-        documents_qa_failed = await db.documents.count_documents({"qa_status": {"$in": ["failed", "rejected_manual"]}})
-        documents_qa_pending = await db.documents.count_documents({"qa_status": {"$in": ["pending", "manual_review"]}})
+        documents_qa_passed = await db.documents.count_documents({**date_filter, "qa_status": {"$in": ["passed", "approved_manual"]}})
+        documents_qa_failed = await db.documents.count_documents({**date_filter, "qa_status": {"$in": ["failed", "rejected_manual"]}})
+        documents_qa_pending = await db.documents.count_documents({**date_filter, "qa_status": {"$in": ["pending", "manual_review"]}})
         
         return {
             "companies_count": companies_count,
@@ -1672,12 +1688,16 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
         if not current_user.company_id:
             return {"error": "No company assigned"}
         
+        project_ids = [p["id"] for p in await db.projects.find({"company_id": current_user.company_id}).to_list(1000)]
+        
         projects_count = await db.projects.count_documents({"company_id": current_user.company_id})
         documents_total = await db.documents.count_documents({
-            "project_id": {"$in": [p["id"] for p in await db.projects.find({"company_id": current_user.company_id}).to_list(1000)]}
+            **date_filter,
+            "project_id": {"$in": project_ids}
         })
         documents_completed = await db.documents.count_documents({
-            "project_id": {"$in": [p["id"] for p in await db.projects.find({"company_id": current_user.company_id}).to_list(1000)]},
+            **date_filter,
+            "project_id": {"$in": project_ids},
             "status": "completed"
         })
         
