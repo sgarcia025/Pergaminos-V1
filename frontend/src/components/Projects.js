@@ -79,10 +79,19 @@ const Projects = ({ user }) => {
     setSuccess('');
 
     try {
-      await axios.post(`${API}/projects`, formData);
-      setSuccess('Proyecto creado exitosamente');
+      if (isEditing && editingProject) {
+        await axios.put(`${API}/projects/${editingProject.id}`, formData);
+        setSuccess('Proyecto actualizado exitosamente');
+      } else {
+        await axios.post(`${API}/projects`, formData);
+        setSuccess('Proyecto creado exitosamente');
+      }
+      
       setShowModal(false);
+      setIsEditing(false);
+      setEditingProject(null);
       setFormData({
+        project_code: '',
         name: '',
         description: '',
         company_id: '',
@@ -90,8 +99,23 @@ const Projects = ({ user }) => {
       });
       fetchProjects();
     } catch (error) {
-      setError(error.response?.data?.detail || 'Error al crear el proyecto');
+      setError(error.response?.data?.detail || 'Error al guardar el proyecto');
     }
+  };
+
+  const handleEditClick = (e, project) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingProject(project);
+    setIsEditing(true);
+    setFormData({
+      project_code: project.project_code || '',
+      name: project.name,
+      description: project.description || '',
+      company_id: project.company_id,
+      semantic_instructions: project.semantic_instructions || ''
+    });
+    setShowModal(true);
   };
 
   const handleChange = (e) => {
