@@ -492,6 +492,18 @@ async def create_project(project_data: ProjectCreate, current_user: User = Depen
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
+    # Validate project_code uniqueness if provided
+    if project_data.project_code:
+        existing_project = await db.projects.find_one({
+            "project_code": project_data.project_code,
+            "company_id": project_data.company_id
+        })
+        if existing_project:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Ya existe un proyecto con el ID '{project_data.project_code}' en esta empresa"
+            )
+    
     project_dict = project_data.dict()
     project_dict["created_by"] = current_user.id
     project = Project(**project_dict)
