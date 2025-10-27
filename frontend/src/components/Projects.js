@@ -24,10 +24,16 @@ const Projects = ({ user }) => {
   const [projectToDelete, setProjectToDelete] = useState(null);
   const [filterCompany, setFilterCompany] = useState('');
   const [filterCorporacion, setFilterCorporacion] = useState('');
+  const [dashboardFilters, setDashboardFilters] = useState(null);
 
   useEffect(() => {
     fetchProjects();
     fetchCompanies();
+    
+    // Check if filters were passed from Dashboard
+    if (location.state?.filters) {
+      setDashboardFilters(location.state.filters);
+    }
   }, []);
 
   useEffect(() => {
@@ -41,7 +47,7 @@ const Projects = ({ user }) => {
 
   useEffect(() => {
     applyFilters();
-  }, [projects, companies, filterCompany, filterCorporacion]);
+  }, [projects, companies, filterCompany, filterCorporacion, dashboardFilters]);
 
   const fetchProjects = async () => {
     try {
