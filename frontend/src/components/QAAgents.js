@@ -48,6 +48,10 @@ const QAAgents = ({ user }) => {
     applyFilters();
   }, [agents, filterProject, searchTerm]);
 
+  useEffect(() => {
+    filterProjectsInModal();
+  }, [projects, projectSearchTerm, formData.project_ids]);
+
   const fetchAgents = async () => {
     try {
       const response = await axios.get(`${API}/qa-agents`);
