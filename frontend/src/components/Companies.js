@@ -207,7 +207,8 @@ const Companies = ({ user }) => {
       asesor_comercial_id: company.asesor_comercial_id || '',
       segmento: company.segmento || '',
       corporacion: company.corporacion || '',
-      is_active: company.is_active !== undefined ? company.is_active : true
+      is_active: company.is_active !== undefined ? company.is_active : true,
+      contactos: company.contactos || []
     });
     setShowModal(true);
   };
