@@ -135,6 +135,19 @@ const Projects = ({ user }) => {
 
     setFilteredProjects(filtered);
   };
+  
+  const getStatusLabel = (status) => {
+    const labels = {
+      'completed': 'Documentos Completados',
+      'processing': 'Documentos en Proceso',
+      'failed': 'Documentos Fallidos',
+      'needs_review': 'Documentos en Revisión',
+      'qa_passed': 'QA Aprobado',
+      'qa_failed': 'QA Fallido',
+      'qa_pending': 'QA Pendiente'
+    };
+    return labels[status] || status;
+  };
 
   const uniqueCorporaciones = [...new Set(
     companies.map(c => c.corporacion).filter(Boolean)
