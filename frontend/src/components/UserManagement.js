@@ -474,6 +474,97 @@ const UserManagement = ({ user }) => {
           </div>
         </div>
       )}
+
+
+      {/* Reset Password Modal */}
+      {showResetPasswordModal && userToResetPassword && (
+        <div className="modal-overlay" onClick={() => setShowResetPasswordModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Reiniciar Contraseña</h3>
+              <button
+                onClick={() => setShowResetPasswordModal(false)}
+                className="modal-close"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-800">
+                      Estás a punto de reiniciar la contraseña para:
+                    </p>
+                    <p className="text-sm font-semibold text-blue-900 mt-1">
+                      {userToResetPassword.name} ({userToResetPassword.email})
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="newPassword" className="form-label">
+                  Nueva Contraseña *
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="form-input"
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirmPassword" className="form-label">
+                  Confirmar Contraseña *
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="form-input"
+                  placeholder="Confirmar nueva contraseña"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                <div className="text-sm text-red-600">
+                  Las contraseñas no coinciden
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowResetPasswordModal(false)}
+                  className="btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetPasswordConfirm}
+                  disabled={!newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Reiniciar Contraseña
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
