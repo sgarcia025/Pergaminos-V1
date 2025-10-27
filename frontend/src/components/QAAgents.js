@@ -561,19 +561,66 @@ const QAAgents = ({ user }) => {
               {!formData.is_universal && (
                 <div className="form-group">
                   <label className="form-label">Proyectos a Aplicar</label>
-                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                    {projects.map((project) => (
-                      <label key={project.id} className="flex items-center py-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.project_ids.includes(project.id)}
-                          onChange={() => handleProjectSelection(project.id)}
-                          className="form-checkbox mr-2"
-                        />
-                        <span className="text-sm text-gray-700">{project.name}</span>
-                      </label>
-                    ))}
+                  
+                  {/* Search box for projects */}
+                  <div className="mb-3">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={projectSearchTerm}
+                        onChange={(e) => setProjectSearchTerm(e.target.value)}
+                        placeholder="Buscar proyecto por nombre o ID..."
+                        className="form-input w-full pl-10"
+                      />
+                      <svg 
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    {projectSearchTerm && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Mostrando {filteredProjects.length} de {projects.length} proyectos
+                      </p>
+                    )}
                   </div>
+
+                  {/* Project checkboxes */}
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                    {filteredProjects.length > 0 ? (
+                      filteredProjects.map((project) => (
+                        <label key={project.id} className="flex items-center py-2 hover:bg-gray-50 rounded px-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.project_ids.includes(project.id)}
+                            onChange={() => handleProjectSelection(project.id)}
+                            className="form-checkbox mr-2"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {project.project_code && (
+                              <span className="font-medium text-emerald-600 mr-1">
+                                [{project.project_code}]
+                              </span>
+                            )}
+                            {project.name}
+                          </span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No se encontraron proyectos
+                      </p>
+                    )}
+                  </div>
+                  
+                  {formData.project_ids.length > 0 && (
+                    <p className="text-xs text-gray-600 mt-2">
+                      {formData.project_ids.length} proyecto(s) seleccionado(s)
+                    </p>
+                  )}
                 </div>
               )}
 
