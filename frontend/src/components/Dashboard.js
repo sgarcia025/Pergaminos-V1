@@ -1,26 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const Dashboard = ({ user }) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API}/dashboard/stats`);
+      let url = `${API}/dashboard/stats`;
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      if (params.toString()) url += `?${params.toString()}`;
+      
+      const response = await axios.get(url);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCardClick = (filterType) => {
+    // Navigate to projects with filter
+    const filters = { status: filterType };
+    if (startDate) filters.start_date = startDate;
+    if (endDate) filters.end_date = endDate;
+    
+    navigate('/projects', { state: { filters } });
+  };
+
+  const clearFilters = () => {
+    setStartDate('');
+    setEndDate('');
   };
 
   if (loading) {
