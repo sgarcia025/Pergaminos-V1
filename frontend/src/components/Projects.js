@@ -210,6 +210,40 @@ const Projects = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {/* Dashboard Filters Info Banner */}
+      {dashboardFilters && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-blue-400 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="text-sm font-medium text-blue-800 mb-1">
+                  Filtros aplicados desde el Dashboard
+                </h4>
+                <p className="text-sm text-blue-700">
+                  Mostrando proyectos con: <strong>{getStatusLabel(dashboardFilters.status)}</strong>
+                  {dashboardFilters.start_date && ` desde ${dashboardFilters.start_date}`}
+                  {dashboardFilters.end_date && ` hasta ${dashboardFilters.end_date}`}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Haz click en un proyecto para ver los documentos en este estado
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setDashboardFilters(null)}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Filtros</h3>
