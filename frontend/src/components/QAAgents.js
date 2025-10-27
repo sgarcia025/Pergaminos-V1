@@ -6,6 +6,7 @@ const API = `${BACKEND_URL}/api`;
 
 const QAAgents = ({ user }) => {
   const [agents, setAgents] = useState([]);
+  const [filteredAgents, setFilteredAgents] = useState([]);
   const [projects, setProjects] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -15,6 +16,8 @@ const QAAgents = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState(null);
+  const [filterProject, setFilterProject] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -38,6 +41,10 @@ const QAAgents = ({ user }) => {
     fetchAgents();
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [agents, filterProject, searchTerm]);
 
   const fetchAgents = async () => {
     try {
