@@ -68,49 +68,108 @@ const Dashboard = ({ user }) => {
         </div>
       </div>
 
+      {/* Date Range Filter */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Fecha Inicio:</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="form-input"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Fecha Fin:</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="form-input"
+            />
+          </div>
+          {(startDate || endDate) && (
+            <button
+              onClick={clearFilters}
+              className="btn-secondary text-sm"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Limpiar Filtros
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="stats-grid">
         {user.role === 'staff' ? (
           <>
-            <div className="stat-card">
+            <div className="stat-card cursor-pointer hover:shadow-lg transition-shadow">
               <div className="stat-number">{stats?.companies_count || 0}</div>
               <div className="stat-label">Empresas</div>
             </div>
-            <div className="stat-card">
+            <div 
+              className="stat-card cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => navigate('/projects')}
+            >
               <div className="stat-number">{stats?.projects_count || 0}</div>
               <div className="stat-label">Proyectos</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card cursor-pointer hover:shadow-lg transition-shadow">
               <div className="stat-number">{stats?.documents_total || 0}</div>
               <div className="stat-label">Documentos Total</div>
             </div>
-            <div className="stat-card">
+            <div 
+              className="stat-card cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('completed')}
+            >
               <div className="stat-number">{stats?.documents_completed || 0}</div>
               <div className="stat-label">Procesados</div>
             </div>
-            <div className="stat-card">
+            <div 
+              className="stat-card cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('processing')}
+            >
               <div className="stat-number">{stats?.documents_processing || 0}</div>
               <div className="stat-label">En Proceso</div>
             </div>
-            <div className="stat-card">
+            <div 
+              className="stat-card cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('failed')}
+            >
               <div className="stat-number">{stats?.documents_failed || 0}</div>
               <div className="stat-label">Fallidos</div>
             </div>
-            <div className="stat-card">
+            <div 
+              className="stat-card cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('needs_review')}
+            >
               <div className="stat-number">{stats?.documents_needs_review || 0}</div>
               <div className="stat-label">Revisión</div>
             </div>
             
             {/* QA Statistics */}
-            <div className="stat-card bg-green-50 border-green-200">
+            <div 
+              className="stat-card bg-green-50 border-green-200 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('qa_passed')}
+            >
               <div className="stat-number text-green-600">{stats?.qa_passed || 0}</div>
               <div className="stat-label text-green-700">QA Aprobado</div>
             </div>
-            <div className="stat-card bg-red-50 border-red-200">
+            <div 
+              className="stat-card bg-red-50 border-red-200 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('qa_failed')}
+            >
               <div className="stat-number text-red-600">{stats?.qa_failed || 0}</div>
               <div className="stat-label text-red-700">QA Falló</div>
             </div>
-            <div className="stat-card bg-yellow-50 border-yellow-200">
+            <div 
+              className="stat-card bg-yellow-50 border-yellow-200 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleCardClick('qa_pending')}
+            >
               <div className="stat-number text-yellow-600">{stats?.qa_pending || 0}</div>
               <div className="stat-label text-yellow-700">QA Pendiente</div>
             </div>
