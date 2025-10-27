@@ -582,6 +582,19 @@ async def upload_document(
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
     
+    # Check file size
+    file_content = await file.read()
+    file_size = len(file_content)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"El archivo {file.filename} excede el límite de 500 MB. Tamaño: {file_size / (1024*1024):.2f} MB"
+        )
+    
+    # Reset file pointer for saving
+    await file.seek(0)
+    
     # Save file
     file_id = str(uuid.uuid4())
     file_extension = Path(file.filename).suffix
@@ -589,7 +602,7 @@ async def upload_document(
     file_path = UPLOAD_DIR / filename
     
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(file_content)
     
     # Create document record
     document = Document(
