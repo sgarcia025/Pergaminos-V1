@@ -131,12 +131,37 @@ const Companies = ({ user }) => {
         asesor_comercial_id: '',
         segmento: '',
         corporacion: '',
-        is_active: true
+        is_active: true,
+        contactos: []
       });
       fetchCompanies();
     } catch (error) {
       setError(error.response?.data?.detail || (isEditing ? 'Error al actualizar la empresa' : 'Error al crear la empresa'));
     }
+  };
+
+  const handleAddContact = () => {
+    setFormData({
+      ...formData,
+      contactos: [...formData.contactos, { email: '', telefono: '' }]
+    });
+  };
+
+  const handleRemoveContact = (index) => {
+    const newContactos = formData.contactos.filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      contactos: newContactos
+    });
+  };
+
+  const handleContactChange = (index, field, value) => {
+    const newContactos = [...formData.contactos];
+    newContactos[index][field] = value;
+    setFormData({
+      ...formData,
+      contactos: newContactos
+    });
   };
 
   const handleChange = (e) => {
