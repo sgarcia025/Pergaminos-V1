@@ -1062,7 +1062,7 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                 chat = await create_ai_chat_with_config(
                     ai_config,
                     f"qa_{agent['id']}_{document_id}",
-                    "You are a document quality assurance AI. Analyze documents for quality issues and provide detailed assessment."
+                    "Eres un asistente de control de calidad de documentos con IA. Analiza documentos en busca de problemas de calidad y proporciona una evaluación detallada en español."
                 )
                 
                 # Create QA prompt
@@ -1070,17 +1070,17 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                 active_checks = [check for check, enabled in quality_checks.items() if enabled]
                 
                 prompt = f"""
-                Analyze this document for quality assurance based on the following criteria:
+                Analiza este documento para control de calidad basándote en los siguientes criterios:
                 
-                QA INSTRUCTIONS: {agent['qa_instructions']}
+                INSTRUCCIONES DE QA: {agent['qa_instructions']}
                 
-                QUALITY CHECKS TO PERFORM:
-                {', '.join(active_checks) if active_checks else 'General document quality assessment'}
+                VERIFICACIONES DE CALIDAD A REALIZAR:
+                {', '.join(active_checks) if active_checks else 'Evaluación general de calidad del documento'}
                 
-                DOCUMENT TEXT CONTENT:
+                CONTENIDO DE TEXTO DEL DOCUMENTO:
                 {pdf_text[:15000]}
                 
-                Please provide a JSON response with:
+                Por favor proporciona una respuesta en JSON con:
                 {{
                     "overall_score": <0-100>,
                     "quality_assessment": {{
@@ -1092,10 +1092,10 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                     "findings": [
                         {{
                             "type": "critical|warning|info",
-                            "category": "readability|completeness|structure|content|other",
-                            "description": "Detailed description",
-                            "location": "page number or section",
-                            "recommendation": "How to fix"
+                            "category": "legibilidad|completitud|estructura|contenido|otro",
+                            "description": "Descripción detallada en español",
+                            "location": "número de página o sección",
+                            "recommendation": "Cómo corregirlo"
                         }}
                     ],
                     "recommendation": "approve|manual_review|reject",
