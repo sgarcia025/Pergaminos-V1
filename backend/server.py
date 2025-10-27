@@ -3298,6 +3298,47 @@ async def delete_company(company_id: str, current_user: User = Depends(get_curre
     
     return {"message": "Company deleted successfully", "company_id": company_id}
 
+
+@api_router.put("/projects/{project_id}", response_model=Project)
+async def update_project(
+    project_id: str,
+    project_data: ProjectCreate,
+    current_user: User = Depends(get_current_user)
+):
+    # Get existing project
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Check access permissions
+    if current_user.role == "client" and current_user.company_id != project["company_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Validate project_code uniqueness if changed
+    if project_data.project_code and project_data.project_code != project.get("project_code"):
+        existing_project = await db.projects.find_one({
+            "project_code": project_data.project_code,
+            "company_id": project["company_id"],
+            "id": {"$ne": project_id}
+        })
+        if existing_project:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe un proyecto con el ID '{project_data.project_code}' en esta empresa"
+            )
+    
+    # Update project
+    update_data = project_data.dict(exclude_unset=True)
+    await db.projects.update_one(
+        {"id": project_id},
+        {"$set": update_data}
+    )
+    
+    # Return updated project
+    updated_project = await db.projects.find_one({"id": project_id})
+    return Project(**updated_project)
+
+
 @api_router.delete("/projects/{project_id}")
 async def delete_project(project_id: str, current_user: User = Depends(get_current_user)):
     # Only staff can delete projects
