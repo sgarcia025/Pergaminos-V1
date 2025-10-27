@@ -1099,16 +1099,18 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
                         }}
                     ],
                     "recommendation": "approve|manual_review|reject",
-                    "summary": "Brief summary of assessment"
+                    "summary": "Resumen breve de la evaluación en español"
                 }}
                 
-                Score 0-100 where:
-                - 80-100: Excellent quality, approve automatically
-                - 60-79: Good quality but may need review
-                - 0-59: Poor quality, likely needs rejection or reprocessing
+                Puntuación 0-100 donde:
+                - 80-100: Excelente calidad, aprobar automáticamente
+                - 60-79: Buena calidad pero puede necesitar revisión
+                - 0-59: Calidad deficiente, probablemente necesita rechazo o reprocesamiento
                 
-                Note: Visual quality checks (image clarity, orientation) require visual analysis which is not available with text-only processing.
-                Focus on text readability, completeness, structure, and content quality.
+                Nota: Las verificaciones de calidad visual (claridad de imagen, orientación) requieren análisis visual que no está disponible con procesamiento solo de texto.
+                Enfócate en la legibilidad del texto, completitud, estructura y calidad del contenido.
+                
+                IMPORTANTE: Todas las descripciones, recomendaciones y resúmenes deben estar en español.
                 """
                 
                 user_message = UserMessage(text=prompt)
