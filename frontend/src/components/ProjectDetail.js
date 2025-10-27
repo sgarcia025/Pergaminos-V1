@@ -369,26 +369,31 @@ const ProjectDetail = ({ user }) => {
           >
             📄 Documentos
           </button>
-          <button
-            onClick={() => setActiveTab('pdf-manager')}
-            className={`${
-              activeTab === 'pdf-manager'
-                ? 'border-emerald-500 text-emerald-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            🤖 PDF Manager IA
-          </button>
-          <button
-            onClick={() => setActiveTab('pdf-page-manager')}
-            className={`${
-              activeTab === 'pdf-page-manager'
-                ? 'border-emerald-500 text-emerald-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-          >
-            📄 PDF Manager IA por Página
-          </button>
+          {/* PDF Manager tabs only for staff and asesor */}
+          {user && (user.role === 'staff' || user.role === 'asesor') && (
+            <>
+              <button
+                onClick={() => setActiveTab('pdf-manager')}
+                className={`${
+                  activeTab === 'pdf-manager'
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                🤖 PDF Manager IA
+              </button>
+              <button
+                onClick={() => setActiveTab('pdf-page-manager')}
+                className={`${
+                  activeTab === 'pdf-page-manager'
+                    ? 'border-emerald-500 text-emerald-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              >
+                📄 PDF Manager IA por Página
+              </button>
+            </>
+          )}
         </nav>
       </div>
 
