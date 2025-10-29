@@ -359,7 +359,7 @@ const AIConfiguration = ({ user }) => {
                   value="tesseract"
                   checked={ocrConfig.ocr_method === 'tesseract'}
                   onChange={(e) => handleOcrConfigUpdate(e.target.value)}
-                  disabled={ocrLoading}
+                  disabled={ocrLoading || !ocrConfig.ocr_enabled}
                   className="mt-1"
                 />
                 <label htmlFor="ocr-tesseract" className="flex-1 cursor-pointer">
@@ -380,7 +380,7 @@ const AIConfiguration = ({ user }) => {
                   value="gpt4o_vision"
                   checked={ocrConfig.ocr_method === 'gpt4o_vision'}
                   onChange={(e) => handleOcrConfigUpdate(e.target.value)}
-                  disabled={ocrLoading}
+                  disabled={ocrLoading || !ocrConfig.ocr_enabled}
                   className="mt-1"
                 />
                 <label htmlFor="ocr-gpt4o" className="flex-1 cursor-pointer">
