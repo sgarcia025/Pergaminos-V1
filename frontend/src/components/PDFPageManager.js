@@ -386,7 +386,7 @@ const PDFPageManager = ({ projectId, user }) => {
                   </span>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Action Buttons */}
