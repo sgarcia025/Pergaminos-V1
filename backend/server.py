@@ -1093,13 +1093,14 @@ async def extract_text_from_pdf_with_ocr(
                     if document_id:
                         await db.documents.update_one(
                             {"id": document_id},
-                            {"$set": {"processing_message": f"🔍 Extrayendo texto con GPT-4o Vision ({pages_processed} páginas)... Esto puede tomar 1-2 minutos."}}
+                            {"$set": {"processing_message": f"🔍 Iniciando GPT-4o Vision OCR ({pages_processed} páginas)..."}}
                         )
                     pdf_text = await extract_text_with_gpt4o_vision(
                         file_path, 
                         start_page, 
                         end_page, 
-                        project_id
+                        project_id,
+                        document_id
                     )
                     
                 elif ocr_method == "tesseract":
