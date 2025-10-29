@@ -275,6 +275,9 @@ class Document(BaseModel):
     qa_processed_at: Optional[datetime] = None
     qa_approved_by: Optional[str] = None  # Staff user who approved after manual review
     qa_approved_at: Optional[datetime] = None
+    qa_review_comments: Optional[str] = None  # Comments from reviewer
+    qa_review_action: Optional[str] = None  # "approved" or "rejected"
+    qa_reviewed_by_name: Optional[str] = None  # Name of reviewer for display
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     uploaded_by: str  # user id
 
