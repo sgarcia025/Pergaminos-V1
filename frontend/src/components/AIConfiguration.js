@@ -58,6 +58,7 @@ const AIConfiguration = ({ user }) => {
     // Delay OCR config fetch to ensure token is set
     setTimeout(() => {
       fetchOcrConfig();
+      fetchRetentionPolicy();
     }, 1000);
   }, []);
 
