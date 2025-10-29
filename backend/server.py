@@ -1899,6 +1899,13 @@ async def process_document_with_ai(document_id: str, project: dict):
         else:
             # Process small document normally
             logger.info(f"Processing small PDF ({total_pages} pages) normally")
+            await db.documents.update_one(
+                {"id": document_id},
+                {"$set": {
+                    "processing_progress": 30,
+                    "processing_message": f"🤖 Extrayendo datos de {total_pages} páginas..."
+                }}
+            )
             extraction_config = await get_ai_config_for_task(project["id"], "data_extraction")
             combined_data = await process_single_chunk(
                 document["file_path"],
@@ -1911,6 +1918,14 @@ async def process_document_with_ai(document_id: str, project: dict):
             )
         
         # Process and store extracted data in normalized format
+        await db.documents.update_one(
+            {"id": document_id},
+            {"$set": {
+                "processing_progress": 90,
+                "processing_message": "💾 Guardando datos extraídos..."
+            }}
+        )
+        
         if combined_data:
             await store_extracted_data_normalized(document_id, document, project, combined_data)
         
