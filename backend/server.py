@@ -1010,7 +1010,8 @@ async def extract_text_from_pdf_with_ocr(
     project_id: str,
     start_page: int = 0, 
     end_page: int = None, 
-    max_pages: int = None
+    max_pages: int = None,
+    document_id: Optional[str] = None  # For progress updates
 ) -> str:
     """
     Extract text from PDF with OCR fallback for scanned documents.
@@ -1023,6 +1024,7 @@ async def extract_text_from_pdf_with_ocr(
         start_page: Starting page (0-indexed)
         end_page: Ending page (0-indexed, inclusive). If None, extracts to end
         max_pages: Maximum number of pages to extract. If None, no limit
+        document_id: Document ID for progress updates (optional)
     
     Returns:
         Extracted text as string
@@ -1048,6 +1050,11 @@ async def extract_text_from_pdf_with_ocr(
                 end_page = min(start_page + max_pages - 1, end_page)
             
             # First attempt: Extract text using PyPDF2
+            if document_id:
+                await db.documents.update_one(
+                    {"id": document_id},
+                    {"$set": {"processing_message": "Intentando extraer texto del PDF..."}}
+                )
             pages_processed = 0
             for page_num in range(start_page, end_page + 1):
                 page = pdf_reader.pages[page_num]
