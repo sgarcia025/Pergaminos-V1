@@ -1557,15 +1557,16 @@ async def store_extracted_data_normalized(document_id: str, document: dict, proj
     except Exception as e:
         logger.error(f"Error storing normalized extracted data for document {document_id}: {str(e)}")
 
-async def process_single_chunk(file_path: str, semantic_instructions: str, ai_config: dict, chunk_number: int, start_page: int, end_page: int) -> dict:
+async def process_single_chunk(file_path: str, semantic_instructions: str, ai_config: dict, chunk_number: int, start_page: int, end_page: int, project_id: str) -> dict:
     """Process a single PDF chunk with AI using configured model"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         # Extract text from specified pages of the PDF with OCR fallback
         # Note: emergentintegrations only supports file attachments with Gemini provider
         # For OpenAI, we extract text and send it in the prompt
-        pdf_text = extract_text_from_pdf_with_ocr(
+        pdf_text = await extract_text_from_pdf_with_ocr(
             file_path,
+            project_id=project_id,
             start_page=start_page - 1,  # Convert to 0-indexed
             end_page=end_page - 1  # Convert to 0-indexed
         )
