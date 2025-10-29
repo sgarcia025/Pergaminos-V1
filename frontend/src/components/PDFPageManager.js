@@ -193,10 +193,65 @@ const PDFPageManager = ({ projectId, user }) => {
           )}
         </div>
 
+        {/* Mode Selector */}
+        <div className="border-t pt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Modo de Operación *
+          </label>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setMode('reorder')}
+              disabled={loading || executing}
+              className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                mode === 'reorder'
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-semibold">🔄 Reordenar Páginas</div>
+              <div className="text-xs mt-1">Reorganizar el orden de las páginas</div>
+            </button>
+            <button
+              onClick={() => setMode('extract')}
+              disabled={loading || executing}
+              className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
+                mode === 'extract'
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="font-semibold">✂️ Extraer Páginas</div>
+              <div className="text-xs mt-1">Crear nuevo PDF con páginas específicas</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Manual Range (only for extract mode) */}
+        {mode === 'extract' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <label htmlFor="manual-range" className="block text-sm font-medium text-gray-700 mb-2">
+              Rango Manual (Opcional)
+            </label>
+            <input
+              type="text"
+              id="manual-range"
+              value={manualRange}
+              onChange={(e) => setManualRange(e.target.value)}
+              placeholder='Ej: "1-20" o "1,5,10,15-20"'
+              className="form-input w-full"
+              disabled={loading || executing}
+            />
+            <p className="text-xs text-gray-600 mt-2">
+              💡 Puedes especificar el rango manualmente o usar lenguaje natural abajo.
+              <br />Ejemplos: "1-20" (páginas 1 a 20), "1,5,10" (páginas 1, 5 y 10), "1-10,15-20" (combinado)
+            </p>
+          </div>
+        )}
+
         {/* Instruction Input */}
         <div>
           <label htmlFor="instruction" className="block text-sm font-medium text-gray-700 mb-2">
-            Instrucción en Lenguaje Natural *
+            {mode === 'extract' ? 'Instrucción en Lenguaje Natural (Opcional si usas rango manual)' : 'Instrucción en Lenguaje Natural *'}
           </label>
           <textarea
             id="instruction"
