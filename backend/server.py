@@ -4023,7 +4023,8 @@ Generate the plan:"""
             RenameOperation(
                 from_id=op["from_id"],
                 from_name=op["from_name"],
-                to_name=op["to_name"]
+                to_name=op["to_name"],
+                reasoning=op.get("reasoning", None)
             ) for op in plan_data.get("rename_operations", [])
         ]
         
