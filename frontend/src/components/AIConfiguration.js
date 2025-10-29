@@ -158,7 +158,26 @@ const AIConfiguration = ({ user }) => {
         ocr_method: newMethod
       });
       setOcrConfig({ ...ocrConfig, ocr_method: newMethod });
-      setOcrSuccess('Configuración OCR actualizada exitosamente');
+      setOcrSuccess('Método OCR actualizado exitosamente');
+      setTimeout(() => setOcrSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al actualizar configuración OCR');
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleOcrToggle = async (enabled) => {
+    setOcrLoading(true);
+    setError('');
+    setOcrSuccess('');
+    
+    try {
+      await axios.post(`${API}/ocr-config`, {
+        ocr_enabled: enabled
+      });
+      setOcrConfig({ ...ocrConfig, ocr_enabled: enabled });
+      setOcrSuccess(enabled ? 'OCR habilitado exitosamente' : 'OCR deshabilitado');
       setTimeout(() => setOcrSuccess(''), 3000);
     } catch (error) {
       setError(error.response?.data?.detail || 'Error al actualizar configuración OCR');
