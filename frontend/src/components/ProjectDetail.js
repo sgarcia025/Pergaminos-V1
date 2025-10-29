@@ -26,6 +26,12 @@ const ProjectDetail = ({ user }) => {
   const [batchProgress, setBatchProgress] = useState({});
   const [uploadProgress, setUploadProgress] = useState([]);
   const [activeTab, setActiveTab] = useState('documents'); // documents, pdf-manager, or pdf-page-manager
+  
+  // QA Review Modal
+  const [showQAModal, setShowQAModal] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [qaComments, setQaComments] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     fetchProject();
