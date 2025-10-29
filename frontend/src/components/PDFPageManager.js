@@ -7,7 +7,9 @@ const API = `${BACKEND_URL}/api`;
 const PDFPageManager = ({ projectId, user }) => {
   const [documents, setDocuments] = useState([]);
   const [selectedPdf, setSelectedPdf] = useState('');
+  const [mode, setMode] = useState('reorder'); // 'reorder' or 'extract'
   const [instruction, setInstruction] = useState('');
+  const [manualRange, setManualRange] = useState(''); // For extract mode
   const [loading, setLoading] = useState(false);
   const [currentJob, setCurrentJob] = useState(null);
   const [plan, setPlan] = useState(null);
