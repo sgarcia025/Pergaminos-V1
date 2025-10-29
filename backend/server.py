@@ -1828,6 +1828,19 @@ async def process_document_with_ai(document_id: str, project: dict):
                 start_page = chunk_idx * PAGES_PER_CHUNK
                 end_page = min(start_page + PAGES_PER_CHUNK - 1, total_pages - 1)
                 
+                # Update progress
+                progress = int((chunk_idx / chunk_count) * 80) + 10  # 10-90%
+                await db.documents.update_one(
+                    {"id": document_id},
+                    {
+                        "$set": {
+                            "processing_progress": progress,
+                            "processing_message": f"🤖 Extrayendo datos del chunk {chunk_idx + 1}/{chunk_count} (páginas {start_page + 1}-{end_page + 1})...",
+                            "chunks_processed": chunk_idx
+                        }
+                    }
+                )
+                
                 # Create chunk file
                 chunk_filename = f"{document_id}_chunk_{chunk_idx + 1}.pdf"
                 chunk_path = Path(document["file_path"]).parent / chunk_filename
