@@ -992,12 +992,21 @@ async def extract_text_with_gpt4o_vision(file_path: str, start_page: int, end_pa
         logger.error(f"GPT-4o Vision OCR processing failed: {str(e)}", exc_info=True)
         return f"[Vision OCR Error: {str(e)}]"
 
-def extract_text_from_pdf_with_ocr(file_path: str, start_page: int = 0, end_page: int = None, max_pages: int = None) -> str:
+async def extract_text_from_pdf_with_ocr(
+    file_path: str, 
+    project_id: str,
+    start_page: int = 0, 
+    end_page: int = None, 
+    max_pages: int = None
+) -> str:
     """
     Extract text from PDF with OCR fallback for scanned documents.
+    Uses global OCR configuration to determine method (tesseract or gpt4o_vision).
+    Only applies OCR if PyPDF2 fails to extract text.
     
     Args:
         file_path: Path to PDF file
+        project_id: Project ID for AI configuration (needed for Vision OCR)
         start_page: Starting page (0-indexed)
         end_page: Ending page (0-indexed, inclusive). If None, extracts to end
         max_pages: Maximum number of pages to extract. If None, no limit
@@ -1037,56 +1046,75 @@ def extract_text_from_pdf_with_ocr(file_path: str, start_page: int = 0, end_page
             
             logger.info(f"PyPDF2 extracted {total_text_length} characters from {pages_processed} pages")
             
-            # If minimal text was extracted, try OCR
+            # If minimal text was extracted, try OCR based on global configuration
             if total_text_length < 50 and pages_processed > 0:
-                logger.info(f"Minimal text extracted ({total_text_length} chars). Attempting OCR fallback...")
+                logger.info(f"Minimal text extracted ({total_text_length} chars). Checking OCR configuration...")
                 
-                try:
-                    import pytesseract
-                    from pdf2image import convert_from_path
-                    
-                    # Convert PDF pages to images
-                    images = convert_from_path(
-                        file_path,
-                        first_page=start_page + 1,  # pdf2image uses 1-indexed pages
-                        last_page=end_page + 1,
-                        dpi=200
+                # Get global OCR configuration
+                ocr_config = await db.ocr_config.find_one({"id": "global_ocr_config"})
+                ocr_method = ocr_config.get("ocr_method", "tesseract") if ocr_config else "tesseract"
+                
+                logger.info(f"Using OCR method: {ocr_method}")
+                
+                if ocr_method == "gpt4o_vision":
+                    # Use GPT-4o Vision for OCR
+                    logger.info("Attempting GPT-4o Vision OCR...")
+                    pdf_text = await extract_text_with_gpt4o_vision(
+                        file_path, 
+                        start_page, 
+                        end_page, 
+                        project_id
                     )
                     
-                    # Perform OCR on each page
-                    pdf_text = ""  # Reset text
-                    ocr_success_count = 0
-                    
-                    for idx, image in enumerate(images):
-                        actual_page_num = start_page + idx
-                        try:
-                            ocr_text = pytesseract.image_to_string(
-                                image,
-                                lang='spa',
-                                config='--psm 6'
-                            ).strip()
-                            
-                            pdf_text += f"\n--- PAGE {actual_page_num + 1} ---\n"
-                            pdf_text += ocr_text
-                            
-                            if ocr_text and len(ocr_text) > 20:
-                                ocr_success_count += 1
-                                logger.info(f"OCR Page {actual_page_num + 1}: Extracted {len(ocr_text)} characters")
-                            else:
-                                logger.warning(f"OCR Page {actual_page_num + 1}: Minimal text extracted")
+                elif ocr_method == "tesseract":
+                    # Use Tesseract OCR
+                    logger.info("Attempting Tesseract OCR...")
+                    try:
+                        import pytesseract
+                        from pdf2image import convert_from_path
+                        
+                        # Convert PDF pages to images
+                        images = convert_from_path(
+                            file_path,
+                            first_page=start_page + 1,  # pdf2image uses 1-indexed pages
+                            last_page=end_page + 1,
+                            dpi=200
+                        )
+                        
+                        # Perform OCR on each page
+                        pdf_text = ""  # Reset text
+                        ocr_success_count = 0
+                        
+                        for idx, image in enumerate(images):
+                            actual_page_num = start_page + idx
+                            try:
+                                ocr_text = pytesseract.image_to_string(
+                                    image,
+                                    lang='spa',
+                                    config='--psm 6'
+                                ).strip()
                                 
-                        except Exception as page_ocr_error:
-                            logger.error(f"OCR failed for page {actual_page_num + 1}: {str(page_ocr_error)}")
-                            pdf_text += f"\n[OCR Error on page {actual_page_num + 1}]\n"
-                    
-                    logger.info(f"OCR completed: {ocr_success_count}/{pages_processed} pages processed successfully")
-                    
-                except ImportError as import_error:
-                    logger.error(f"OCR libraries not available: {str(import_error)}")
-                    pdf_text += "\n[OCR not available - please install pytesseract and pdf2image]\n"
-                except Exception as ocr_error:
-                    logger.error(f"OCR processing failed: {str(ocr_error)}", exc_info=True)
-                    pdf_text += "\n[OCR processing failed]\n"
+                                pdf_text += f"\n--- PAGE {actual_page_num + 1} ---\n"
+                                pdf_text += ocr_text
+                                
+                                if ocr_text and len(ocr_text) > 20:
+                                    ocr_success_count += 1
+                                    logger.info(f"Tesseract OCR Page {actual_page_num + 1}: Extracted {len(ocr_text)} characters")
+                                else:
+                                    logger.warning(f"Tesseract OCR Page {actual_page_num + 1}: Minimal text extracted")
+                                    
+                            except Exception as page_ocr_error:
+                                logger.error(f"Tesseract OCR failed for page {actual_page_num + 1}: {str(page_ocr_error)}")
+                                pdf_text += f"\n[OCR Error on page {actual_page_num + 1}]\n"
+                        
+                        logger.info(f"Tesseract OCR completed: {ocr_success_count}/{pages_processed} pages processed successfully")
+                        
+                    except ImportError as import_error:
+                        logger.error(f"Tesseract OCR libraries not available: {str(import_error)}")
+                        pdf_text += "\n[Tesseract OCR not available - please install pytesseract and pdf2image]\n"
+                    except Exception as ocr_error:
+                        logger.error(f"Tesseract OCR processing failed: {str(ocr_error)}", exc_info=True)
+                        pdf_text += "\n[Tesseract OCR processing failed]\n"
             
             # Add note if pages were truncated
             if end_page < total_pdf_pages - 1:
