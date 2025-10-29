@@ -5782,6 +5782,51 @@ async def download_pdf_from_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@api_router.delete("/pdf-history/{history_id}")
+async def delete_pdf_from_history(
+    history_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a PDF from history (staff only)"""
+    try:
+        # Only staff can delete from history
+        if current_user.role != "staff":
+            raise HTTPException(status_code=403, detail="Solo el staff puede eliminar del historial")
+        
+        # Find history entry
+        history_entry = await db.pdf_history.find_one({"id": history_id})
+        if not history_entry:
+            raise HTTPException(status_code=404, detail="Entrada de historial no encontrada")
+        
+        # Delete the history entry from database
+        result = await db.pdf_history.delete_one({"id": history_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="No se pudo eliminar la entrada")
+        
+        # Optionally delete the physical file (commented out for safety - files might be in use)
+        # file_path = Path(history_entry["result_pdf_path"])
+        # if file_path.exists():
+        #     try:
+        #         file_path.unlink()
+        #         logger.info(f"Deleted file: {file_path}")
+        #     except Exception as e:
+        #         logger.warning(f"Could not delete file {file_path}: {str(e)}")
+        
+        logger.info(f"Deleted history entry {history_id} by {current_user.email}")
+        
+        return {
+            "message": "Entrada eliminada del historial exitosamente",
+            "history_id": history_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting PDF from history: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.get("/retention-policy")
 async def get_retention_policy(current_user: User = Depends(get_current_user)):
     """Get retention policy configuration"""
