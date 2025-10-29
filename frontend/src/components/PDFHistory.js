@@ -106,6 +106,37 @@ const PDFHistory = ({ user }) => {
     }
   };
 
+  const handleDeleteClick = (entry) => {
+    setItemToDelete(entry);
+    setDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    
+    try {
+      setDeleting(true);
+      await axios.delete(
+        `${process.env.REACT_APP_BACKEND_URL}/api/pdf-history/${itemToDelete.id}`
+      );
+      
+      // Reload history after deletion
+      await loadHistory();
+      setDeleteModal(false);
+      setItemToDelete(null);
+    } catch (error) {
+      console.error('Error deleting from history:', error);
+      alert('Error al eliminar del historial: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal(false);
+    setItemToDelete(null);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
