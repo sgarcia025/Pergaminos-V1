@@ -1079,6 +1079,11 @@ async def extract_text_from_pdf_with_ocr(
                 if ocr_method == "gpt4o_vision":
                     # Use GPT-4o Vision for OCR
                     logger.info("Attempting GPT-4o Vision OCR...")
+                    if document_id:
+                        await db.documents.update_one(
+                            {"id": document_id},
+                            {"$set": {"processing_message": f"🔍 Extrayendo texto con GPT-4o Vision ({pages_processed} páginas)... Esto puede tomar 1-2 minutos."}}
+                        )
                     pdf_text = await extract_text_with_gpt4o_vision(
                         file_path, 
                         start_page, 
@@ -1089,6 +1094,11 @@ async def extract_text_from_pdf_with_ocr(
                 elif ocr_method == "tesseract":
                     # Use Tesseract OCR
                     logger.info("Attempting Tesseract OCR...")
+                    if document_id:
+                        await db.documents.update_one(
+                            {"id": document_id},
+                            {"$set": {"processing_message": f"🔍 Extrayendo texto con Tesseract OCR ({pages_processed} páginas)..."}}
+                        )
                     try:
                         import pytesseract
                         from pdf2image import convert_from_path
