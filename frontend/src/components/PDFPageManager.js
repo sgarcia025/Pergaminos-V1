@@ -258,11 +258,17 @@ const PDFPageManager = ({ projectId, user }) => {
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             className="form-textarea w-full h-32"
-            placeholder="Ejemplo: Mover la página 3 al inicio del documento y la página 5 al final"
+            placeholder={
+              mode === 'extract'
+                ? 'Ejemplo: "Extraer solo las primeras 20 páginas" o "Crear un PDF con las páginas 10 a 50"'
+                : 'Ejemplo: "Mover la página 3 al inicio del documento y la página 5 al final"'
+            }
             disabled={loading || executing}
           />
           <p className="text-xs text-gray-500 mt-1">
-            Describe cómo quieres reordenar las páginas del PDF seleccionado
+            {mode === 'extract'
+              ? 'Describe qué páginas quieres extraer para crear un nuevo PDF'
+              : 'Describe cómo quieres reordenar las páginas del PDF seleccionado'}
           </p>
         </div>
 
@@ -270,7 +276,7 @@ const PDFPageManager = ({ projectId, user }) => {
         <div className="flex items-center justify-end">
           <button
             onClick={handleGeneratePlan}
-            disabled={loading || !selectedPdf || !instruction.trim()}
+            disabled={loading || !selectedPdf || (!instruction.trim() && !manualRange.trim())}
             className="btn-primary"
           >
             {loading ? (
