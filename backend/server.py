@@ -5548,9 +5548,9 @@ INSTRUCCIONES:
 - Proporciona ejemplos cuando sea posible
 - Si la pregunta es ambigua, pide aclaración en el idioma de la pregunta"""
 
-        user_prompt = f"""Pregunta del usuario: {question}
+        user_prompt = f"""User question: {question}
 
-Por favor, proporciona una respuesta clara y útil."""
+Please provide a clear and helpful answer in the same language as the question."""
 
         # Create AI chat
         chat = await create_ai_chat_with_config(
