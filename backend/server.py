@@ -5444,6 +5444,24 @@ async def execute_pdf_page_plan(
         
         logger.info(f"PDF page {operation_type} completed successfully. Job ID: {job_id}")
         
+        # Save to PDF history
+        history_operation_type = "extract" if job.mode == "extract" else "reorder"
+        await save_pdf_history(
+            company_id=company["id"],
+            company_name=company.get("name", "Unknown"),
+            project_id=project_id,
+            project_name=project.get("name", "Unknown"),
+            operation_type=history_operation_type,
+            original_pdf_name=job.pdf_filename,
+            result_pdf_name=output_filename,
+            result_pdf_path=output_path,
+            instruction=job.instruction,
+            job_id=job_id,
+            performed_by=current_user.id,
+            performed_by_name=current_user.name,
+            download_url=result_url
+        )
+        
         return {
             "job_id": job_id,
             "status": "completed",
