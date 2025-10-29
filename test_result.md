@@ -113,61 +113,73 @@
 #====================================================================================================
 
 user_problem_statement: |
-  El usuario solicita pruebas del MÓDULO DE CONFIGURACIÓN AI implementado para gestionar API keys personalizadas de OpenAI:
+  El usuario solicita implementar HISTORIAL DE PDFs PROCESADOS para poder ver y descargar PDFs que han sido renombrados, reordenados o extraídos:
 
   FUNCIONALIDADES IMPLEMENTADAS:
 
-  1. GESTIÓN DE CONFIGURACIONES AI POR EMPRESA:
-     - POST `/api/companies/{company_id}/ai-config` - Crear configuración AI
-     - GET `/api/companies/{company_id}/ai-config` - Obtener configuraciones
-     - PUT `/api/companies/{company_id}/ai-config/{config_id}` - Actualizar configuración  
-     - DELETE `/api/companies/{company_id}/ai-config/{config_id}` - Eliminar configuración
+  1. BACKEND - MODELOS Y ENDPOINTS:
+     - PDFHistory model: almacena información de cada operación (empresa, proyecto, tipo, archivos, usuario, fecha)
+     - RetentionPolicyConfig model: configuración global de retención (6 o 12 meses)
+     - GET `/api/pdf-history` - Obtener historial con filtros (empresa, proyecto, tipo de operación)
+     - GET `/api/pdf-history/download/{history_id}` - Descargar PDF del historial
+     - GET `/api/retention-policy` - Obtener política de retención
+     - POST `/api/retention-policy` - Actualizar política de retención (admin only)
+     - Función `save_pdf_history()` helper para registrar operaciones automáticamente
 
-  2. TIPOS DE CONFIGURACIÓN:
-     - `data_extraction`: Para extracción de datos estructurados
-     - `qa_processing`: Para control de calidad automático
-     - `document_processing`: Para procesamiento general de documentos
+  2. TIPOS DE OPERACIONES RASTREADAS:
+     - `rename`: Renombrado de PDFs (PDF Manager)
+     - `reorder`: Reordenamiento de páginas (PDF Page Manager)
+     - `extract`: Extracción de páginas (PDF Page Manager)
 
-  3. ENCRIPTACIÓN DE API KEYS:
-     - Almacenamiento seguro con Fernet encryption
-     - API keys nunca se devuelven en respuestas (***ENCRYPTED***)
-     - Función de desencriptación para uso interno
+  3. FILTROS Y PERMISOS:
+     - Staff: puede ver todo el historial, filtrar por empresa, proyecto y tipo de operación
+     - Asesor: solo ve historial de sus empresas asignadas
+     - Cliente: solo ve historial de su empresa
+     - Filtros: Empresa, Proyecto, Tipo de Operación
 
-  4. MODELO RECOMMENDATIONS:
-     - GET `/api/ai-models/recommendations` - Modelos recomendados por tarea
-     - Incluye `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo` con descripciones y casos de uso
+  4. FRONTEND:
+     - Nuevo componente `PDFHistory.js` con tabla de historial
+     - Nueva opción en menú lateral "Historial de PDFs" (accesible para staff, asesor y cliente)
+     - Filtros dinámicos con limpieza de filtros
+     - Paginación (10 items por página)
+     - Botón de descarga por cada registro
+     - Formato de fecha, tamaño de archivo, badges de operación
+
+  5. CONFIGURACIÓN DE RETENCIÓN:
+     - Sección en AIConfiguration.js (solo para admin/staff)
+     - Opciones: 6 meses o 1 año
+     - Filtrado automático de registros antiguos según política
+
+  6. INTEGRACIÓN AUTOMÁTICA:
+     - Modificado `execute_pdf_page_plan` para guardar historial al completar reorder/extract
+     - Modificado `apply_renames_and_generate_zip` para guardar historial de cada archivo renombrado
+     - Metadatos guardados: tamaño de archivo, número de páginas, usuario que realizó la operación
 
   TESTING PRIORITARIO:
-  1. Crear configuración AI:
-     - Empresa existente con configuración `data_extraction`
-     - Proveedor: `openai`, modelo: `gpt-4o`, API key de prueba
-     - Verificar encriptación correcta de API key
+  1. Backend - PDF History CRUD:
+     - Crear entrada de historial al procesar PDF
+     - Obtener historial con filtros
+     - Descargar PDF del historial
+     - Verificar permisos (staff, asesor, cliente)
 
-  2. Obtener configuraciones:
-     - Listar configuraciones de empresa
-     - Verificar que API key aparece como ***ENCRYPTED***
-     - Confirmar estructura de respuesta
+  2. Backend - Retention Policy:
+     - Obtener política actual
+     - Actualizar política (6 o 12 meses)
+     - Verificar filtrado por fecha de retención
 
-  3. Actualizar configuración:
-     - Cambiar modelo de `gpt-4o` a `gpt-4o-mini`  
-     - Actualizar API key
-     - Verificar nueva encriptación
+  3. Frontend - PDFHistory Component:
+     - Cargar y mostrar historial
+     - Aplicar filtros
+     - Descargar PDFs
+     - Paginación
 
-  4. Eliminar configuración:
-     - Soft delete (is_active = false)
-     - Verificar que no aparece en listados
+  4. Frontend - Retention Configuration:
+     - Mostrar configuración actual
+     - Actualizar política (admin only)
+     - Guardar y reflejar cambios
 
-  5. Model Recommendations:
-     - Verificar endpoint de recomendaciones
-     - Confirmar estructura por tipo de tarea
+  OBJETIVO: Validar que el sistema mantiene un historial completo de PDFs procesados, permite descargarlos y administrar su retención.
 
-  CASOS ESPECÍFICOS:
-  - Múltiples configuraciones por empresa (diferentes tipos)
-  - Validaciones: solo staff puede gestionar configuraciones
-  - Encriptación/desencriptación de API keys
-  - Fallback a Emergent LLM cuando no hay configuración
-
-  OBJETIVO: Validar que el sistema permite configuraciones AI personalizadas por cliente con almacenamiento seguro de API keys.
 
 backend:
   - task: "Crear configuración AI por empresa"
