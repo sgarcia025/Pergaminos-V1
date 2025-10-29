@@ -18,6 +18,7 @@ import QAFindings from "./components/QAFindings";
 import ExtractedData from "./components/ExtractedData";
 import AIConfiguration from "./components/AIConfiguration";
 import UserManual from "./components/UserManual";
+import PDFHistory from "./components/PDFHistory";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 
