@@ -314,6 +314,7 @@ El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado 
 • Acceso completo al sistema
 • Gestiona empresas, proyectos, usuarios
 • Configura segmentos y agentes QA
+• Puede resetear contraseñas de usuarios
 
 **2. Asesor**
 • Asignado a empresas específicas
@@ -323,9 +324,17 @@ El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado 
 **3. Cliente**
 • Acceso solo a su empresa
 • Ve proyectos de su empresa
-• Acceso limitado a funcionalidades
+• Acceso de solo lectura a documentos
 
-⚠️ **Protección:** El usuario admin@pergaminos.com no puede ser eliminado.`
+**Funciones administrativas:**
+• Crear nuevos usuarios
+• Editar información de usuarios
+• Activar/desactivar usuarios
+• **Resetear contraseña:** Staff puede resetear contraseñas a "password123"
+
+⚠️ **Protección:** El usuario admin@pergaminos.com no puede ser eliminado.
+
+🔒 **Acceso de clientes:** Los clientes solo pueden ver, no editar ni subir documentos.`
     }
   ];
 
