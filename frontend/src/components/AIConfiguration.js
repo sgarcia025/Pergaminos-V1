@@ -555,6 +555,7 @@ const AIConfiguration = ({ user }) => {
                       </div>
                     </div>
                   </label>
+                  {/* Hidden: Sistema Universal option 
                   <label className="flex items-center space-x-3">
                     <input
                       type="radio"
@@ -570,6 +571,7 @@ const AIConfiguration = ({ user }) => {
                       </div>
                     </div>
                   </label>
+                  */}
                 </div>
               </div>
 
