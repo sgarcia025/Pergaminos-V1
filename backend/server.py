@@ -1116,71 +1116,71 @@ async def extract_text_from_pdf_with_ocr(
                         )
                         
                     elif ocr_method == "tesseract":
-                    # Use Tesseract OCR
-                    logger.info("Attempting Tesseract OCR...")
-                    if document_id:
-                        await db.documents.update_one(
-                            {"id": document_id},
-                            {"$set": {"processing_message": f"🔍 Extrayendo texto con Tesseract OCR ({pages_processed} páginas)..."}}
-                        )
-                    try:
-                        import pytesseract
-                        from pdf2image import convert_from_path
-                        
-                        # Convert PDF pages to images
-                        images = convert_from_path(
-                            file_path,
-                            first_page=start_page + 1,  # pdf2image uses 1-indexed pages
-                            last_page=end_page + 1,
-                            dpi=200
-                        )
-                        
-                        # Perform OCR on each page
-                        pdf_text = ""  # Reset text
-                        ocr_success_count = 0
-                        total_images = len(images)
-                        
-                        for idx, image in enumerate(images):
-                            actual_page_num = start_page + idx
+                        # Use Tesseract OCR
+                        logger.info("Attempting Tesseract OCR...")
+                        if document_id:
+                            await db.documents.update_one(
+                                {"id": document_id},
+                                {"$set": {"processing_message": f"🔍 Extrayendo texto con Tesseract OCR ({pages_processed} páginas)..."}}
+                            )
+                        try:
+                            import pytesseract
+                            from pdf2image import convert_from_path
                             
-                            # Update progress every 3 pages
-                            if document_id and idx > 0 and idx % 3 == 0:
-                                progress_pct = int((idx / total_images) * 100)
-                                await db.documents.update_one(
-                                    {"id": document_id},
-                                    {"$set": {
-                                        "processing_message": f"🔍 Tesseract OCR: Procesando página {idx + 1}/{total_images}... ({progress_pct}%)"
-                                    }}
-                                )
+                            # Convert PDF pages to images
+                            images = convert_from_path(
+                                file_path,
+                                first_page=start_page + 1,  # pdf2image uses 1-indexed pages
+                                last_page=end_page + 1,
+                                dpi=200
+                            )
                             
-                            try:
-                                ocr_text = pytesseract.image_to_string(
-                                    image,
-                                    lang='spa',
-                                    config='--psm 6'
-                                ).strip()
+                            # Perform OCR on each page
+                            pdf_text = ""  # Reset text
+                            ocr_success_count = 0
+                            total_images = len(images)
+                            
+                            for idx, image in enumerate(images):
+                                actual_page_num = start_page + idx
                                 
-                                pdf_text += f"\n--- PAGE {actual_page_num + 1} ---\n"
-                                pdf_text += ocr_text
+                                # Update progress every 3 pages
+                                if document_id and idx > 0 and idx % 3 == 0:
+                                    progress_pct = int((idx / total_images) * 100)
+                                    await db.documents.update_one(
+                                        {"id": document_id},
+                                        {"$set": {
+                                            "processing_message": f"🔍 Tesseract OCR: Procesando página {idx + 1}/{total_images}... ({progress_pct}%)"
+                                        }}
+                                    )
                                 
-                                if ocr_text and len(ocr_text) > 20:
-                                    ocr_success_count += 1
-                                    logger.info(f"Tesseract OCR Page {actual_page_num + 1}: Extracted {len(ocr_text)} characters")
-                                else:
-                                    logger.warning(f"Tesseract OCR Page {actual_page_num + 1}: Minimal text extracted")
+                                try:
+                                    ocr_text = pytesseract.image_to_string(
+                                        image,
+                                        lang='spa',
+                                        config='--psm 6'
+                                    ).strip()
                                     
-                            except Exception as page_ocr_error:
-                                logger.error(f"Tesseract OCR failed for page {actual_page_num + 1}: {str(page_ocr_error)}")
-                                pdf_text += f"\n[OCR Error on page {actual_page_num + 1}]\n"
-                        
-                        logger.info(f"Tesseract OCR completed: {ocr_success_count}/{pages_processed} pages processed successfully")
-                        
-                    except ImportError as import_error:
-                        logger.error(f"Tesseract OCR libraries not available: {str(import_error)}")
-                        pdf_text += "\n[Tesseract OCR not available - please install pytesseract and pdf2image]\n"
-                    except Exception as ocr_error:
-                        logger.error(f"Tesseract OCR processing failed: {str(ocr_error)}", exc_info=True)
-                        pdf_text += "\n[Tesseract OCR processing failed]\n"
+                                    pdf_text += f"\n--- PAGE {actual_page_num + 1} ---\n"
+                                    pdf_text += ocr_text
+                                    
+                                    if ocr_text and len(ocr_text) > 20:
+                                        ocr_success_count += 1
+                                        logger.info(f"Tesseract OCR Page {actual_page_num + 1}: Extracted {len(ocr_text)} characters")
+                                    else:
+                                        logger.warning(f"Tesseract OCR Page {actual_page_num + 1}: Minimal text extracted")
+                                        
+                                except Exception as page_ocr_error:
+                                    logger.error(f"Tesseract OCR failed for page {actual_page_num + 1}: {str(page_ocr_error)}")
+                                    pdf_text += f"\n[OCR Error on page {actual_page_num + 1}]\n"
+                            
+                            logger.info(f"Tesseract OCR completed: {ocr_success_count}/{pages_processed} pages processed successfully")
+                            
+                        except ImportError as import_error:
+                            logger.error(f"Tesseract OCR libraries not available: {str(import_error)}")
+                            pdf_text += "\n[Tesseract OCR not available - please install pytesseract and pdf2image]\n"
+                        except Exception as ocr_error:
+                            logger.error(f"Tesseract OCR processing failed: {str(ocr_error)}", exc_info=True)
+                            pdf_text += "\n[Tesseract OCR processing failed]\n"
             
             # Add note if pages were truncated
             if end_page < total_pdf_pages - 1:
