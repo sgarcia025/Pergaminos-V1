@@ -438,6 +438,75 @@ const AIConfiguration = ({ user }) => {
         </div>
       </div>
 
+      {/* Retention Policy Configuration (Admin Only) */}
+      {user.role === 'staff' && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200 p-6">
+          <div className="flex items-start">
+            <span className="text-3xl mr-4">🗂️</span>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Política de Retención del Historial
+              </h2>
+              <p className="text-gray-600 text-sm mb-4">
+                Configura por cuánto tiempo se conservarán los PDFs procesados en el historial.
+                Los PDFs más antiguos que el período de retención serán eliminados automáticamente.
+              </p>
+              
+              <div className="bg-white rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Período de Retención
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="radio"
+                      id="retention-6"
+                      name="retention-months"
+                      value="6"
+                      checked={retentionPolicy.retention_months === 6}
+                      onChange={() => handleRetentionPolicyUpdate(6)}
+                      disabled={retentionLoading}
+                      className="mt-1"
+                    />
+                    <label htmlFor="retention-6" className="flex-1 cursor-pointer">
+                      <div className="font-medium text-gray-900">6 meses</div>
+                      <div className="text-sm text-gray-600">
+                        Conservar historial por medio año
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-start space-x-3">
+                    <input
+                      type="radio"
+                      id="retention-12"
+                      name="retention-months"
+                      value="12"
+                      checked={retentionPolicy.retention_months === 12}
+                      onChange={() => handleRetentionPolicyUpdate(12)}
+                      disabled={retentionLoading}
+                      className="mt-1"
+                    />
+                    <label htmlFor="retention-12" className="flex-1 cursor-pointer">
+                      <div className="font-medium text-gray-900">12 meses (1 año)</div>
+                      <div className="text-sm text-gray-600">
+                        Conservar historial por un año completo
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              {retentionLoading && (
+                <div className="mt-3 text-sm text-gray-600">
+                  Guardando configuración...
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Company and Project Selector */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
