@@ -280,6 +280,37 @@ const ProjectDetail = ({ user }) => {
     handleFileUpload(files);
   };
 
+  const handleQABadgeClick = (document) => {
+    setSelectedDocument(document);
+    setQaComments(document.qa_review_comments || '');
+    setShowQAModal(true);
+  };
+
+  const handleQAReview = async (action) => {
+    if (!selectedDocument) return;
+    
+    try {
+      setSubmittingReview(true);
+      await axios.post(
+        `${API}/projects/${projectId}/documents/${selectedDocument.id}/qa-review`,
+        {
+          action: action,  // "approved" or "rejected"
+          comments: qaComments
+        }
+      );
+      
+      setSuccess(`Documento ${action === 'approved' ? 'aprobado' : 'rechazado'} exitosamente`);
+      setShowQAModal(false);
+      setSelectedDocument(null);
+      setQaComments('');
+      fetchDocuments();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al procesar la revisión QA');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       'uploaded': 'status-uploaded',
