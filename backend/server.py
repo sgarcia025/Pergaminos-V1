@@ -4387,12 +4387,15 @@ IMPORTANTE:
 
         user_prompt = f"""ARCHIVO PDF: {pdf_filename}
 TOTAL DE PÁGINAS: {total_pages}
+PÁGINAS CON TEXTO EXTRAÍBLE: {pages_with_text} de {total_pages}
 
 CONTENIDO DE LAS PÁGINAS:
 {pages_info}
 
 INSTRUCCIÓN:
 {instruction}
+
+NOTA: Analiza cuidadosamente el contenido de texto extraído de cada página. Si algunas páginas no tienen texto, pueden ser imágenes escaneadas o páginas gráficas. Busca palabras clave, nombres, títulos o cualquier contenido que coincida con la instrucción.
 
 Analiza el contenido anterior y genera el plan de reordenamiento:"""
 
