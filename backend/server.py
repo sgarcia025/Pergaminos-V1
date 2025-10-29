@@ -916,6 +916,82 @@ def create_pdf_chunk(source_path: str, start_page: int, end_page: int, output_pa
         logger.error(f"Error creating PDF chunk: {str(e)}")
         return False
 
+async def extract_text_with_gpt4o_vision(file_path: str, start_page: int, end_page: int, project_id: str) -> str:
+    """
+    Extract text from PDF pages using GPT-4o Vision.
+    Converts pages to images and uses Vision API to read text.
+    """
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+        from pdf2image import convert_from_path
+        import base64
+        from io import BytesIO
+        
+        logger.info(f"Using GPT-4o Vision OCR for pages {start_page + 1} to {end_page + 1}")
+        
+        # Get AI configuration for the project
+        ai_config = await get_ai_config_for_task(project_id, "data_extraction")
+        if not ai_config or not ai_config.get("api_key"):
+            logger.error("No AI configuration available for GPT-4o Vision OCR")
+            return "[Error: No AI configuration available for Vision OCR]"
+        
+        # Convert PDF pages to images
+        images = convert_from_path(
+            file_path,
+            first_page=start_page + 1,  # pdf2image uses 1-indexed pages
+            last_page=end_page + 1,
+            dpi=150  # Lower DPI for faster processing
+        )
+        
+        logger.info(f"Converted {len(images)} pages to images for Vision OCR")
+        
+        # Process each page with GPT-4o Vision
+        pdf_text = ""
+        
+        for idx, image in enumerate(images):
+            actual_page_num = start_page + idx
+            
+            try:
+                # Convert PIL Image to base64
+                buffered = BytesIO()
+                image.save(buffered, format="PNG")
+                img_base64 = base64.b64encode(buffered.getvalue()).decode()
+                
+                # Create chat instance
+                chat = await create_ai_chat_with_config(
+                    ai_config,
+                    f"vision_ocr_page_{actual_page_num}",
+                    "You are an expert OCR assistant. Extract all visible text from images accurately."
+                )
+                
+                # Create image content
+                image_content = ImageContent(image_base64=img_base64)
+                
+                # Create user message with image
+                user_message = UserMessage(
+                    text="Extract all text from this document image. Return ONLY the text content, maintaining the original layout and structure as much as possible. Do not add any explanations or comments.",
+                    file_contents=[image_content]
+                )
+                
+                # Send message and get response
+                response = await chat.send_message(user_message)
+                
+                pdf_text += f"\n--- PAGE {actual_page_num + 1} ---\n"
+                pdf_text += response.strip()
+                
+                logger.info(f"Vision OCR Page {actual_page_num + 1}: Extracted {len(response)} characters")
+                
+            except Exception as page_error:
+                logger.error(f"Vision OCR failed for page {actual_page_num + 1}: {str(page_error)}")
+                pdf_text += f"\n--- PAGE {actual_page_num + 1} ---\n"
+                pdf_text += f"[Vision OCR Error: {str(page_error)}]\n"
+        
+        return pdf_text
+        
+    except Exception as e:
+        logger.error(f"GPT-4o Vision OCR processing failed: {str(e)}", exc_info=True)
+        return f"[Vision OCR Error: {str(e)}]"
+
 def extract_text_from_pdf_with_ocr(file_path: str, start_page: int = 0, end_page: int = None, max_pages: int = None) -> str:
     """
     Extract text from PDF with OCR fallback for scanned documents.
