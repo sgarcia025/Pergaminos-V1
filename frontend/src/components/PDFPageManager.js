@@ -42,8 +42,8 @@ const PDFPageManager = ({ projectId, user }) => {
       setError('Por favor selecciona un PDF');
       return;
     }
-    if (!instruction.trim()) {
-      setError('Por favor ingresa una instrucción');
+    if (!instruction.trim() && !manualRange.trim()) {
+      setError('Por favor ingresa una instrucción o un rango de páginas');
       return;
     }
 
@@ -56,12 +56,20 @@ const PDFPageManager = ({ projectId, user }) => {
       const response = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/plan`, {
         project_id: projectId,
         pdf_filename: selectedPdf,
-        instruction: instruction
+        instruction: instruction || (mode === 'extract' ? `Extraer páginas: ${manualRange}` : 'Reordenar'),
+        mode: mode,
+        manual_range: mode === 'extract' && manualRange.trim() ? manualRange.trim() : null
       });
 
       setCurrentJob(response.data);
       setPlan(response.data.plan);
-      setSuccess(`Plan generado: ${response.data.plan.total_pages} páginas serán reordenadas`);
+      
+      if (mode === 'extract') {
+        const pagesCount = response.data.plan.pages_to_extract?.length || 0;
+        setSuccess(`Plan de extracción generado: ${pagesCount} páginas serán extraídas`);
+      } else {
+        setSuccess(`Plan de reordenamiento generado: ${response.data.plan.total_pages} páginas`);
+      }
     } catch (error) {
       setError(error.response?.data?.detail || 'Error al generar el plan');
     } finally {
