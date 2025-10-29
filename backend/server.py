@@ -1812,7 +1812,8 @@ async def process_document_with_ai(document_id: str, project: dict):
                         extraction_config,
                         chunk_idx + 1,
                         start_page + 1,
-                        end_page + 1
+                        end_page + 1,
+                        project["id"]
                     )
                     
                     if chunk_result:
