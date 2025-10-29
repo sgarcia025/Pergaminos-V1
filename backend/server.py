@@ -1079,17 +1079,27 @@ async def extract_text_from_pdf_with_ocr(
             
             logger.info(f"PyPDF2 extracted {total_text_length} characters from {pages_processed} pages")
             
-            # If minimal text was extracted, try OCR based on global configuration
+            # If minimal text was extracted, check if OCR is enabled
             if total_text_length < 50 and pages_processed > 0:
                 logger.info(f"Minimal text extracted ({total_text_length} chars). Checking OCR configuration...")
                 
                 # Get global OCR configuration
                 ocr_config = await db.ocr_config.find_one({"id": "global_ocr_config"})
-                ocr_method = ocr_config.get("ocr_method", "tesseract") if ocr_config else "tesseract"
+                ocr_enabled = ocr_config.get("ocr_enabled", False) if ocr_config else False
+                ocr_method = ocr_config.get("ocr_method", "gpt4o_vision") if ocr_config else "gpt4o_vision"
                 
-                logger.info(f"Using OCR method: {ocr_method}")
-                
-                if ocr_method == "gpt4o_vision":
+                if not ocr_enabled:
+                    logger.warning("OCR is disabled. Document has no text and OCR is turned off.")
+                    if document_id:
+                        await db.documents.update_one(
+                            {"id": document_id},
+                            {"$set": {"processing_message": "⚠️ PDF sin texto detectado. OCR está deshabilitado en configuración."}}
+                        )
+                    pdf_text += "\n\n[ADVERTENCIA: Este PDF no contiene texto incrustado y el OCR está deshabilitado en la configuración global. Habilita OCR en 'Configuración IA' para procesar documentos escaneados.]\n"
+                else:
+                    logger.info(f"OCR enabled. Using method: {ocr_method}")
+                    
+                    if ocr_method == "gpt4o_vision":
                     # Use GPT-4o Vision for OCR
                     logger.info("Attempting GPT-4o Vision OCR...")
                     if document_id:
