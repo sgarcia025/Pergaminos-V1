@@ -1269,7 +1269,7 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
             document["file_path"],
             project_id=document["project_id"],
             start_page=0,
-            max_pages=10  # Extract first 10 pages for QA (to avoid token limits)
+            max_pages=3  # Extract first 3 pages for QA (reduced for Vision OCR performance)
         )
         
         all_results = []
