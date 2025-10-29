@@ -1126,9 +1126,21 @@ async def extract_text_from_pdf_with_ocr(
                         # Perform OCR on each page
                         pdf_text = ""  # Reset text
                         ocr_success_count = 0
+                        total_images = len(images)
                         
                         for idx, image in enumerate(images):
                             actual_page_num = start_page + idx
+                            
+                            # Update progress every 3 pages
+                            if document_id and idx > 0 and idx % 3 == 0:
+                                progress_pct = int((idx / total_images) * 100)
+                                await db.documents.update_one(
+                                    {"id": document_id},
+                                    {"$set": {
+                                        "processing_message": f"🔍 Tesseract OCR: Procesando página {idx + 1}/{total_images}... ({progress_pct}%)"
+                                    }}
+                                )
+                            
                             try:
                                 ocr_text = pytesseract.image_to_string(
                                     image,
