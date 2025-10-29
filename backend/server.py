@@ -182,12 +182,14 @@ class AIConfigurationUpdate(BaseModel):
 # OCR Configuration (Global)
 class OCRConfig(BaseModel):
     id: str = "global_ocr_config"  # Single global configuration
-    ocr_method: str = "tesseract"  # "tesseract" or "gpt4o_vision"
+    ocr_enabled: bool = False  # Enable/disable OCR globally
+    ocr_method: str = "gpt4o_vision"  # "tesseract" or "gpt4o_vision"
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_by: Optional[str] = None  # Staff user who updated
 
 class OCRConfigUpdate(BaseModel):
-    ocr_method: str  # "tesseract" or "gpt4o_vision"
+    ocr_enabled: Optional[bool] = None  # Enable/disable OCR
+    ocr_method: Optional[str] = None  # "tesseract" or "gpt4o_vision"
 
 # Contact model for companies
 class Contact(BaseModel):
