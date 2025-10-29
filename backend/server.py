@@ -265,6 +265,7 @@ class Document(BaseModel):
     chunks_processed: Optional[int] = 0
     chunk_results: Optional[List[Dict[str, Any]]] = None
     processing_progress: Optional[int] = 0  # 0-100
+    processing_message: Optional[str] = None  # Progress message for user
     # QA fields
     qa_status: Optional[str] = None  # pending, passed, failed, manual_review
     qa_results: Optional[Dict[str, Any]] = None  # QA agent results
