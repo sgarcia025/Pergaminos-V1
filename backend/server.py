@@ -378,6 +378,36 @@ class PDFPageManagerPlanRequest(BaseModel):
     mode: str = "reorder"  # "reorder" or "extract"
     manual_range: Optional[str] = None  # e.g., "1-20" or "1,5,10,15" for extract mode
 
+# PDF History Model
+class PDFHistory(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    company_id: str
+    company_name: str
+    project_id: str
+    project_name: str
+    operation_type: str  # "rename", "reorder", "extract"
+    original_pdf_name: str
+    original_pdf_path: Optional[str] = None  # Path to original PDF
+    result_pdf_name: str
+    result_pdf_path: str  # Path to processed PDF
+    instruction: Optional[str] = None  # Natural language instruction used
+    job_id: Optional[str] = None  # Reference to PDFManagerJob or PDFPageManagerJob
+    performed_by: str  # User ID who performed the operation
+    performed_by_name: str  # User name for display
+    performed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    file_size: Optional[int] = None  # Size in bytes
+    page_count: Optional[int] = None  # Number of pages in result PDF
+    download_url: str  # URL to download the PDF
+
+class RetentionPolicyConfig(BaseModel):
+    id: str = "global_retention_policy"  # Single global configuration
+    retention_months: int = 6  # 6 or 12 months
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_by: Optional[str] = None  # Staff user who updated
+
+class RetentionPolicyUpdate(BaseModel):
+    retention_months: int  # 6 or 12 months
+
 # Create uploads directory
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
