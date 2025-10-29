@@ -285,6 +285,73 @@ const AIConfiguration = ({ user }) => {
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+      {ocrSuccess && <div className="alert alert-success">{ocrSuccess}</div>}
+
+      {/* Global OCR Configuration */}
+      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl shadow-sm border border-purple-200 p-6">
+        <div className="flex items-start">
+          <span className="text-3xl mr-4">🔍</span>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">
+              Configuración OCR Global
+            </h2>
+            <p className="text-gray-600 text-sm mb-4">
+              Selecciona el método OCR para extraer texto de PDFs escaneados o sin texto incrustado. 
+              Esta configuración aplica a todo el sistema.
+            </p>
+            
+            <div className="bg-white rounded-lg p-4 space-y-3">
+              <div className="flex items-start space-x-3">
+                <input
+                  type="radio"
+                  id="ocr-tesseract"
+                  name="ocr-method"
+                  value="tesseract"
+                  checked={ocrConfig.ocr_method === 'tesseract'}
+                  onChange={(e) => handleOcrConfigUpdate(e.target.value)}
+                  disabled={ocrLoading}
+                  className="mt-1"
+                />
+                <label htmlFor="ocr-tesseract" className="flex-1 cursor-pointer">
+                  <div className="font-medium text-gray-900">Tesseract OCR</div>
+                  <div className="text-sm text-gray-600">
+                    ✅ Gratuito y rápido<br />
+                    ⚠️ Menor precisión con documentos de baja calidad<br />
+                    💡 Recomendado para documentos simples con buena calidad de escaneo
+                  </div>
+                </label>
+              </div>
+              
+              <div className="flex items-start space-x-3">
+                <input
+                  type="radio"
+                  id="ocr-gpt4o"
+                  name="ocr-method"
+                  value="gpt4o_vision"
+                  checked={ocrConfig.ocr_method === 'gpt4o_vision'}
+                  onChange={(e) => handleOcrConfigUpdate(e.target.value)}
+                  disabled={ocrLoading}
+                  className="mt-1"
+                />
+                <label htmlFor="ocr-gpt4o" className="flex-1 cursor-pointer">
+                  <div className="font-medium text-gray-900">GPT-4o Vision</div>
+                  <div className="text-sm text-gray-600">
+                    ✅ Máxima precisión y calidad<br />
+                    ⚠️ Usa tokens de OpenAI (costo por página)<br />
+                    💡 Recomendado para documentos complejos o mala calidad de escaneo
+                  </div>
+                </label>
+              </div>
+            </div>
+            
+            {ocrLoading && (
+              <div className="mt-3 text-sm text-gray-600">
+                Guardando configuración...
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Company and Project Selector */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
