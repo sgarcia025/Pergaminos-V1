@@ -346,9 +346,11 @@ class PDFPageManagerJob(BaseModel):
     project_id: str
     pdf_filename: str  # The specific PDF being processed
     instruction: str  # Natural language instruction
-    plan: Optional[PDFPagePlan] = None
+    mode: str = "reorder"  # "reorder" or "extract"
+    plan: Optional[PDFPagePlan] = None  # For reorder mode
+    extract_plan: Optional[PDFPageExtractPlan] = None  # For extract mode
     status: str = "pending"  # pending, plan_ready, executing, completed, failed
-    result_url: Optional[str] = None  # URL to download reordered PDF
+    result_url: Optional[str] = None  # URL to download reordered/extracted PDF
     result_filename: Optional[str] = None
     error_message: Optional[str] = None
     logs: List[Dict[str, Any]] = []
