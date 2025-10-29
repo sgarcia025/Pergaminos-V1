@@ -12,6 +12,11 @@ const PDFHistory = ({ user }) => {
   const [selectedProject, setSelectedProject] = useState('');
   const [selectedOperation, setSelectedOperation] = useState('');
   
+  // Delete modal
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
