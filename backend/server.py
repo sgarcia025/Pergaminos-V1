@@ -5539,6 +5539,247 @@ async def download_reordered_pdf(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ========== PDF HISTORY ENDPOINTS ==========
+
+async def save_pdf_history(
+    company_id: str,
+    company_name: str,
+    project_id: str,
+    project_name: str,
+    operation_type: str,
+    original_pdf_name: str,
+    result_pdf_name: str,
+    result_pdf_path: str,
+    instruction: Optional[str],
+    job_id: str,
+    performed_by: str,
+    performed_by_name: str,
+    download_url: str
+):
+    """Helper function to save PDF operation history"""
+    try:
+        # Get file size and page count
+        file_size = None
+        page_count = None
+        
+        if Path(result_pdf_path).exists():
+            file_size = Path(result_pdf_path).stat().st_size
+            try:
+                from PyPDF2 import PdfReader
+                pdf_reader = PdfReader(result_pdf_path)
+                page_count = len(pdf_reader.pages)
+            except Exception as e:
+                logger.warning(f"Could not get page count: {str(e)}")
+        
+        history_entry = PDFHistory(
+            company_id=company_id,
+            company_name=company_name,
+            project_id=project_id,
+            project_name=project_name,
+            operation_type=operation_type,
+            original_pdf_name=original_pdf_name,
+            result_pdf_name=result_pdf_name,
+            result_pdf_path=result_pdf_path,
+            instruction=instruction,
+            job_id=job_id,
+            performed_by=performed_by,
+            performed_by_name=performed_by_name,
+            file_size=file_size,
+            page_count=page_count,
+            download_url=download_url
+        )
+        
+        await db.pdf_history.insert_one(history_entry.dict())
+        logger.info(f"PDF history saved: {operation_type} - {result_pdf_name}")
+        
+    except Exception as e:
+        logger.error(f"Error saving PDF history: {str(e)}", exc_info=True)
+        # Don't raise exception, history is not critical
+
+
+@api_router.get("/pdf-history")
+async def get_pdf_history(
+    company_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    operation_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get PDF history with filters.
+    Staff and asesor can filter by company/project.
+    Clients can only see their company's history.
+    """
+    try:
+        # Build query filter
+        query_filter = {}
+        
+        # Apply role-based filtering
+        if current_user.role == "client":
+            # Clients can only see their company's history
+            if not current_user.company_id:
+                raise HTTPException(status_code=403, detail="Client user has no company assigned")
+            query_filter["company_id"] = current_user.company_id
+        elif current_user.role == "asesor":
+            # Asesores can only see their assigned companies' history
+            assigned_companies = await db.companies.find(
+                {"asesor_comercial_id": current_user.id, "is_active": True}
+            ).to_list(None)
+            company_ids = [c["id"] for c in assigned_companies]
+            if company_id:
+                # Verify asesor has access to this company
+                if company_id not in company_ids:
+                    raise HTTPException(status_code=403, detail="Access denied to this company")
+                query_filter["company_id"] = company_id
+            else:
+                # Filter to only assigned companies
+                query_filter["company_id"] = {"$in": company_ids}
+        else:
+            # Staff can see all, apply optional filters
+            if company_id:
+                query_filter["company_id"] = company_id
+        
+        # Apply additional filters
+        if project_id:
+            query_filter["project_id"] = project_id
+        
+        if operation_type:
+            query_filter["operation_type"] = operation_type
+        
+        # Get history entries sorted by most recent first
+        history_entries = await db.pdf_history.find(query_filter).sort("performed_at", -1).to_list(None)
+        
+        # Apply retention policy filter
+        retention_config = await db.retention_policy.find_one({"id": "global_retention_policy"})
+        if retention_config:
+            retention_months = retention_config.get("retention_months", 6)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_months * 30)
+            
+            # Filter out old entries
+            history_entries = [
+                entry for entry in history_entries
+                if entry.get("performed_at") and entry["performed_at"] > cutoff_date
+            ]
+        
+        return {
+            "history": history_entries,
+            "total": len(history_entries)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting PDF history: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/pdf-history/download/{history_id}")
+async def download_pdf_from_history(
+    history_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Download a PDF from history"""
+    try:
+        # Find history entry
+        history_entry = await db.pdf_history.find_one({"id": history_id})
+        if not history_entry:
+            raise HTTPException(status_code=404, detail="History entry not found")
+        
+        # Verify access
+        if current_user.role == "client":
+            if current_user.company_id != history_entry["company_id"]:
+                raise HTTPException(status_code=403, detail="Access denied")
+        elif current_user.role == "asesor":
+            company = await db.companies.find_one({"id": history_entry["company_id"]})
+            if company.get("asesor_comercial_id") != current_user.id:
+                raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Get file path
+        file_path = Path(history_entry["result_pdf_path"])
+        
+        if not file_path.exists():
+            logger.error(f"File not found in history: {file_path}")
+            raise HTTPException(status_code=404, detail="File not found. It may have been deleted.")
+        
+        # Stream file
+        def iterfile():
+            with open(file_path, mode="rb") as file:
+                yield from file
+        
+        return StreamingResponse(
+            iterfile(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={history_entry['result_pdf_name']}",
+                "Content-Type": "application/pdf"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading PDF from history: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/retention-policy")
+async def get_retention_policy(current_user: User = Depends(get_current_user)):
+    """Get retention policy configuration"""
+    try:
+        config = await db.retention_policy.find_one({"id": "global_retention_policy"})
+        if not config:
+            # Return default
+            return {
+                "retention_months": 6,
+                "updated_at": None,
+                "updated_by": None
+            }
+        return config
+    except Exception as e:
+        logger.error(f"Error getting retention policy: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/retention-policy")
+async def update_retention_policy(
+    update: RetentionPolicyUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update retention policy (admin only)"""
+    try:
+        # Only staff can update retention policy
+        if current_user.role != "staff":
+            raise HTTPException(status_code=403, detail="Only staff can update retention policy")
+        
+        # Validate retention_months
+        if update.retention_months not in [6, 12]:
+            raise HTTPException(status_code=400, detail="retention_months must be 6 or 12")
+        
+        # Update or create retention policy
+        config = RetentionPolicyConfig(
+            retention_months=update.retention_months,
+            updated_by=current_user.id
+        )
+        
+        await db.retention_policy.update_one(
+            {"id": "global_retention_policy"},
+            {"$set": config.dict()},
+            upsert=True
+        )
+        
+        logger.info(f"Retention policy updated to {update.retention_months} months by {current_user.email}")
+        
+        return {
+            "message": "Retention policy updated successfully",
+            "retention_months": update.retention_months
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating retention policy: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ========== USER MANUAL ENDPOINTS ==========
 
 async def get_first_active_project_ai_config():
