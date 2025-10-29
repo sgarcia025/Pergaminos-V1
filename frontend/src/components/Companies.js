@@ -581,32 +581,47 @@ const Companies = ({ user }) => {
                               </svg>
                             </button>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-3">
                             <div>
                               <label className="block text-xs text-gray-600 mb-1">
-                                Correo Electrónico *
+                                Nombre del Contacto *
                               </label>
                               <input
-                                type="email"
-                                value={contacto.email}
-                                onChange={(e) => handleContactChange(index, 'email', e.target.value)}
+                                type="text"
+                                value={contacto.nombre || ''}
+                                onChange={(e) => handleContactChange(index, 'nombre', e.target.value)}
                                 className="form-input text-sm"
-                                placeholder="correo@ejemplo.com"
+                                placeholder="Nombre completo"
                                 required
                               />
                             </div>
-                            <div>
-                              <label className="block text-xs text-gray-600 mb-1">
-                                Teléfono *
-                              </label>
-                              <input
-                                type="tel"
-                                value={contacto.telefono}
-                                onChange={(e) => handleContactChange(index, 'telefono', e.target.value)}
-                                className="form-input text-sm"
-                                placeholder="+57 300 123 4567"
-                                required
-                              />
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">
+                                  Correo Electrónico *
+                                </label>
+                                <input
+                                  type="email"
+                                  value={contacto.email}
+                                  onChange={(e) => handleContactChange(index, 'email', e.target.value)}
+                                  className="form-input text-sm"
+                                  placeholder="correo@ejemplo.com"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs text-gray-600 mb-1">
+                                  Teléfono *
+                                </label>
+                                <input
+                                  type="tel"
+                                  value={contacto.telefono}
+                                  onChange={(e) => handleContactChange(index, 'telefono', e.target.value)}
+                                  className="form-input text-sm"
+                                  placeholder="+502 1234 5678"
+                                  required
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
