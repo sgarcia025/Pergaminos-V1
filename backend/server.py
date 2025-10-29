@@ -5107,7 +5107,9 @@ async def create_pdf_page_plan(
                 project_id=project_id,
                 pdf_filename=plan_request.pdf_filename,
                 instruction=plan_request.instruction,
+                mode="reorder",
                 plan=plan,
+                extract_plan=None,
                 status="plan_ready",
                 created_by=current_user.id,
                 logs=[{
