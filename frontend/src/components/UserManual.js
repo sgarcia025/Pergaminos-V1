@@ -259,10 +259,49 @@ Los documentos que fallan QA van a "Hallazgos QA" para revisión manual.`
 1. Selecciona una empresa
 2. Selecciona un proyecto
 3. Elige el tipo de configuración
-4. Selecciona modelo de OpenAI
-5. Ingresa tu API key
+4. Selecciona modelo de OpenAI (solo OpenAI soportado)
+5. Ingresa tu API key de OpenAI
 
-🔒 **Seguridad:** Las claves se encriptan antes de almacenarse en la base de datos.`
+🔒 **Seguridad:** Las claves se encriptan antes de almacenarse en la base de datos.
+
+📝 **Nota:** Solo se acepta OpenAI como proveedor de IA.`
+    },
+    {
+      id: 'ocr-config',
+      title: '🔍 Configuración OCR Global',
+      content: `Configura cómo el sistema extrae texto de PDFs escaneados (sin texto incrustado).
+
+**¿Cuándo se usa OCR?**
+El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado o es una imagen, automáticamente usa OCR.
+
+**Dos métodos disponibles:**
+
+**1. 🔧 Tesseract OCR (Por defecto)**
+✅ Ventajas:
+• Gratuito y rápido
+• Procesa páginas en segundos
+• Ideal para documentos simples
+
+⚠️ Desventajas:
+• Menor precisión con documentos complejos
+• Puede fallar con mala calidad de escaneo
+
+**2. 🤖 GPT-4o Vision**
+✅ Ventajas:
+• Máxima precisión y calidad
+• Excelente con documentos complejos
+• Entiende contexto y layout
+
+⚠️ Desventajas:
+• Usa tokens de OpenAI (tiene costo)
+• Más lento (~7 segundos por página)
+• Requiere API key configurada
+
+**¿Cuál elegir?**
+• **Tesseract:** Para documentos de buena calidad y procesamiento rápido
+• **GPT-4o Vision:** Para documentos críticos o mala calidad de escaneo
+
+**Ubicación:** Configuración IA → Sección superior "Configuración OCR Global"`
     },
     {
       id: 'users',
