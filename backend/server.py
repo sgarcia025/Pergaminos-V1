@@ -5305,7 +5305,7 @@ async def download_reordered_pdf(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Download a reordered PDF file (authenticated).
+    Download a reordered or extracted PDF file (authenticated).
     """
     try:
         # Find job
@@ -5324,11 +5324,17 @@ async def download_reordered_pdf(
         elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied")
         
-        # Get file path
-        output_dir = UPLOAD_DIR / "pdf_page_reorder_output"
+        # Get file path based on mode
+        mode = job.get("mode", "reorder")
+        if mode == "extract":
+            output_dir = UPLOAD_DIR / "pdf_page_extract_output"
+        else:
+            output_dir = UPLOAD_DIR / "pdf_page_reorder_output"
+        
         file_path = output_dir / file_name
         
         if not file_path.exists():
+            logger.error(f"File not found: {file_path}")
             raise HTTPException(status_code=404, detail="File not found")
         
         # Stream file
