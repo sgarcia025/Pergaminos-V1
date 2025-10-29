@@ -32,6 +32,10 @@ Este sistema está diseñado para gestionar empresas, proyectos de digitalizaci�
 • Revisión de QA pendiente
 • QA aprobados y fallidos
 
+**Nuevo: Filtros de fecha**
+• Filtra estadísticas por rango de fechas
+• Haz clic en las cards de estado para filtrar proyectos
+
 Proporciona accesos rápidos a las funciones principales del sistema.`
     },
     {
@@ -47,12 +51,16 @@ Proporciona accesos rápidos a las funciones principales del sistema.`
 
 **Campos disponibles:**
 • Nombre de la empresa
-• Email de contacto
-• Teléfono
+• **Múltiples contactos** (nombre, email, teléfono)
 • Asesor comercial asignado
 • Segmento/Industria
 • Corporación
 • Dirección
+
+**Gestión de contactos:**
+• Agrega varios contactos por empresa
+• Cada contacto tiene: nombre, email y teléfono (+502)
+• Edita o elimina contactos fácilmente
 
 ⚠️ **Importante:** Las empresas inactivas no permiten el login de sus usuarios.`
     },
@@ -64,12 +72,14 @@ Proporciona accesos rápidos a las funciones principales del sistema.`
 **Características:**
 • Cada proyecto contiene documentos PDF para procesar
 • Estados: Activo o Completado
+• **Código de proyecto alfanumérico único**
 • Instrucciones semánticas para guiar la IA
+• Filtros por empresa y corporación
 
 **Tres pestañas principales:**
 1. **Documentos:** Subir y gestionar PDFs
 2. **PDF Manager IA:** Renombrar y reordenar múltiples PDFs
-3. **PDF Manager IA por Página:** Reordenar páginas dentro de un PDF`
+3. **PDF Manager IA por Página:** Reordenar o extraer páginas de PDFs`
     },
     {
       id: 'documentos',
@@ -79,19 +89,28 @@ Proporciona accesos rápidos a las funciones principales del sistema.`
 **1. Subida de archivos:**
 • Arrastra o selecciona archivos PDF
 • Hasta 10 archivos simultáneos
+• Límites: 500MB por archivo, 1GB por lote
 
 **2. Procesamiento automático:**
 • Control de calidad (QA) según reglas configuradas
 • Extracción de datos con IA si pasa QA
+• **Mensajes de progreso en tiempo real**
 
 **Estados del documento:**
 • ⬆️ Subido
 • 🔄 QA en Proceso
 • ✅ QA Aprobado → IA Processing
 • ❌ QA Falló
-• 🤖 Extracción IA
+• 🤖 Extracción IA (con barra de progreso)
 • ✓ Completado
-• ⚠️ Necesita Revisión Manual`
+• ⚠️ Necesita Revisión Manual
+
+**Mensajes de progreso:**
+Verás mensajes descriptivos durante el procesamiento:
+• "📄 Iniciando procesamiento..."
+• "🔍 Extrayendo texto con OCR..."
+• "🤖 Extrayendo datos del chunk X/Y..."
+• "✅ Procesamiento completado"`
     },
     {
       id: 'pdf-manager',
