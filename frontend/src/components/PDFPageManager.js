@@ -303,7 +303,9 @@ const PDFPageManager = ({ projectId, user }) => {
       {plan && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">📋 Vista Previa del Plan</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              📋 Vista Previa del Plan {mode === 'extract' ? '(Extracción)' : '(Reordenamiento)'}
+            </h3>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">
                 Confianza: {(plan.confidence * 100).toFixed(0)}%
@@ -321,11 +323,16 @@ const PDFPageManager = ({ projectId, user }) => {
           <div className="mb-4 space-y-3">
             <div className="p-3 bg-gray-50 rounded">
               <p className="text-sm text-gray-700">
-                <strong>PDF:</strong> {plan.pdf_filename}
+                <strong>PDF:</strong> {plan.pdf_filename || plan.new_filename || selectedPdf}
               </p>
               <p className="text-sm text-gray-700 mt-1">
                 <strong>Total de páginas:</strong> {plan.total_pages}
               </p>
+              {mode === 'extract' && plan.pages_to_extract && (
+                <p className="text-sm text-gray-700 mt-1">
+                  <strong>Páginas a extraer:</strong> {plan.pages_to_extract.length}
+                </p>
+              )}
             </div>
 
             <div className="p-3 bg-blue-50 border border-blue-200 rounded">
@@ -337,16 +344,39 @@ const PDFPageManager = ({ projectId, user }) => {
               </p>
             </div>
 
-            {/* New Page Sequence */}
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
-              <p className="text-sm text-emerald-900 mb-2">
-                <strong>Nuevo orden de páginas:</strong>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {plan.new_page_sequence.map((pageNum, idx) => (
-                  <span
-                    key={idx}
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+            {/* Pages Display */}
+            {mode === 'extract' && plan.pages_to_extract ? (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                <p className="text-sm text-amber-900 mb-2">
+                  <strong>Páginas que se extraerán:</strong>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {plan.pages_to_extract.map((pageNum, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800"
+                    >
+                      {pageNum}
+                    </span>
+                  ))}
+                </div>
+                {plan.new_filename && (
+                  <p className="text-sm text-amber-700 mt-2">
+                    <strong>Nombre del nuevo PDF:</strong> {plan.new_filename}
+                  </p>
+                )}
+              </div>
+            ) : plan.new_page_sequence && (
+              /* New Page Sequence for reorder mode */
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
+                <p className="text-sm text-emerald-900 mb-2">
+                  <strong>Nuevo orden de páginas:</strong>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {plan.new_page_sequence.map((pageNum, idx) => (
+                    <span
+                      key={idx}
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                       pageNum === idx + 1
                         ? 'bg-gray-200 text-gray-700'
                         : 'bg-emerald-100 text-emerald-800'
