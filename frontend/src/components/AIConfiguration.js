@@ -50,6 +50,7 @@ const AIConfiguration = ({ user }) => {
   useEffect(() => {
     fetchCompanies();
     fetchModelRecommendations();
+    fetchOcrConfig();
   }, []);
 
   useEffect(() => {
