@@ -1446,24 +1446,14 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
     """Process a single PDF chunk with AI using configured model"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
-        import PyPDF2
-        
-        # Extract text from specified pages of the PDF
+        # Extract text from specified pages of the PDF with OCR fallback
         # Note: emergentintegrations only supports file attachments with Gemini provider
         # For OpenAI, we extract text and send it in the prompt
-        pdf_text = ""
-        try:
-            with open(file_path, 'rb') as pdf_file:
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                # Extract text from the specified page range (0-indexed)
-                for page_num in range(start_page - 1, min(end_page, len(pdf_reader.pages))):
-                    page = pdf_reader.pages[page_num]
-                    pdf_text += f"\n--- PAGE {page_num + 1} ---\n"
-                    pdf_text += page.extract_text()
-                    
-        except Exception as e:
-            logger.error(f"Error extracting PDF text for chunk {chunk_number}: {str(e)}")
-            pdf_text = f"[Error: Could not extract text from PDF chunk {chunk_number}]"
+        pdf_text = extract_text_from_pdf_with_ocr(
+            file_path,
+            start_page=start_page - 1,  # Convert to 0-indexed
+            end_page=end_page - 1  # Convert to 0-indexed
+        )
         
         chat = await create_ai_chat_with_config(
             ai_config,
