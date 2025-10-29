@@ -1272,6 +1272,15 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
     """Run QA checks on document using specified agents"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        
+        # Update progress
+        await db.documents.update_one(
+            {"id": document_id},
+            {"$set": {
+                "processing_message": f"✅ Iniciando controles de calidad con {len(qa_agents)} agentes..."
+            }}
+        )
+        
         # Get AI configuration for QA
         project = await db.projects.find_one({"id": document["project_id"]})
         company = await db.companies.find_one({"id": project["company_id"]})
@@ -1287,7 +1296,8 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
             document["file_path"],
             project_id=document["project_id"],
             start_page=0,
-            max_pages=3  # Extract first 3 pages for QA (reduced for Vision OCR performance)
+            max_pages=3,  # Extract first 3 pages for QA (reduced for Vision OCR performance)
+            document_id=document_id  # Pass document_id for OCR progress messages
         )
         
         all_results = []
