@@ -5220,10 +5220,21 @@ async def execute_pdf_page_plan(
             }
         )
         
-        logger.info(f"Executing PDF page reordering for job {job_id}")
+        logger.info(f"Executing PDF page operation ({job.mode}) for job {job_id}")
         
-        # Execute reordering
-        output_path = await execute_pdf_page_reorder(job, str(pdf_path))
+        # Execute based on mode
+        if job.mode == "extract":
+            # Execute extraction
+            if not job.extract_plan:
+                raise HTTPException(status_code=400, detail="Extract plan not found in job")
+            output_path = await execute_pdf_page_extract(job.extract_plan, str(pdf_path), job_id)
+            operation_type = "extracción"
+        else:
+            # Execute reordering
+            if not job.plan:
+                raise HTTPException(status_code=400, detail="Reorder plan not found in job")
+            output_path = await execute_pdf_page_reorder(job, str(pdf_path))
+            operation_type = "reordenamiento"
         
         # Generate download URL
         output_filename = Path(output_path).name
@@ -5250,14 +5261,14 @@ async def execute_pdf_page_plan(
             }
         )
         
-        logger.info(f"PDF page reordering completed successfully. Job ID: {job_id}")
+        logger.info(f"PDF page {operation_type} completed successfully. Job ID: {job_id}")
         
         return {
             "job_id": job_id,
             "status": "completed",
             "result_url": result_url,
             "result_filename": output_filename,
-            "message": "Page reordering completed successfully"
+            "message": f"Operación de {operation_type} completada exitosamente"
         }
         
     except HTTPException:
