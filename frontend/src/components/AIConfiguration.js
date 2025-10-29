@@ -135,6 +135,35 @@ const AIConfiguration = ({ user }) => {
     }
   };
 
+  // OCR Configuration functions
+  const fetchOcrConfig = async () => {
+    try {
+      const response = await axios.get(`${API}/ocr-config`);
+      setOcrConfig(response.data);
+    } catch (error) {
+      console.error('Error fetching OCR config:', error);
+    }
+  };
+
+  const handleOcrConfigUpdate = async (newMethod) => {
+    setOcrLoading(true);
+    setError('');
+    setOcrSuccess('');
+    
+    try {
+      await axios.post(`${API}/ocr-config`, {
+        ocr_method: newMethod
+      });
+      setOcrConfig({ ...ocrConfig, ocr_method: newMethod });
+      setOcrSuccess('Configuración OCR actualizada exitosamente');
+      setTimeout(() => setOcrSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al actualizar configuración OCR');
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
