@@ -192,6 +192,34 @@ const AIConfiguration = ({ user }) => {
     }
   };
 
+  const fetchRetentionPolicy = async () => {
+    try {
+      const response = await axios.get(`${API}/retention-policy`);
+      setRetentionPolicy(response.data);
+    } catch (error) {
+      console.error('Error fetching retention policy:', error);
+    }
+  };
+
+  const handleRetentionPolicyUpdate = async (months) => {
+    setRetentionLoading(true);
+    setError('');
+    setRetentionSuccess('');
+    
+    try {
+      await axios.post(`${API}/retention-policy`, {
+        retention_months: months
+      });
+      setRetentionPolicy({ ...retentionPolicy, retention_months: months });
+      setRetentionSuccess(`Política de retención actualizada a ${months} meses`);
+      setTimeout(() => setRetentionSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al actualizar política de retención');
+    } finally {
+      setRetentionLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
