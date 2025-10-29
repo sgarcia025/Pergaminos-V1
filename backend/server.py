@@ -778,6 +778,75 @@ async def batch_upload_documents(
         "total_size_mb": round(total_size / (1024*1024), 2)
     }
 
+
+@api_router.post("/projects/{project_id}/documents/{document_id}/qa-review")
+async def update_qa_review(
+    project_id: str,
+    document_id: str,
+    review_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update QA review with comments and action (approve/reject).
+    Only staff can perform QA review.
+    """
+    try:
+        # Only staff can review QA
+        if current_user.role != "staff":
+            raise HTTPException(status_code=403, detail="Solo el staff puede revisar documentos QA")
+        
+        # Find document
+        document = await db.documents.find_one({"id": document_id, "project_id": project_id})
+        if not document:
+            raise HTTPException(status_code=404, detail="Documento no encontrado")
+        
+        # Validate action
+        action = review_data.get("action")  # "approved" or "rejected"
+        if action not in ["approved", "rejected"]:
+            raise HTTPException(status_code=400, detail="Acción inválida. Debe ser 'approved' o 'rejected'")
+        
+        comments = review_data.get("comments", "")
+        
+        # Update document with review information
+        update_data = {
+            "qa_review_action": action,
+            "qa_review_comments": comments,
+            "qa_approved_by": current_user.id,
+            "qa_reviewed_by_name": current_user.name,
+            "qa_approved_at": datetime.now(timezone.utc)
+        }
+        
+        # Update status based on action
+        if action == "approved":
+            update_data["status"] = "qa_passed"
+            update_data["qa_status"] = "passed"
+            # Continue to AI processing
+            asyncio.create_task(process_document_with_ai(document_id))
+        else:  # rejected
+            update_data["status"] = "qa_failed"
+            update_data["qa_status"] = "failed"
+        
+        await db.documents.update_one(
+            {"id": document_id},
+            {"$set": update_data}
+        )
+        
+        logger.info(f"QA review completed for document {document_id} by {current_user.email}: {action}")
+        
+        return {
+            "message": f"Documento {'aprobado' if action == 'approved' else 'rechazado'} exitosamente",
+            "document_id": document_id,
+            "action": action,
+            "reviewed_by": current_user.name
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating QA review: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Batch Processing Status Endpoint
 @api_router.get("/projects/{project_id}/batch-status/{batch_task_id}")
 async def get_batch_processing_status(
