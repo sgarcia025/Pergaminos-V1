@@ -1100,22 +1100,22 @@ async def extract_text_from_pdf_with_ocr(
                     logger.info(f"OCR enabled. Using method: {ocr_method}")
                     
                     if ocr_method == "gpt4o_vision":
-                    # Use GPT-4o Vision for OCR
-                    logger.info("Attempting GPT-4o Vision OCR...")
-                    if document_id:
-                        await db.documents.update_one(
-                            {"id": document_id},
-                            {"$set": {"processing_message": f"🔍 Iniciando GPT-4o Vision OCR ({pages_processed} páginas)..."}}
+                        # Use GPT-4o Vision for OCR
+                        logger.info("Attempting GPT-4o Vision OCR...")
+                        if document_id:
+                            await db.documents.update_one(
+                                {"id": document_id},
+                                {"$set": {"processing_message": f"🔍 Iniciando GPT-4o Vision OCR ({pages_processed} páginas)..."}}
+                            )
+                        pdf_text = await extract_text_with_gpt4o_vision(
+                            file_path, 
+                            start_page, 
+                            end_page, 
+                            project_id,
+                            document_id
                         )
-                    pdf_text = await extract_text_with_gpt4o_vision(
-                        file_path, 
-                        start_page, 
-                        end_page, 
-                        project_id,
-                        document_id
-                    )
-                    
-                elif ocr_method == "tesseract":
+                        
+                    elif ocr_method == "tesseract":
                     # Use Tesseract OCR
                     logger.info("Attempting Tesseract OCR...")
                     if document_id:
