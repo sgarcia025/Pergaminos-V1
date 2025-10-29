@@ -657,6 +657,25 @@ const ProjectDetail = ({ user }) => {
                           <strong>IA:</strong> {document.reorder_reasoning}
                         </div>
                       )}
+                      {/* Progress Message */}
+                      {document.processing_message && document.status === 'processing' && (
+                        <div className="mt-2">
+                          <div className="flex items-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>
+                            <span className="text-sm text-emerald-700 font-medium">
+                              {document.processing_message}
+                            </span>
+                          </div>
+                          {document.processing_progress > 0 && (
+                            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${document.processing_progress}%` }}
+                              ></div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
