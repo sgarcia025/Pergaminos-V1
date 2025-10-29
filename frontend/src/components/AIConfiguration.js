@@ -50,7 +50,10 @@ const AIConfiguration = ({ user }) => {
   useEffect(() => {
     fetchCompanies();
     fetchModelRecommendations();
-    fetchOcrConfig();
+    // Delay OCR config fetch to ensure token is set
+    setTimeout(() => {
+      fetchOcrConfig();
+    }, 1000);
   }, []);
 
   useEffect(() => {
