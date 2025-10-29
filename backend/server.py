@@ -340,6 +340,14 @@ class PDFPagePlan(BaseModel):
     confidence: float  # 0.0 to 1.0
     reasoning: str  # AI explanation of the reordering logic
 
+class PDFPageExtractPlan(BaseModel):
+    pdf_filename: str
+    total_pages: int
+    pages_to_extract: List[int] = []  # Page numbers to extract (1-indexed)
+    new_filename: str  # Name for the extracted PDF
+    confidence: float  # 0.0 to 1.0
+    reasoning: str  # AI explanation
+
 class PDFPageManagerJob(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     company_id: str
@@ -365,14 +373,6 @@ class PDFPageManagerPlanRequest(BaseModel):
     instruction: str
     mode: str = "reorder"  # "reorder" or "extract"
     manual_range: Optional[str] = None  # e.g., "1-20" or "1,5,10,15" for extract mode
-
-class PDFPageExtractPlan(BaseModel):
-    pdf_filename: str
-    total_pages: int
-    pages_to_extract: List[int] = []  # Page numbers to extract (1-indexed)
-    new_filename: str  # Name for the extracted PDF
-    confidence: float  # 0.0 to 1.0
-    reasoning: str  # AI explanation
 
 # Create uploads directory
 UPLOAD_DIR = Path("uploads")
