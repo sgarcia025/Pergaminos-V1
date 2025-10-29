@@ -369,7 +369,15 @@ const Companies = ({ user }) => {
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <p className="text-xs font-medium text-gray-600 mb-2">Contactos Adicionales:</p>
                       {company.contactos.map((contacto, idx) => (
-                        <div key={idx} className="ml-2 mb-2 text-xs">
+                        <div key={idx} className="ml-2 mb-3 text-xs bg-gray-50 p-2 rounded">
+                          {contacto.nombre && (
+                            <div className="flex items-center text-gray-700 font-medium mb-1">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              {contacto.nombre}
+                            </div>
+                          )}
                           <div className="flex items-center text-gray-500 mb-1">
                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
