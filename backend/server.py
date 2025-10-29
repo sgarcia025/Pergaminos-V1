@@ -3878,15 +3878,22 @@ async def generate_pdf_plan_with_ai(
 ) -> PDFManagerPlan:
     """
     Generate a plan for PDF renaming and reordering using AI (GPT-4o).
+    Extracts content from PDFs when needed for intelligent naming.
     Returns a plan with rename operations, reorder sequence, and validation.
     """
     try:
         # Get AI configuration for document processing
         ai_config = await get_ai_config_for_task(project["id"], "document_processing")
         
-        # Prepare documents metadata for LLM (lightweight)
+        # Check if instruction requires reading PDF content
+        content_keywords = ["número de factura", "numero de factura", "invoice number", "número", "numero", 
+                          "fecha", "date", "nombre", "name", "contenido", "content", "dentro del pdf", 
+                          "detecte", "busque", "encuentre", "extraiga"]
+        needs_content = any(keyword in instruction.lower() for keyword in content_keywords)
+        
+        # Prepare documents metadata for LLM
         docs_metadata = []
-        for doc in documents:
+        for idx, doc in enumerate(documents):
             # Extract relevant metadata
             metadata = {
                 "id": doc["id"],
@@ -3903,25 +3910,46 @@ async def generate_pdf_plan_with_ai(
                         if k in ["date", "client", "document_type", "amount", "invoice_number", "project_name"]
                     }
             
+            # Extract PDF content if instruction requires it (only first 2 pages for performance)
+            if needs_content and doc.get("file_path"):
+                try:
+                    logger.info(f"Extracting content from PDF {doc['original_filename']} for intelligent naming")
+                    pdf_content = await extract_text_from_pdf_with_ocr(
+                        doc["file_path"],
+                        project_id=project["id"],
+                        start_page=0,
+                        max_pages=2  # Only read first 2 pages for naming
+                    )
+                    # Limit content to first 1000 characters to avoid token overflow
+                    metadata["content_preview"] = pdf_content[:1000] if pdf_content else "[No text extracted]"
+                except Exception as e:
+                    logger.warning(f"Failed to extract content from {doc['original_filename']}: {str(e)}")
+                    metadata["content_preview"] = "[Error extracting content]"
+            
             docs_metadata.append(metadata)
         
-        # Build LLM prompt
+        # Build LLM prompt with enhanced instructions
         system_prompt = """You are an expert document management AI planner. Your task is to analyze natural language instructions and generate a deterministic plan for renaming and reordering PDF documents.
+
+You can extract specific data from PDF content (when provided in content_preview) to create intelligent file names.
 
 RULES:
 1. Return ONLY valid JSON, no markdown or explanations.
-2. Use only the metadata provided - do not invent data.
-3. For rename operations, use the document ID in "from_id" and generate a safe filename in "to_name".
-4. Preserve file extensions (.pdf).
-5. For reordering, ALWAYS provide "reorder_ids" array with ALL document IDs in the desired order.
-6. If no specific order is mentioned, maintain current order in reorder_ids.
-7. Detect conflicts: duplicate names, missing required metadata, ambiguous instructions.
-8. Set confidence (0.0-1.0) based on instruction clarity and metadata availability.
+2. Use content_preview when available to extract specific data (invoice numbers, dates, names, etc.) for renaming.
+3. If content_preview is provided, analyze it to find the requested data (e.g., "número de factura", "fecha", etc.).
+4. For rename operations, use the document ID in "from_id" and generate a safe filename in "to_name".
+5. Generate descriptive filenames based on extracted data: e.g., "Factura_12345.pdf", "Contrato_2024-01-15.pdf"
+6. Preserve file extensions (.pdf).
+7. For reordering, ALWAYS provide "reorder_ids" array with ALL document IDs in the desired order.
+8. If no specific order is mentioned, maintain current order in reorder_ids.
+9. Detect conflicts: duplicate names, missing required metadata, ambiguous instructions.
+10. Set confidence (0.0-1.0) based on instruction clarity and data availability.
+11. Use SAFE filenames: no special characters, spaces replaced with underscores.
 
 OUTPUT FORMAT (MANDATORY):
 {
   "rename_operations": [
-    {"from_id": "doc_id", "from_name": "current.pdf", "to_name": "new_name.pdf"}
+    {"from_id": "doc_id", "from_name": "current.pdf", "to_name": "new_name_based_on_content.pdf", "reasoning": "Extracted invoice number 12345 from content"}
   ],
   "reorder_ids": ["doc_id_1", "doc_id_2", "doc_id_3"],
   "validation": {
@@ -3931,7 +3959,19 @@ OUTPUT FORMAT (MANDATORY):
   }
 }
 
-IMPORTANT: reorder_ids MUST contain ALL document IDs. If instruction doesn't mention ordering, use the same order as provided in DOCUMENTS METADATA."""
+EXAMPLES:
+- Instruction: "Renombrar PDFs según número de factura"
+  Content: "FACTURA No. 12345"
+  Result: "Factura_12345.pdf"
+
+- Instruction: "Usar fecha del documento"
+  Content: "Fecha: 15/01/2024"
+  Result: "Documento_2024-01-15.pdf"
+
+IMPORTANT: 
+- reorder_ids MUST contain ALL document IDs
+- If you can't find the requested data in content_preview, use a generic name with index
+- Ensure all generated filenames are UNIQUE"""
 
         user_prompt = f"""CONTEXT:
 Company: {company.get('name', 'N/A')}
