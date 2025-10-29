@@ -5702,11 +5702,19 @@ async def get_pdf_history(
             retention_months = retention_config.get("retention_months", 6)
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=retention_months * 30)
             
-            # Filter out old entries
-            history_entries = [
-                entry for entry in history_entries
-                if entry.get("performed_at") and entry["performed_at"] > cutoff_date
-            ]
+            # Filter out old entries - handle both timezone-aware and naive datetimes
+            filtered_entries = []
+            for entry in history_entries:
+                performed_at = entry.get("performed_at")
+                if performed_at:
+                    # If performed_at is naive (no timezone), assume UTC
+                    if performed_at.tzinfo is None:
+                        performed_at = performed_at.replace(tzinfo=timezone.utc)
+                    
+                    if performed_at > cutoff_date:
+                        filtered_entries.append(entry)
+            
+            history_entries = filtered_entries
         
         return {
             "history": history_entries,
