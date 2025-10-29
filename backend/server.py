@@ -4968,7 +4968,8 @@ async def create_pdf_page_plan(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Generate a plan for reordering pages within a specific PDF.
+    Generate a plan for reordering or extracting pages from a specific PDF.
+    Supports two modes: 'reorder' (reorganize pages) or 'extract' (create new PDF with specific pages).
     """
     try:
         # Verify project exists and user has access
@@ -5000,7 +5001,6 @@ async def create_pdf_page_plan(
             )
         
         # Get PDF file path
-        # file_path is stored as absolute path, so use it directly
         pdf_path = Path(document["file_path"])
         if not pdf_path.exists():
             raise HTTPException(
@@ -5008,31 +5008,69 @@ async def create_pdf_page_plan(
                 detail="PDF file not found on server"
             )
         
-        logger.info(f"Generating PDF page plan for {plan_request.pdf_filename}")
+        logger.info(f"Generating PDF page plan for {plan_request.pdf_filename}, mode: {plan_request.mode}")
         
-        # Generate plan using AI
-        plan = await generate_pdf_page_plan_with_ai(
-            project,
-            plan_request.pdf_filename,
-            str(pdf_path),
-            plan_request.instruction
-        )
+        # Generate plan based on mode
+        if plan_request.mode == "extract":
+            # Extract mode - create new PDF with specific pages
+            extract_plan = await generate_pdf_extract_plan_with_ai(
+                project,
+                plan_request.pdf_filename,
+                str(pdf_path),
+                plan_request.instruction,
+                plan_request.manual_range
+            )
+            
+            # Create job record for extract
+            job = PDFPageManagerJob(
+                company_id=project["company_id"],
+                project_id=project_id,
+                pdf_filename=plan_request.pdf_filename,
+                instruction=plan_request.instruction,
+                plan=None,  # We'll store extract_plan differently
+                status="plan_ready",
+                created_by=current_user.id,
+                logs=[{
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event": "extract_plan_generated",
+                    "details": f"Plan to extract {len(extract_plan.pages_to_extract)} pages from {extract_plan.total_pages} total pages"
+                }]
+            )
+            
+            # Save job
+            await db.pdf_page_manager_jobs.insert_one(job.dict())
+            
+            return {
+                "job_id": job.id,
+                "mode": "extract",
+                "plan": extract_plan.dict(),
+                "status": "plan_ready"
+            }
         
-        # Create job record
-        job = PDFPageManagerJob(
-            company_id=project["company_id"],
-            project_id=project_id,
-            pdf_filename=plan_request.pdf_filename,
-            instruction=plan_request.instruction,
-            plan=plan,
-            status="plan_ready",
-            created_by=current_user.id,
-            logs=[{
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "event": "plan_generated",
-                "details": f"Generated plan to reorder {plan.total_pages} pages"
-            }]
-        )
+        else:
+            # Reorder mode - reorganize pages within the PDF
+            plan = await generate_pdf_page_plan_with_ai(
+                project,
+                plan_request.pdf_filename,
+                str(pdf_path),
+                plan_request.instruction
+            )
+            
+            # Create job record
+            job = PDFPageManagerJob(
+                company_id=project["company_id"],
+                project_id=project_id,
+                pdf_filename=plan_request.pdf_filename,
+                instruction=plan_request.instruction,
+                plan=plan,
+                status="plan_ready",
+                created_by=current_user.id,
+                logs=[{
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event": "plan_generated",
+                    "details": f"Generated plan to reorder {plan.total_pages} pages"
+                }]
+            )
         
         # Save job to database
         await db.pdf_page_manager_jobs.insert_one(job.dict())
