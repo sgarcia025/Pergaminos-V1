@@ -367,7 +367,6 @@ const PDFPageManager = ({ projectId, user }) => {
                 )}
               </div>
             ) : plan.new_page_sequence ? (
-              /* New Page Sequence for reorder mode */
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
                 <p className="text-sm text-emerald-900 mb-2">
                   <strong>Nuevo orden de páginas:</strong>
@@ -381,10 +380,11 @@ const PDFPageManager = ({ projectId, user }) => {
                         ? 'bg-gray-200 text-gray-700'
                         : 'bg-emerald-100 text-emerald-800'
                     }`}
-                  >
-                    {idx + 1}: Pág {pageNum}
-                  </span>
-                ))}
+                    >
+                      {idx + 1}: Pág {pageNum}
+                    </span>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
