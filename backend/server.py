@@ -5071,18 +5071,19 @@ async def create_pdf_page_plan(
                     "details": f"Generated plan to reorder {plan.total_pages} pages"
                 }]
             )
-        
-        # Save job to database
-        await db.pdf_page_manager_jobs.insert_one(job.dict())
-        
-        logger.info(f"PDF page plan created successfully. Job ID: {job.id}")
-        
-        return {
-            "job_id": job.id,
-            "status": job.status,
-            "plan": job.plan.dict(),
-            "created_at": job.created_at.isoformat()
-        }
+            
+            # Save job to database
+            await db.pdf_page_manager_jobs.insert_one(job.dict())
+            
+            logger.info(f"PDF page plan created successfully. Job ID: {job.id}")
+            
+            return {
+                "job_id": job.id,
+                "mode": "reorder",
+                "status": job.status,
+                "plan": job.plan.dict(),
+                "created_at": job.created_at.isoformat()
+            }
         
     except HTTPException:
         raise
