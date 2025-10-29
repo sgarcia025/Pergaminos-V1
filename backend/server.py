@@ -5070,7 +5070,9 @@ async def create_pdf_page_plan(
                 project_id=project_id,
                 pdf_filename=plan_request.pdf_filename,
                 instruction=plan_request.instruction,
-                plan=None,  # We'll store extract_plan differently
+                mode="extract",
+                plan=None,
+                extract_plan=extract_plan,
                 status="plan_ready",
                 created_by=current_user.id,
                 logs=[{
