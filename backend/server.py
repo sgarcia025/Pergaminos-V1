@@ -929,7 +929,7 @@ def create_pdf_chunk(source_path: str, start_page: int, end_page: int, output_pa
         logger.error(f"Error creating PDF chunk: {str(e)}")
         return False
 
-async def extract_text_with_gpt4o_vision(file_path: str, start_page: int, end_page: int, project_id: str) -> str:
+async def extract_text_with_gpt4o_vision(file_path: str, start_page: int, end_page: int, project_id: str, document_id: Optional[str] = None) -> str:
     """
     Extract text from PDF pages using GPT-4o Vision.
     Converts pages to images and uses Vision API to read text.
@@ -956,13 +956,24 @@ async def extract_text_with_gpt4o_vision(file_path: str, start_page: int, end_pa
             dpi=150  # Lower DPI for faster processing
         )
         
-        logger.info(f"Converted {len(images)} pages to images for Vision OCR")
+        total_pages = len(images)
+        logger.info(f"Converted {total_pages} pages to images for Vision OCR")
         
         # Process each page with GPT-4o Vision
         pdf_text = ""
         
         for idx, image in enumerate(images):
             actual_page_num = start_page + idx
+            
+            # Update progress every 2 pages
+            if document_id and idx % 2 == 0:
+                progress_pct = int((idx / total_pages) * 100)
+                await db.documents.update_one(
+                    {"id": document_id},
+                    {"$set": {
+                        "processing_message": f"🔍 GPT-4o Vision: Procesando página {idx + 1}/{total_pages}... ({progress_pct}%)"
+                    }}
+                )
             
             try:
                 # Convert PIL Image to base64
