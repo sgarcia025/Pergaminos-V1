@@ -143,7 +143,7 @@ const Companies = ({ user }) => {
   const handleAddContact = () => {
     setFormData({
       ...formData,
-      contactos: [...formData.contactos, { email: '', telefono: '' }]
+      contactos: [...formData.contactos, { nombre: '', email: '', telefono: '' }]
     });
   };
 
