@@ -300,6 +300,7 @@ class RenameOperation(BaseModel):
     from_id: str  # Document ID
     from_name: str  # Current name
     to_name: str  # New name
+    reasoning: Optional[str] = None  # AI reasoning for the rename
 
 class PlanValidation(BaseModel):
     confidence: float  # 0.0 to 1.0
