@@ -420,6 +420,60 @@ const PDFHistory = ({ user }) => {
           </>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-start mb-4">
+              <div className="flex-shrink-0">
+                <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3l-6.928-12c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Confirmar Eliminación
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  ¿Estás seguro de que deseas eliminar esta entrada del historial?
+                </p>
+                {itemToDelete && (
+                  <div className="mt-3 bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900">
+                      {itemToDelete.result_pdf_name}
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Operación: {getOperationTypeName(itemToDelete.operation_type)} • 
+                      Proyecto: {itemToDelete.project_name}
+                    </p>
+                  </div>
+                )}
+                <p className="mt-3 text-xs text-red-600">
+                  <strong>Nota:</strong> Esta acción solo eliminará la entrada del historial. 
+                  El archivo físico permanecerá en el servidor.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={handleDeleteCancel}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleting}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
