@@ -181,6 +181,7 @@ class AIConfigurationUpdate(BaseModel):
 
 # Contact model for companies
 class Contact(BaseModel):
+    nombre: str
     email: EmailStr
     telefono: str
 
