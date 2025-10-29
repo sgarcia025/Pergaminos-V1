@@ -23,6 +23,11 @@ const AIConfiguration = ({ user }) => {
     model_name: 'gpt-4o',
     model_config: {}
   });
+  
+  // OCR Configuration (Global)
+  const [ocrConfig, setOcrConfig] = useState({ ocr_method: 'tesseract' });
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrSuccess, setOcrSuccess] = useState('');
 
   const configTypes = {
     'data_extraction': {
