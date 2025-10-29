@@ -303,7 +303,35 @@ const AIConfiguration = ({ user }) => {
               Esta configuración aplica a todo el sistema.
             </p>
             
-            <div className="bg-white rounded-lg p-4 space-y-3">
+            {/* OCR Enable/Disable Toggle */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">Habilitar OCR</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Activa el reconocimiento óptico de caracteres para PDFs escaneados. 
+                    {!ocrConfig.ocr_enabled && (
+                      <span className="text-amber-700 font-medium"> ⚠️ Deshabilitado: Los PDFs sin texto no se procesarán.</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleOcrToggle(!ocrConfig.ocr_enabled)}
+                  disabled={ocrLoading}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    ocrConfig.ocr_enabled ? 'bg-emerald-600' : 'bg-gray-300'
+                  } ${ocrLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      ocrConfig.ocr_enabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+            
+            <div className={`bg-white rounded-lg p-4 space-y-3 ${!ocrConfig.ocr_enabled ? 'opacity-50' : ''}`}>
               <div className="flex items-start space-x-3">
                 <input
                   type="radio"
