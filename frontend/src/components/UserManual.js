@@ -134,23 +134,39 @@ Verás mensajes descriptivos durante el procesamiento:
     {
       id: 'pdf-page-manager',
       title: '📑 PDF Manager IA por Página',
-      content: `Reordena páginas DENTRO de un PDF específico.
+      content: `Reordena o extrae páginas DENTRO de un PDF específico.
 
-**Proceso:**
-1. **Selección:** Elige un PDF del proyecto
+**Dos modos de operación:**
 
-2. **Instrucción:** Describe el reordenamiento deseado
+**1. 🔄 Reordenar Páginas**
+Reorganiza el orden de las páginas dentro del PDF.
+
+Proceso:
+1. Selecciona un PDF del proyecto
+2. Describe el reordenamiento deseado
    Ejemplo: "Mover la página con notas importantes al inicio"
-   
-3. **Análisis:** La IA lee el contenido de cada página
+3. La IA lee el contenido y genera un plan
+4. Ejecuta para crear el PDF reordenado
+5. Descarga el PDF con nuevo orden
 
-4. **Plan:** Genera nuevo orden con razonamiento explicado
+**2. ✂️ Extraer Páginas**
+Crea un NUEVO PDF con solo las páginas que necesitas.
 
-5. **Ejecución:** Crea el PDF reordenado
+Dos formas de especificar páginas:
 
-6. **Descarga:** Obtén el PDF con páginas en nuevo orden
+**A. Rango Manual:**
+Escribe directamente qué páginas extraer:
+• "1-20" → Páginas 1 a 20
+• "1,5,10,15" → Solo páginas 1, 5, 10 y 15
+• "1-10,15-20" → Páginas 1-10 y 15-20
 
-**Ventaja:** La IA analiza el contenido real de cada página para tomar decisiones informadas.`
+**B. Lenguaje Natural:**
+Describe qué extraer:
+• "Extraer solo las primeras 20 páginas"
+• "Crear PDF con páginas 10 a 50"
+• "Solo páginas con información financiera"
+
+**Ventaja:** La IA analiza el contenido real de cada página para tomar decisiones informadas (requiere OCR para PDFs escaneados).`
     },
     {
       id: 'qa-agents',
