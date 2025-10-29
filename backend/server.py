@@ -4358,9 +4358,11 @@ REGLAS:
 1. Devuelve SOLO JSON válido, sin markdown ni explicaciones.
 2. Los números de página empiezan en 1 (la primera página es 1, no 0).
 3. Analiza el contenido de texto de cada página para tomar decisiones informadas.
-4. Genera una secuencia completa que incluya TODAS las páginas.
-5. Proporciona un razonamiento claro EN ESPAÑOL explicando qué páginas identificaste y por qué.
-6. Establece la confianza (0.0-1.0) basándote en qué tan bien encontraste el contenido mencionado en las instrucciones.
+4. Si una página no tiene texto extraíble (puede ser una imagen o escaneo), indícalo en el razonamiento.
+5. Genera una secuencia completa que incluya TODAS las páginas.
+6. Proporciona un razonamiento claro EN ESPAÑOL explicando qué páginas identificaste y por qué.
+7. Establece la confianza (0.0-1.0) basándote en qué tan bien encontraste el contenido mencionado en las instrucciones.
+8. Si no puedes encontrar el contenido solicitado, propón un orden lógico y explica por qué.
 
 FORMATO DE SALIDA (OBLIGATORIO):
 {
@@ -4369,11 +4371,17 @@ FORMATO DE SALIDA (OBLIGATORIO):
   "reasoning": "Encontré 'notas importantes' en la página 3, la moví a la segunda posición como se solicitó. La página 1 permanece primero, la página 2 se movió a la tercera posición."
 }
 
-IMPORTANTE: new_page_sequence DEBE contener TODOS los números de página (1 a total_pages) exactamente una vez."""
+IMPORTANTE: 
+- new_page_sequence DEBE contener TODOS los números de página (1 a total_pages) exactamente una vez.
+- Si el PDF contiene principalmente imágenes sin texto extraíble, menciona esto en el razonamiento.
+- Busca palabras clave, nombres, fechas, títulos, o cualquier texto distintivo mencionado en las instrucciones."""
 
-        # Build pages content section
+        # Count pages with text
+        pages_with_text = sum(1 for p in pages_content if p.get('has_text', False))
+        
+        # Build pages content section with better formatting
         pages_info = "\n\n".join([
-            f"PÁGINA {page['page_number']}:\n{page['text_preview']}"
+            f"PÁGINA {page['page_number']} {'(CON TEXTO)' if page.get('has_text') else '(SIN TEXTO EXTRAÍBLE)'}:\n{page['text_preview']}"
             for page in pages_content
         ])
 
