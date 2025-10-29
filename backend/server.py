@@ -1303,8 +1303,16 @@ async def run_qa_checks(document_id: str, document: dict, qa_agents: list) -> di
         all_results = []
         critical_findings = []
         
-        for agent in qa_agents:
+        for idx, agent in enumerate(qa_agents):
             try:
+                # Update progress
+                await db.documents.update_one(
+                    {"id": document_id},
+                    {"$set": {
+                        "processing_message": f"✅ Ejecutando agente QA {idx + 1}/{len(qa_agents)}: {agent.get('name', 'Agente')}..."
+                    }}
+                )
+                
                 # Create AI chat for QA using configured model
                 chat = await create_ai_chat_with_config(
                     ai_config,
