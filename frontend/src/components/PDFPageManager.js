@@ -136,7 +136,7 @@ const PDFPageManager = ({ projectId, user }) => {
             📄 PDF Manager IA por Página
           </h2>
           <p className="text-gray-600 mt-1">
-            Reordena páginas dentro de un PDF usando instrucciones en lenguaje natural
+            Reordena páginas dentro de un PDF o extrae páginas específicas para crear nuevos documentos
           </p>
         </div>
       </div>
@@ -150,13 +150,13 @@ const PDFPageManager = ({ projectId, user }) => {
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">Cómo funciona</h3>
             <p className="text-sm text-blue-700 mt-1">
-              1) Selecciona un PDF del proyecto
+              1) Selecciona un PDF del proyecto y elige el modo (Reordenar o Extraer)
               <br />
-              2) Escribe una instrucción (ej: "Mover página 3 al inicio", "Intercambiar páginas 2 y 5")
+              2) Escribe una instrucción en lenguaje natural o usa rangos manuales
               <br />
               3) Genera el plan con IA para revisar los cambios
               <br />
-              4) Si estás conforme, ejecuta el plan para generar el PDF reordenado
+              4) Si estás conforme, ejecuta el plan para generar el nuevo PDF
             </p>
           </div>
         </div>
