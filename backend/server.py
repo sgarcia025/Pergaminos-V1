@@ -3533,20 +3533,26 @@ async def update_ocr_config(
     if current_user.role != "staff":
         raise HTTPException(status_code=403, detail="Only staff can update OCR configuration")
     
-    # Validate ocr_method
-    if config_update.ocr_method not in ["tesseract", "gpt4o_vision"]:
+    # Validate ocr_method if provided
+    if config_update.ocr_method and config_update.ocr_method not in ["tesseract", "gpt4o_vision"]:
         raise HTTPException(
             status_code=400, 
             detail="Invalid OCR method. Must be 'tesseract' or 'gpt4o_vision'"
         )
     
-    # Update or create configuration
+    # Build update data
     update_data = {
-        "ocr_method": config_update.ocr_method,
         "updated_at": datetime.now(timezone.utc),
         "updated_by": current_user.id
     }
     
+    if config_update.ocr_enabled is not None:
+        update_data["ocr_enabled"] = config_update.ocr_enabled
+    
+    if config_update.ocr_method:
+        update_data["ocr_method"] = config_update.ocr_method
+    
+    # Update or create configuration
     result = await db.ocr_config.update_one(
         {"id": "global_ocr_config"},
         {"$set": update_data},
@@ -3555,6 +3561,7 @@ async def update_ocr_config(
     
     return {
         "message": "OCR configuration updated successfully",
+        "ocr_enabled": config_update.ocr_enabled,
         "ocr_method": config_update.ocr_method
     }
 
