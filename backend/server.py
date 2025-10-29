@@ -1862,7 +1862,8 @@ async def process_document_with_ai(document_id: str, project: dict):
                 extraction_config,
                 1,
                 1,
-                total_pages
+                total_pages,
+                project["id"]
             )
         
         # Process and store extracted data in normalized format
