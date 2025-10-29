@@ -291,7 +291,6 @@ const AIConfiguration = ({ user }) => {
       {ocrSuccess && <div className="alert alert-success">{ocrSuccess}</div>}
 
       {/* Global OCR Configuration */}
-      {console.log('Rendering OCR section, ocrConfig:', ocrConfig)}
       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl shadow-sm border border-purple-200 p-6">
         <div className="flex items-start">
           <span className="text-3xl mr-4">🔍</span>
