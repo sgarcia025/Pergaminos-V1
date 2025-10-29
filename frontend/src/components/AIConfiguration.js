@@ -342,6 +342,7 @@ const AIConfiguration = ({ user }) => {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
       {ocrSuccess && <div className="alert alert-success">{ocrSuccess}</div>}
+      {retentionSuccess && <div className="alert alert-success">{retentionSuccess}</div>}
 
       {/* Global OCR Configuration */}
       <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl shadow-sm border border-purple-200 p-6">
