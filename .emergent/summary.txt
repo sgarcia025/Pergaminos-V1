@@ -1,9 +1,20 @@
 <analysis>
-The AI engineer successfully enhanced the Pergaminos digitalización application by resolving critical bugs and implementing significant features. Key bug fixes included rectifying an  issue that prevented API key decryption and adapting AI document processing to send PDF text for OpenAI integration. The QA findings display was improved by adjusting backend filters. Major feature additions encompassed expanding company/project management with active status validation, improved navigation, and comprehensive filtering. AI configuration was seamlessly migrated to a project-level scope. A robust PDF Manager module was developed, enabling semantic PDF renaming and file reordering, overcoming challenges with LLM plan generation, file paths, and implementing authenticated downloads. The most recent task involves reorganizing the application's sidebar.
+The AI engineer successfully iterated on the Pergaminos digitalización application, addressing a range of bug fixes and feature enhancements across both frontend and backend. Initially, critical PDF Manager download issues were resolved, followed by a sidebar reorganization. Key feature additions included developing a PDF Manager IA por Página for reordering PDF pages, adding date filters to the Dashboard, implementing multi-contact support for Companies, and introducing custom project IDs. Security and access control were enhanced by protecting the admin user, removing demo credentials, and restricting client access to read-only views. The AI's capability was significantly improved by adding actual page content extraction (including Tesseract OCR as a fallback for scanned PDFs) for better reasoning in the PDF Page Manager, and localizing QA findings to Spanish. The immediate last action was installing Tesseract OCR dependencies and implementing its fallback for text extraction, with a pending backend restart.
 </analysis>
 
 <product_requirements>
-The Pergaminos digitalización application provides client/project management, AI-driven PDF processing, and user management. Recent enhancements included admin deletion, expanded company details, an asesor role, parallel PDF processing, a pre-extraction QA workflow, and normalized data storage. A configurable AI module allows clients to manage OpenAI keys. New requirements involved: enhancing Empresas (Companies) to link to project cards, adding Empresa and Corporación filters to Proyectos (Projects), introducing an Activa/Inactiva dropdown for company status to control user access, and migrating AI configurations to a project-level scope. A major addition is the PDF Manager module, which processes natural-language instructions to rename and reorder PDFs, generates a plan, executes changes on storage/DB, and provides downloadable ZIPs and individual files, all with multi-tenancy.
+The Pergaminos digitalización application provides client/project management, AI-driven PDF processing, and user management. Enhancements included admin deletion, expanded company details, asesor role, parallel PDF processing, pre-extraction QA, and normalized data storage. A configurable AI module manages OpenAI keys. Key requests encompassed:
+- Enhancing Empresas to link to project cards and add multi-contact details.
+- Adding Empresa and Corporación filters to Proyectos and custom alphanumeric IDs.
+- Introducing Activa/Inactiva dropdown for company status.
+- Migrating AI configurations to a project-level scope.
+- Developing PDF Manager and PDF Manager IA por Página modules for semantic renaming/reordering PDFs using natural language, plan generation, execution on storage/DB, and downloadable files, all with multi-tenancy.
+- Creating a Manual de Uso module with AI chat and PDF download for staff/advisors.
+- Implementing dashboard filters by date range and clickable status cards.
+- Restricting client access to read-only views and removing specific modules.
+- Enabling admin to reset user passwords.
+- Translating AI outputs (QA findings, PDF reordering reasoning) to Spanish.
+- Ensuring PDF processing can handle large files (up to 3GB total) and image-based PDFs via OCR.
 </product_requirements>
 
 <key_technical_concepts>
@@ -13,69 +24,209 @@ The Pergaminos digitalización application provides client/project management, A
 - JWT (Authentication)
 - Tailwind CSS (UI/Styling)
 -  (LLM Integration)
-- OpenAI GPT-4o (AI Processing)
-- PyPDF2 (PDF chunking)
-- asyncio (Concurrency)
-- Fernet Encryption (API key security)
+- OpenAI GPT (AI Processing)
+- PyPDF2 (PDF text extraction)
 -  (FastAPI file serving)
 -  (Authenticated downloads)
+-  (PDF generation)
+- Tesseract OCR, ,  (Image-based PDF text extraction)
 </key_technical_concepts>
 
 <code_architecture>
-The application utilizes a React frontend and a FastAPI backend, with MongoDB for data persistence.
+The application uses a React frontend, a FastAPI backend, and MongoDB for data.
 
 
 
--   : The core FastAPI application.
-    -   **Summary**: Contains all API endpoints, Pydantic models, and business logic for the application's functionality.
-    -   **Changes**:  model updated for . CRUD endpoints for AI config adapted to project scope.  handling fixed.  and  modified to send PDF text for OpenAI. Login validation now checks . A  endpoint was added. New Pydantic models for PDF Manager were added, along with , , and authenticated  endpoints using . File path management and  order were corrected.
+-   : Core FastAPI app.
+    -   **Summary**: API endpoints, Pydantic models, business logic.
+    -   **Changes**:
+        -   Fixed  handling,  order.
+        -   Updated Pydantic models for  (added  model for multiple contacts with , , ),  (added ).
+        -   Added new Pydantic models for , , etc.
+        -   New CRUD () endpoints for Project management, including  validation.
+        -   New endpoints for PDF Page Manager (plan, execute, download),  (chat, download), and User Management (password reset).
+        -   Modified  to use  task type for PDF page reordering.
+        -   Enhanced  for text extraction (PyPDF2 and Tesseract OCR fallback) and Spanish reasoning.
+        -   Updated  prompt for Spanish findings.
+        -   Modified  to accept date filters.
+        -   Implemented file size (500MB) and batch size (1GB) limits for document uploads.
+        -   Protected admin@pergaminos user from deletion.
+        -   Imports updated (e.g., ).
+-   : Python dependencies.
+    -   **Summary**: Lists all backend Python packages.
+    -   **Changes**: Added , , .
 -   : Environment variables.
-    -   **Summary**: Stores critical configurations.
-    -   **Changes**:  was added to ensure consistent API key encryption.
+    -   **Summary**: Critical configurations.
+    -   **Changes**:  added.
 -   : Global styling.
-    -   **Summary**: Manages overall application visual styles.
+    -   **Summary**: Application visual styles.
     -   **Changes**: Added styles for .
--   : Manages client companies.
-    -   **Summary**: Handles company creation, editing, and listing.
-    -   **Changes**: Ver Proyectos button now links to company-specific projects. The  field was converted to a dropdown in the form, and filters for Corporación and Estado were added.
--   : Manages digitization projects.
-    -   **Summary**: Displays and manages projects.
-    -   **Changes**: Filters for Empresa and Corporación were added to the UI.
--   : Frontend for QA findings.
-    -   **Summary**: Displays documents that require manual QA review.
-    -   **Changes**: Implicitly affected by backend changes to display more documents needing review.
--   : Manages AI settings.
-    -   **Summary**: Allows users to configure AI models and API keys.
-    -   **Changes**: Refactored to first select a company, then a project, before configuring AI models/keys, making it project-level.
--   : Manages industry segments.
-    -   **Summary**: Displays and allows management of industry segments.
-    -   **Changes**: Added full editing functionality for segment cards with a dedicated modal and updated form handling.
--   : Displays project details.
-    -   **Summary**: The main view for a project, including document upload.
-    -   **Changes**: Integrated the new  component as a new tab.
--    (NEW): PDF Manager module frontend.
-    -   **Summary**: Enables users to provide natural language instructions for renaming/reordering PDFs, preview the AI-generated plan, execute it, and download modified files.
-    -   **Changes**: Implemented UI for instruction input, plan preview, execution, and secure, authenticated file downloads using .
+-   : Frontend environment variables.
+    -   **Summary**: Frontend configurations.
+    -   **Changes**: Fixed malformed line for  and .
+-   : Main React component and routing.
+    -   **Summary**: Handles main application layout and routing.
+    -   **Changes**: Added new route for .
+-   : User login.
+    -   **Summary**: Handles user authentication.
+    -   **Changes**: Removed demo credentials section and associated state.
+-   : Dashboard view.
+    -   **Summary**: Displays high-level statistics.
+    -   **Changes**: Added date range filter, made cards clickable to filter projects by status.
 -   : Application navigation.
-    -   **Summary**: Provides the main navigation links for the application.
-    -   **Changes**: Currently being modified to remove Procesador Docs and reorder existing links.
+    -   **Summary**: Main navigation links.
+    -   **Changes**: Removed Procesador Docs, reordered links (Dashboard, Empresas, Proyectos, Agentes QA, Hallazgos QA, Datos Extraídos, Segmentos, Configuración IA, Usuarios), added Manual de Uso after Users, and restricted Datos Extraídos for clients.
+-   : Manages companies.
+    -   **Summary**: Handles company creation, editing, listing.
+    -   **Changes**: Ver Proyectos links to company-specific projects.  to dropdown. Added Corporación and Estado filters. Implemented multi-contact management (name, email, phone) with UI for adding/removing contacts. Added frontend deduplication for segments. Changed phone placeholder to +502.
+-   : Manages projects.
+    -   **Summary**: Displays and manages projects.
+    -   **Changes**: Added Empresa and Corporación filters. Modified to receive and apply document status filters from Dashboard. Added  input field, validation, display on cards, and edit functionality.
+-   : Project details and document upload.
+    -   **Summary**: Main project view.
+    -   **Changes**: Integrated  and  as new tabs. Wrapped file upload and PDF Manager tabs in role-based conditions for client view restrictions. Added a read-only banner for clients. Updated upload message with new file size limits.
+-   : Frontend for QA Agents.
+    -   **Summary**: Displays and manages QA agents.
+    -   **Changes**: Added project search filter to the main list. Added a project search filter within the agent creation/edit modal's Proyectos a Aplicar section. Improved project display on agent cards.
+-   : PDF Manager module frontend.
+    -   **Summary**: Renames/reorders PDFs.
+    -   **Changes**: Modified download buttons to use  for authenticated requests.
+-    (NEW): PDF Page Manager module frontend.
+    -   **Summary**: Enables users to reorder PDF pages via natural language.
+    -   **Changes**: Implemented UI for instruction input, plan preview, execution, and secure downloads.
+-   : User management.
+    -   **Summary**: Displays and manages users.
+    -   **Changes**: Added Reset Password button and confirmation modal for admin users.
+-    (NEW): User Manual module.
+    -   **Summary**: Provides application usage instructions, PDF download, and AI chat.
+    -   **Changes**: Created with content, PDF download button, and AI chat interface.
 </code_architecture>
 
 <pending_tasks>
-- Reorganize the sidebar modules in  to match the user's specified order (Dashboard, Empresas, Proyectos, Agentes QA, Hallazgos QA, Datos Extraídos, Segmentos, Configuración IA, Usuarios).
-- Implement page reordering functionality *within* individual PDFs for the PDF Manager module.
+- Investigate and resolve root cause of duplicate segments if the frontend deduplication is insufficient (user was advised to manually remove duplicates in the Segmentos module, but an underlying issue might persist).
+- The current work involves OCR for image-based PDFs, a backend restart is pending to apply the changes.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer successfully resolved critical issues affecting the download functionality of the newly developed PDF Manager module. This involved fixing several problems: incorrect HTTP headers/response types causing JSON downloads,  order issues in FastAPI, and the lack of JWT token inclusion in direct download links.
+Immediately prior to this summary, the AI engineer was addressing a critical issue in the PDF Manager IA por Página module where the AI was unable to read document content for reordering, especially from image-based PDFs. Previously, text extraction was implemented using PyPDF2, but it yielded no text for scanned PDFs.
 
-The solution implemented involved:
-1.  **Backend ():** Switched file serving to  with correct  and  headers for both ZIP and individual PDF downloads. Fixed the order of  calls to occur before .
-2.  **Frontend ():** Modified the download buttons to trigger a JavaScript function that uses  to make authenticated download requests, ensuring the JWT token is sent.
+The user explicitly requested to incluye el uso de tesseract como opción si el pdf detecta que no trae texto incrustado.
 
-These changes made the download system fully functional and secure. The user's current request, which the AI engineer has just acknowledged, is to remove the Procesador Docs module and reorder the remaining navigation links in the application's sidebar.
+The AI engineer successfully:
+1.  **Installed System Dependencies:** Used apt 2.6.1 (arm64)
+Usage: apt [options] command
+
+apt is a commandline package manager and provides commands for
+searching and managing as well as querying information about packages.
+It provides the same functionality as the specialized APT tools,
+like apt-get and apt-cache, but enables options more suitable for
+interactive use by default.
+
+Most used commands:
+  list - list packages based on package names
+  search - search in package descriptions
+  show - show package details
+  install - install packages
+  reinstall - reinstall packages
+  remove - remove packages
+  autoremove - automatically remove all unused packages
+  update - update list of available packages
+  upgrade - upgrade the system by installing/upgrading packages
+  full-upgrade - upgrade the system by removing/installing/upgrading packages
+  edit-sources - edit the source information file
+  satisfy - satisfy dependency strings
+
+See apt(8) for more information about the available commands.
+Configuration options and syntax is detailed in apt.conf(5).
+Information about how to configure sources can be found in sources.list(5).
+Package and version choices can be expressed via apt_preferences(5).
+Security details are available in apt-secure(8).
+                                        This APT has Super Cow Powers. to install .
+2.  **Installed Python Libraries:** Used 
+Usage:   
+  pip <command> [options]
+
+Commands:
+  install                     Install packages.
+  lock                        Generate a lock file.
+  download                    Download packages.
+  uninstall                   Uninstall packages.
+  freeze                      Output installed packages in requirements format.
+  inspect                     Inspect the python environment.
+  list                        List installed packages.
+  show                        Show information about installed packages.
+  check                       Verify installed packages have compatible dependencies.
+  config                      Manage local and global configuration.
+  search                      Search PyPI for packages.
+  cache                       Inspect and manage pip's wheel cache.
+  index                       Inspect information available from package indexes.
+  wheel                       Build wheels from your requirements.
+  hash                        Compute hashes of package archives.
+  completion                  A helper command used for command completion.
+  debug                       Show information useful for debugging.
+  help                        Show help for commands.
+
+General Options:
+  -h, --help                  Show help.
+  --debug                     Let unhandled exceptions propagate outside the
+                              main subroutine, instead of logging them to
+                              stderr.
+  --isolated                  Run pip in an isolated mode, ignoring
+                              environment variables and user configuration.
+  --require-virtualenv        Allow pip to only run in a virtual environment;
+                              exit with an error otherwise.
+  --python <python>           Run pip with the specified Python interpreter.
+  -v, --verbose               Give more output. Option is additive, and can be
+                              used up to 3 times.
+  -V, --version               Show version and exit.
+  -q, --quiet                 Give less output. Option is additive, and can be
+                              used up to 3 times (corresponding to WARNING,
+                              ERROR, and CRITICAL logging levels).
+  --log <path>                Path to a verbose appending log.
+  --no-input                  Disable prompting for input.
+  --keyring-provider <keyring_provider>
+                              Enable the credential lookup via the keyring
+                              library if user input is allowed. Specify which
+                              mechanism to use [auto, disabled, import,
+                              subprocess]. (default: auto)
+  --proxy <proxy>             Specify a proxy in the form
+                              scheme://[user:passwd@]proxy.server:port.
+  --retries <retries>         Maximum attempts to establish a new HTTP
+                              connection. (default: 5)
+  --timeout <sec>             Set the socket timeout (default 15 seconds).
+  --exists-action <action>    Default action when a path already exists:
+                              (s)witch, (i)gnore, (w)ipe, (b)ackup, (a)bort.
+  --trusted-host <hostname>   Mark this host or host:port pair as trusted,
+                              even though it does not have valid or any HTTPS.
+  --cert <path>               Path to PEM-encoded CA certificate bundle. If
+                              provided, overrides the default. See 'SSL
+                              Certificate Verification' in pip documentation
+                              for more information.
+  --client-cert <path>        Path to SSL client certificate, a single file
+                              containing the private key and the certificate
+                              in PEM format.
+  --cache-dir <dir>           Store the cache data in <dir>.
+  --no-cache-dir              Disable the cache.
+  --disable-pip-version-check
+                              Don't periodically check PyPI to determine
+                              whether a new version of pip is available for
+                              download. Implied with --no-index.
+  --no-color                  Suppress colored output.
+  --use-feature <feature>     Enable new functionality, that may be backward
+                              incompatible.
+  --use-deprecated <feature>  Enable deprecated functionality, that will be
+                              removed in the future.
+  --resume-retries <resume_retries>
+                              Maximum attempts to resume or restart an
+                              incomplete download. (default: 5) to install  and .
+3.  **Modified Backend ():**
+    *   Updated the  function.
+    *   Implemented logic to first attempt text extraction using PyPDF2.
+    *   If PyPDF2 yields no text (indicating an image-based PDF), it now falls back to using  to convert PDF pages to images, and then  to perform OCR on those images to extract text. This ensures the AI receives actual content for its analysis and reordering plans, regardless of the PDF type.
+
+The OCR integration is complete, and the last action recorded was preparing to restart the backend to apply these changes.
 </current_work>
 
 <optional_next_step>
-Reorganize the sidebar by removing Procesador Docs and reordering the remaining links as requested by the user.
+Restart the backend service to apply the newly implemented Tesseract OCR integration.
 </optional_next_step>
