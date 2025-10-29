@@ -1955,7 +1955,8 @@ async def process_document_with_ai(document_id: str, project: dict):
                     "status": "completed" if combined_data else "failed",
                     "extracted_data": combined_data or {"error": "No data extracted"},
                     "processed_at": datetime.now(timezone.utc),
-                    "processing_progress": 100
+                    "processing_progress": 100,
+                    "processing_message": "✅ Procesamiento completado exitosamente" if combined_data else "❌ Error en el procesamiento"
                 }
             }
         )
