@@ -3298,6 +3298,54 @@ async def delete_ai_configuration(
     
     return {"message": "Configuration deactivated successfully", "config_id": config_id}
 
+# OCR Configuration endpoints (Global)
+@api_router.get("/ocr-config", response_model=OCRConfig)
+async def get_ocr_config(current_user: User = Depends(get_current_user)):
+    """Get global OCR configuration"""
+    config = await db.ocr_config.find_one({"id": "global_ocr_config"})
+    
+    if not config:
+        # Create default configuration if it doesn't exist
+        default_config = OCRConfig()
+        await db.ocr_config.insert_one(default_config.dict())
+        return default_config
+    
+    return OCRConfig(**config)
+
+@api_router.post("/ocr-config")
+async def update_ocr_config(
+    config_update: OCRConfigUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update global OCR configuration (staff only)"""
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can update OCR configuration")
+    
+    # Validate ocr_method
+    if config_update.ocr_method not in ["tesseract", "gpt4o_vision"]:
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid OCR method. Must be 'tesseract' or 'gpt4o_vision'"
+        )
+    
+    # Update or create configuration
+    update_data = {
+        "ocr_method": config_update.ocr_method,
+        "updated_at": datetime.now(timezone.utc),
+        "updated_by": current_user.id
+    }
+    
+    result = await db.ocr_config.update_one(
+        {"id": "global_ocr_config"},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return {
+        "message": "OCR configuration updated successfully",
+        "ocr_method": config_update.ocr_method
+    }
+
 @api_router.get("/ai-models/recommendations")
 async def get_model_recommendations():
     """Get recommended models for each AI task type"""
