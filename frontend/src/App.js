@@ -26,6 +26,7 @@ const API = `${BACKEND_URL}/api`;
 
 // Set up axios defaults
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+axios.defaults.timeout = 300000; // 5 minutes timeout for long-running processes (OCR)
 
 function App() {
   const [user, setUser] = useState(null);
