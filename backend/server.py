@@ -4960,6 +4960,47 @@ async def execute_pdf_page_reorder(
         logger.error(f"Error executing PDF page reorder: {str(e)}", exc_info=True)
         raise
 
+async def execute_pdf_page_extract(
+    extract_plan: PDFPageExtractPlan,
+    source_pdf_path: str,
+    job_id: str
+) -> str:
+    """
+    Execute page extraction from a PDF and save as new PDF.
+    Returns the path to the new PDF.
+    """
+    try:
+        from PyPDF2 import PdfReader, PdfWriter
+        
+        # Create output directory
+        output_dir = UPLOAD_DIR / "pdf_page_extract_output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Read source PDF
+        reader = PdfReader(source_pdf_path)
+        writer = PdfWriter()
+        
+        # Add specified pages
+        for page_num in extract_plan.pages_to_extract:
+            # PyPDF2 uses 0-indexed pages internally
+            writer.add_page(reader.pages[page_num - 1])
+        
+        # Generate output filename
+        output_filename = f"{Path(extract_plan.new_filename).stem}_{job_id[:8]}.pdf"
+        output_path = output_dir / output_filename
+        
+        # Write output PDF
+        with open(output_path, 'wb') as output_file:
+            writer.write(output_file)
+        
+        logger.info(f"PDF page extraction completed: {output_path}, {len(extract_plan.pages_to_extract)} pages extracted")
+        
+        return str(output_path)
+        
+    except Exception as e:
+        logger.error(f"Error executing PDF page extract: {str(e)}", exc_info=True)
+        raise
+
 
 @api_router.post("/projects/{project_id}/pdf-page-manager/plan")
 async def create_pdf_page_plan(
