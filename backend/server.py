@@ -4288,6 +4288,7 @@ async def generate_pdf_page_plan_with_ai(
 ) -> PDFPagePlan:
     """
     Generate a plan for reordering pages within a single PDF using AI.
+    Uses OCR (Tesseract) as fallback for scanned PDFs without embedded text.
     """
     try:
         # Get AI configuration - use data_extraction config since it's the same for document processing
@@ -4333,7 +4334,7 @@ async def generate_pdf_page_plan_with_ai(
                     logger.warning(f"Page {page_num + 1}: No text extracted")
                 
                 # Truncate text to first 800 characters for better context
-                text_preview = text[:800] if text else "[No se pudo extraer texto de esta página]"
+                text_preview = text[:800] if text else ""
                 
                 pages_content.append({
                     "page_number": page_num + 1,
@@ -4345,11 +4346,71 @@ async def generate_pdf_page_plan_with_ai(
                 logger.error(f"Error extracting text from page {page_num + 1}: {str(e)}", exc_info=True)
                 pages_content.append({
                     "page_number": page_num + 1,
-                    "text_preview": "[Error al extraer texto]",
+                    "text_preview": "",
                     "has_text": False
                 })
         
         logger.info(f"Total text extracted from PDF: {total_text_extracted} characters across {total_pages} pages")
+        
+        # If no text was extracted, try OCR on a sample of pages
+        if total_text_extracted < 50 and total_pages > 0:
+            logger.info(f"PDF appears to be scanned (no embedded text). Attempting OCR on sample pages...")
+            
+            try:
+                import pytesseract
+                from pdf2image import convert_from_path
+                from PIL import Image
+                
+                # Determine how many pages to OCR (sample strategy)
+                # For large PDFs, only OCR first 10, middle, and last pages
+                pages_to_ocr = []
+                if total_pages <= 10:
+                    pages_to_ocr = list(range(total_pages))
+                else:
+                    # First 5, middle 3, last 2
+                    pages_to_ocr = list(range(5))  # First 5
+                    middle = total_pages // 2
+                    pages_to_ocr.extend([middle - 1, middle, middle + 1])  # Middle 3
+                    pages_to_ocr.extend([total_pages - 2, total_pages - 1])  # Last 2
+                    pages_to_ocr = sorted(set(pages_to_ocr))  # Remove duplicates and sort
+                
+                logger.info(f"OCR will process {len(pages_to_ocr)} pages out of {total_pages}")
+                
+                # Convert specific pages to images
+                images = convert_from_path(
+                    pdf_path,
+                    first_page=1,
+                    last_page=min(max(pages_to_ocr) + 1, total_pages),
+                    dpi=200  # Lower DPI for speed
+                )
+                
+                ocr_success_count = 0
+                for idx in pages_to_ocr:
+                    try:
+                        if idx < len(images):
+                            # Perform OCR with Spanish language
+                            ocr_text = pytesseract.image_to_string(
+                                images[idx],
+                                lang='spa',
+                                config='--psm 6'  # Assume uniform block of text
+                            ).strip()
+                            
+                            if ocr_text and len(ocr_text) > 20:
+                                pages_content[idx]["text_preview"] = ocr_text[:800]
+                                pages_content[idx]["has_text"] = True
+                                total_text_extracted += len(ocr_text)
+                                ocr_success_count += 1
+                                logger.info(f"OCR Page {idx + 1}: Extracted {len(ocr_text)} characters")
+                            else:
+                                logger.warning(f"OCR Page {idx + 1}: Minimal text extracted")
+                    except Exception as ocr_error:
+                        logger.error(f"OCR failed for page {idx + 1}: {str(ocr_error)}")
+                
+                logger.info(f"OCR completed: {ocr_success_count} pages processed successfully. Total text now: {total_text_extracted} characters")
+                
+            except Exception as ocr_setup_error:
+                logger.error(f"OCR setup failed: {str(ocr_setup_error)}", exc_info=True)
+                # Continue without OCR
         
         # Build LLM prompt
         system_prompt = """Eres un experto en gestión de páginas PDF con IA. Tu tarea es analizar el contenido de las páginas de un PDF y generar un plan para reordenarlas según instrucciones en lenguaje natural.
