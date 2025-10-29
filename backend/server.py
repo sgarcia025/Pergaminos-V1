@@ -4300,22 +4300,56 @@ async def generate_pdf_page_plan_with_ai(
         
         # Extract text from each page
         pages_content = []
+        total_text_extracted = 0
+        
         for page_num in range(total_pages):
             try:
                 page = reader.pages[page_num]
-                text = page.extract_text()
-                # Truncate text to first 500 characters to keep prompt manageable
-                text_preview = text[:500] if text else "[No text extracted]"
+                
+                # Try multiple extraction methods
+                text = ""
+                
+                # Method 1: Standard extraction
+                try:
+                    text = page.extract_text() or ""
+                except:
+                    pass
+                
+                # Method 2: Try with layout mode if available
+                if not text or len(text.strip()) < 10:
+                    try:
+                        text = page.extract_text(extraction_mode="layout") or ""
+                    except:
+                        pass
+                
+                # Clean up text
+                text = text.strip()
+                
+                # Log for debugging
+                if text and len(text) > 0:
+                    total_text_extracted += len(text)
+                    logger.info(f"Page {page_num + 1}: Extracted {len(text)} characters")
+                else:
+                    logger.warning(f"Page {page_num + 1}: No text extracted")
+                
+                # Truncate text to first 800 characters for better context
+                text_preview = text[:800] if text else "[No se pudo extraer texto de esta página]"
+                
                 pages_content.append({
                     "page_number": page_num + 1,
-                    "text_preview": text_preview
+                    "text_preview": text_preview,
+                    "has_text": len(text) > 0
                 })
+                
             except Exception as e:
-                logger.warning(f"Error extracting text from page {page_num + 1}: {str(e)}")
+                logger.error(f"Error extracting text from page {page_num + 1}: {str(e)}", exc_info=True)
                 pages_content.append({
                     "page_number": page_num + 1,
-                    "text_preview": "[Error extracting text]"
+                    "text_preview": "[Error al extraer texto]",
+                    "has_text": False
                 })
+        
+        logger.info(f"Total text extracted from PDF: {total_text_extracted} characters across {total_pages} pages")
         
         # Build LLM prompt
         system_prompt = """Eres un experto en gestión de páginas PDF con IA. Tu tarea es analizar el contenido de las páginas de un PDF y generar un plan para reordenarlas según instrucciones en lenguaje natural.
