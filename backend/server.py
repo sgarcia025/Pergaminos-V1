@@ -1791,7 +1791,8 @@ async def process_document_with_ai(document_id: str, project: dict):
                     "total_pages": total_pages,
                     "chunk_count": chunk_count,
                     "chunks_processed": 0,
-                    "processing_progress": 0,
+                    "processing_progress": 5,
+                    "processing_message": f"📄 Iniciando procesamiento de {total_pages} páginas...",
                     "chunk_results": []
                 }
             }
