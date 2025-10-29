@@ -4537,6 +4537,143 @@ async def execute_pdf_plan(
 
 # ========== PDF PAGE MANAGER ENDPOINTS ==========
 
+def parse_page_range(range_str: str, total_pages: int) -> List[int]:
+    """
+    Parse manual page range string into list of page numbers.
+    Examples: "1-20" -> [1,2,3...20], "1,5,10" -> [1,5,10], "1-10,15,20-25" -> [1,2...10,15,20,21...25]
+    """
+    pages = []
+    parts = range_str.replace(" ", "").split(",")
+    
+    for part in parts:
+        if "-" in part:
+            # Range like "1-20"
+            start, end = part.split("-")
+            try:
+                start_page = int(start)
+                end_page = int(end)
+                if start_page < 1 or end_page > total_pages:
+                    raise ValueError(f"Page range {start}-{end} is out of bounds (1-{total_pages})")
+                pages.extend(range(start_page, end_page + 1))
+            except ValueError as e:
+                raise ValueError(f"Invalid range format: {part}. {str(e)}")
+        else:
+            # Single page like "5"
+            try:
+                page = int(part)
+                if page < 1 or page > total_pages:
+                    raise ValueError(f"Page {page} is out of bounds (1-{total_pages})")
+                pages.append(page)
+            except ValueError as e:
+                raise ValueError(f"Invalid page number: {part}. {str(e)}")
+    
+    # Remove duplicates and sort
+    return sorted(list(set(pages)))
+
+async def generate_pdf_extract_plan_with_ai(
+    project: dict,
+    pdf_filename: str,
+    pdf_path: str,
+    instruction: str,
+    manual_range: Optional[str] = None
+) -> PDFPageExtractPlan:
+    """
+    Generate a plan for extracting specific pages from a PDF.
+    Can use AI to interpret instruction or manual range.
+    """
+    try:
+        from PyPDF2 import PdfReader
+        reader = PdfReader(pdf_path)
+        total_pages = len(reader.pages)
+        
+        # If manual range provided, use it directly
+        if manual_range:
+            try:
+                pages_to_extract = parse_page_range(manual_range, total_pages)
+                return PDFPageExtractPlan(
+                    pdf_filename=pdf_filename,
+                    total_pages=total_pages,
+                    pages_to_extract=pages_to_extract,
+                    new_filename=f"{Path(pdf_filename).stem}_extracted.pdf",
+                    confidence=1.0,
+                    reasoning=f"Extracción manual de páginas: {manual_range}"
+                )
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+        
+        # Use AI to interpret natural language instruction
+        ai_config = await get_ai_config_for_task(project["id"], "data_extraction")
+        
+        # Create AI chat
+        chat = await create_ai_chat_with_config(
+            ai_config,
+            f"pdf_extract_{pdf_filename}",
+            "Eres un experto en procesamiento de PDFs. Interpreta instrucciones para extraer páginas específicas."
+        )
+        
+        prompt = f"""Analiza esta instrucción para extraer páginas de un PDF:
+
+PDF: {pdf_filename}
+Total de páginas: {total_pages}
+Instrucción: {instruction}
+
+Determina qué páginas deben extraerse basándote en la instrucción.
+
+REGLAS:
+1. Devuelve SOLO JSON válido
+2. Los números de página empiezan en 1
+3. Proporciona razonamiento claro EN ESPAÑOL
+
+FORMATO OBLIGATORIO:
+{{
+  "pages_to_extract": [1, 2, 3, ...],
+  "new_filename": "nombre_descriptivo.pdf",
+  "confidence": 0.95,
+  "reasoning": "Explicación de por qué estas páginas"
+}}
+
+Ejemplos:
+- "Extraer primeras 20 páginas" -> pages_to_extract: [1,2,3...20]
+- "Solo páginas impares" -> pages_to_extract: [1,3,5,7...]
+- "Páginas 10 a 50" -> pages_to_extract: [10,11,12...50]
+"""
+        
+        from emergentintegrations.llm.chat import UserMessage
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        # Parse JSON
+        import json, re
+        json_match = re.search(r'\{.*\}', response, re.DOTALL)
+        if not json_match:
+            raise ValueError("AI did not return valid JSON")
+        
+        result = json.loads(json_match.group())
+        
+        # Validate pages
+        pages_to_extract = result.get("pages_to_extract", [])
+        if not pages_to_extract:
+            raise ValueError("No pages specified for extraction")
+        
+        # Filter invalid pages
+        pages_to_extract = [p for p in pages_to_extract if 1 <= p <= total_pages]
+        
+        if not pages_to_extract:
+            raise ValueError("All specified pages are out of range")
+        
+        return PDFPageExtractPlan(
+            pdf_filename=pdf_filename,
+            total_pages=total_pages,
+            pages_to_extract=sorted(pages_to_extract),
+            new_filename=result.get("new_filename", f"{Path(pdf_filename).stem}_extracted.pdf"),
+            confidence=result.get("confidence", 0.8),
+            reasoning=result.get("reasoning", "Páginas extraídas según instrucción")
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating extract plan: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error al generar plan de extracción: {str(e)}")
+
 async def generate_pdf_page_plan_with_ai(
     project: dict,
     pdf_filename: str,
