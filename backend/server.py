@@ -5696,6 +5696,11 @@ async def get_pdf_history(
         # Get history entries sorted by most recent first
         history_entries = await db.pdf_history.find(query_filter).sort("performed_at", -1).to_list(None)
         
+        # Remove MongoDB's _id field from all entries
+        for entry in history_entries:
+            if '_id' in entry:
+                del entry['_id']
+        
         # Apply retention policy filter
         retention_config = await db.retention_policy.find_one({"id": "global_retention_policy"})
         if retention_config:
