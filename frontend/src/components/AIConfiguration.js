@@ -137,8 +137,10 @@ const AIConfiguration = ({ user }) => {
 
   // OCR Configuration functions
   const fetchOcrConfig = async () => {
+    console.log('Fetching OCR config from:', `${API}/ocr-config`);
     try {
       const response = await axios.get(`${API}/ocr-config`);
+      console.log('OCR config received:', response.data);
       setOcrConfig(response.data);
     } catch (error) {
       console.error('Error fetching OCR config:', error);
