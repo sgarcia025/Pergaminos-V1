@@ -28,6 +28,11 @@ const AIConfiguration = ({ user }) => {
   const [ocrConfig, setOcrConfig] = useState({ ocr_method: 'tesseract' });
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrSuccess, setOcrSuccess] = useState('');
+  
+  // Retention Policy Configuration (Global)
+  const [retentionPolicy, setRetentionPolicy] = useState({ retention_months: 6 });
+  const [retentionLoading, setRetentionLoading] = useState(false);
+  const [retentionSuccess, setRetentionSuccess] = useState('');
 
   const configTypes = {
     'data_extraction': {
