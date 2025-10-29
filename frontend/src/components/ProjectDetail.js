@@ -32,6 +32,24 @@ const ProjectDetail = ({ user }) => {
     fetchDocuments();
   }, [projectId]);
 
+  // Auto-refresh documents when there are processing documents
+  useEffect(() => {
+    const processingDocs = documents.filter(doc => 
+      doc.status === 'processing' || 
+      doc.status === 'qa_pending' || 
+      doc.status === 'uploaded'
+    );
+
+    if (processingDocs.length > 0) {
+      // Poll every 3 seconds when documents are processing
+      const interval = setInterval(() => {
+        fetchDocuments();
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [documents, projectId]);
+
   const fetchProject = async () => {
     try {
       const response = await axios.get(`${API}/projects/${projectId}`);
