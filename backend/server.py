@@ -4445,6 +4445,14 @@ async def apply_renames_and_generate_zip(
         output_dir = UPLOAD_DIR / "pdf_manager_output"
         output_dir.mkdir(parents=True, exist_ok=True)
         
+        # Get project and company info for history
+        project = await db.projects.find_one({"id": job.project_id})
+        company = await db.companies.find_one({"id": project["company_id"]}) if project else None
+        
+        # Get user info
+        user = await db.users.find_one({"id": job.created_by})
+        user_name = user.get("name", "Unknown") if user else "Unknown"
+        
         # Map document IDs to documents
         doc_map = {doc["id"]: doc for doc in documents}
         
@@ -4498,6 +4506,28 @@ async def apply_renames_and_generate_zip(
                     }
                 }
             )
+            
+            # Save to PDF history for each renamed file
+            if company and project and new_name != doc["original_filename"]:
+                import urllib.parse
+                encoded_filename = urllib.parse.quote(new_name)
+                download_url = f"/api/pdf-manager/download/file/{job.id}/{encoded_filename}"
+                
+                await save_pdf_history(
+                    company_id=company["id"],
+                    company_name=company.get("name", "Unknown"),
+                    project_id=job.project_id,
+                    project_name=project.get("name", "Unknown"),
+                    operation_type="rename",
+                    original_pdf_name=doc["original_filename"],
+                    result_pdf_name=new_name,
+                    result_pdf_path=str(temp_file_path),
+                    instruction=job.instruction,
+                    job_id=job.id,
+                    performed_by=job.created_by,
+                    performed_by_name=user_name,
+                    download_url=download_url
+                )
         
         # Step 2: Create ordered ZIP according to plan.reorder_ids
         zip_filename = f"reordered_pdfs_{job.project_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
