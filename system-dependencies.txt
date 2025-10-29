@@ -1,0 +1,13 @@
+# System Dependencies Required for OCR Functionality
+# These packages must be installed in the deployment container
+
+# For pdf2image (converts PDF to images)
+poppler-utils
+
+# For Tesseract OCR (text extraction from images)
+tesseract-ocr
+tesseract-ocr-spa
+tesseract-ocr-eng
+
+# Installation command for Debian/Ubuntu:
+# apt-get update && apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-spa tesseract-ocr-eng
