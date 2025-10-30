@@ -520,6 +520,124 @@ const QAFindings = ({ user }) => {
           </div>
         </div>
       )}
+
+      {/* Bulk Action Confirmation Modal */}
+      {showBulkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {bulkAction === 'approve' ? '✓ Aprobar Documentos' : '✗ Rechazar Documentos'}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Vas a {bulkAction === 'approve' ? 'aprobar' : 'rechazar'} {selectedDocuments.length} documento(s)
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  disabled={processing}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Selected Documents Preview */}
+              <div className="mb-4 bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Documentos seleccionados:</h4>
+                <ul className="space-y-1">
+                  {selectedDocuments.map(docId => {
+                    const doc = findings.documents_with_findings.find(d => d.document_id === docId);
+                    return (
+                      <li key={docId} className="text-sm text-gray-600 flex items-center">
+                        <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {doc?.filename || 'Documento'}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              {/* Comments Input */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Comentarios * (obligatorio para procesamiento masivo)
+                </label>
+                <textarea
+                  value={bulkComments}
+                  onChange={(e) => setBulkComments(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  rows="4"
+                  placeholder={`Escribe el motivo por el cual ${bulkAction === 'approve' ? 'apruebas' : 'rechazas'} estos documentos...`}
+                  disabled={processing}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Este comentario se aplicará a todos los documentos seleccionados
+                </p>
+              </div>
+
+              {/* Warning Message */}
+              <div className={`mb-4 p-4 rounded-lg ${bulkAction === 'approve' ? 'bg-green-50' : 'bg-red-50'}`}>
+                <div className="flex items-start">
+                  <svg className={`w-5 h-5 mr-2 mt-0.5 ${bulkAction === 'approve' ? 'text-green-600' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${bulkAction === 'approve' ? 'text-green-800' : 'text-red-800'}`}>
+                      {bulkAction === 'approve' 
+                        ? '¿Confirmas que deseas aprobar todos estos documentos?'
+                        : '¿Confirmas que deseas rechazar todos estos documentos?'}
+                    </p>
+                    <p className={`text-xs mt-1 ${bulkAction === 'approve' ? 'text-green-700' : 'text-red-700'}`}>
+                      Esta acción {bulkAction === 'approve' ? 'continuará el procesamiento de estos documentos' : 'marcará estos documentos como fallidos'}.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  disabled={processing}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleBulkApproval}
+                  disabled={processing || !bulkComments.trim()}
+                  className={`px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                    bulkAction === 'approve' 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {processing ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 inline mr-2" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Procesando...
+                    </>
+                  ) : (
+                    <>
+                      {bulkAction === 'approve' ? '✓ Aprobar Todo' : '✗ Rechazar Todo'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
