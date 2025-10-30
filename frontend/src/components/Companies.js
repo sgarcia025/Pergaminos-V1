@@ -159,6 +159,8 @@ const Companies = ({ user }) => {
       setShowModal(false);
       setIsEditing(false);
       setEditingCompany(null);
+      setShowNewCorporationInput(false);
+      setNewCorporationName('');
       setFormData({
         name: '',
         razon_social: '',
