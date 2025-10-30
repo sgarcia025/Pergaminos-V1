@@ -311,7 +311,15 @@ const QAFindings = ({ user }) => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {findings.documents_with_findings.map((doc) => (
-                  <tr key={doc.document_id}>
+                  <tr key={doc.document_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedDocuments.includes(doc.document_id)}
+                        onChange={() => handleDocumentToggle(doc.document_id)}
+                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {doc.filename}
