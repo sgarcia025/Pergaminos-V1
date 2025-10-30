@@ -16,9 +16,6 @@ const ProjectDetail = ({ user }) => {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showReorderModal, setShowReorderModal] = useState(false);
-  const [reorderInstructions, setReorderInstructions] = useState('');
-  const [reorderStatus, setReorderStatus] = useState(null);
   const [renamingDoc, setRenamingDoc] = useState(null);
   const [newDocName, setNewDocName] = useState('');
   const [batchUploading, setBatchUploading] = useState(false);
