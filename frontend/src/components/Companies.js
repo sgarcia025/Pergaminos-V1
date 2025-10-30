@@ -121,6 +121,29 @@ const Companies = ({ user }) => {
     }
   };
 
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setIsEditing(false);
+    setEditingCompany(null);
+    setShowNewCorporationInput(false);
+    setNewCorporationName('');
+    setFormData({
+      name: '',
+      razon_social: '',
+      nit: '',
+      description: '',
+      contacto: '',
+      contact_email: '',
+      telefono: '',
+      direccion: '',
+      asesor_comercial_id: '',
+      segmento: '',
+      corporacion: '',
+      is_active: true,
+      contactos: []
+    });
+  };
+
   const applyFilters = () => {
     let filtered = [...companies];
 
