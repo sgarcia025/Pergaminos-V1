@@ -728,14 +728,65 @@ const Companies = ({ user }) => {
                   <label htmlFor="corporacion" className="form-label">
                     Corporación
                   </label>
-                  <input
-                    id="corporacion"
-                    name="corporacion"
-                    type="text"
-                    value={formData.corporacion}
-                    onChange={handleChange}
-                    className="form-input"
-                  />
+                  {!showNewCorporationInput ? (
+                    <div className="flex gap-2">
+                      <select
+                        id="corporacion"
+                        name="corporacion"
+                        value={formData.corporacion}
+                        onChange={(e) => {
+                          if (e.target.value === '__new__') {
+                            setShowNewCorporationInput(true);
+                            setFormData({ ...formData, corporacion: '' });
+                          } else {
+                            handleChange(e);
+                          }
+                        }}
+                        className="form-input flex-1"
+                      >
+                        <option value="">-- Selecciona una corporación --</option>
+                        {corporations.map((corp) => (
+                          <option key={corp.id} value={corp.name}>
+                            {corp.name}
+                          </option>
+                        ))}
+                        <option value="__new__">➕ Agregar nueva corporación</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newCorporationName}
+                          onChange={(e) => setNewCorporationName(e.target.value)}
+                          placeholder="Nombre de la nueva corporación"
+                          className="form-input flex-1"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateCorporation}
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                          Crear
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowNewCorporationInput(false);
+                            setNewCorporationName('');
+                          }}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        La nueva corporación se agregará a la lista para uso futuro
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
