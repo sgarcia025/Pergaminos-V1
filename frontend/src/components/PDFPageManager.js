@@ -42,8 +42,124 @@ const PDFPageManager = ({ projectId, user }) => {
     }
   };
 
+  const handlePdfToggle = (pdfFilename) => {
+    setSelectedPdfs(prev => {
+      if (prev.includes(pdfFilename)) {
+        return prev.filter(p => p !== pdfFilename);
+      } else {
+        return [...prev, pdfFilename];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPdfs.length === documents.length) {
+      setSelectedPdfs([]);
+    } else {
+      setSelectedPdfs(documents.map(doc => doc.original_filename));
+    }
+  };
+
+  const processSinglePdf = async (pdfFilename, index, total) => {
+    try {
+      // Update progress
+      setBatchProgress(prev => {
+        const updated = [...prev];
+        updated[index] = { status: 'generating_plan', filename: pdfFilename };
+        return updated;
+      });
+
+      // Step 1: Generate plan
+      const planResponse = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/plan`, {
+        project_id: projectId,
+        pdf_filename: pdfFilename,
+        instruction: instruction || (mode === 'extract' ? `Extraer páginas: ${manualRange}` : 'Reordenar'),
+        mode: mode,
+        manual_range: mode === 'extract' && manualRange.trim() ? manualRange.trim() : null
+      });
+
+      const jobId = planResponse.data.job_id;
+
+      // Update progress
+      setBatchProgress(prev => {
+        const updated = [...prev];
+        updated[index] = { status: 'executing', filename: pdfFilename, jobId };
+        return updated;
+      });
+
+      // Step 2: Execute plan
+      const executeResponse = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute/${jobId}`);
+
+      // Update progress
+      setBatchProgress(prev => {
+        const updated = [...prev];
+        updated[index] = { 
+          status: 'completed', 
+          filename: pdfFilename, 
+          jobId,
+          result: executeResponse.data
+        };
+        return updated;
+      });
+
+      return { success: true, filename: pdfFilename };
+    } catch (error) {
+      // Update progress with error
+      setBatchProgress(prev => {
+        const updated = [...prev];
+        updated[index] = { 
+          status: 'failed', 
+          filename: pdfFilename,
+          error: error.response?.data?.detail || error.message
+        };
+        return updated;
+      });
+
+      return { success: false, filename: pdfFilename, error: error.message };
+    }
+  };
+
+  const handleBatchProcess = async () => {
+    if (selectedPdfs.length === 0) {
+      setError('Por favor selecciona al menos un PDF');
+      return;
+    }
+    if (!instruction.trim() && !manualRange.trim()) {
+      setError('Por favor ingresa una instrucción o un rango de páginas');
+      return;
+    }
+
+    setBatchProcessing(true);
+    setError('');
+    setSuccess('');
+    setBatchProgress(selectedPdfs.map(pdf => ({ status: 'pending', filename: pdf })));
+    setCurrentBatchIndex(0);
+
+    const results = [];
+
+    // Process PDFs sequentially
+    for (let i = 0; i < selectedPdfs.length; i++) {
+      setCurrentBatchIndex(i + 1);
+      const result = await processSinglePdf(selectedPdfs[i], i, selectedPdfs.length);
+      results.push(result);
+    }
+
+    // Summary
+    const successCount = results.filter(r => r.success).length;
+    const failedCount = results.filter(r => !r.success).length;
+
+    if (failedCount === 0) {
+      setSuccess(`✅ Procesamiento completo: ${successCount} PDF(s) procesados exitosamente`);
+    } else {
+      setError(`⚠️ Procesamiento completo: ${successCount} exitosos, ${failedCount} fallidos`);
+    }
+
+    setBatchProcessing(false);
+  };
+
   const handleGeneratePlan = async () => {
-    if (!selectedPdf) {
+    // This is now for single PDF preview only
+    if (selectedPdfs.length === 0) {
       setError('Por favor selecciona un PDF');
       return;
     }
@@ -60,7 +176,7 @@ const PDFPageManager = ({ projectId, user }) => {
     try {
       const response = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/plan`, {
         project_id: projectId,
-        pdf_filename: selectedPdf,
+        pdf_filename: selectedPdfs[0], // Use first selected PDF for preview
         instruction: instruction || (mode === 'extract' ? `Extraer páginas: ${manualRange}` : 'Reordenar'),
         mode: mode,
         manual_range: mode === 'extract' && manualRange.trim() ? manualRange.trim() : null
@@ -71,9 +187,9 @@ const PDFPageManager = ({ projectId, user }) => {
       
       if (mode === 'extract') {
         const pagesCount = response.data.plan.pages_to_extract?.length || 0;
-        setSuccess(`Plan de extracción generado: ${pagesCount} páginas serán extraídas`);
+        setSuccess(`Plan de extracción generado para "${selectedPdfs[0]}": ${pagesCount} páginas serán extraídas`);
       } else {
-        setSuccess(`Plan de reordenamiento generado: ${response.data.plan.total_pages} páginas`);
+        setSuccess(`Plan de reordenamiento generado para "${selectedPdfs[0]}": ${response.data.plan.total_pages} páginas`);
       }
     } catch (error) {
       setError(error.response?.data?.detail || 'Error al generar el plan');
