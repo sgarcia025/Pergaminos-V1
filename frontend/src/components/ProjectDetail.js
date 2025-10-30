@@ -626,18 +626,6 @@ const ProjectDetail = ({ user }) => {
             <h2 className="text-xl font-semibold text-gray-900">
               Documentos ({documents.length})
             </h2>
-            {completedDocuments.length > 1 && (
-              <button
-                onClick={() => setShowReorderModal(true)}
-                className="btn-secondary flex items-center"
-                disabled={reorderStatus?.status === 'processing'}
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-                Reordenar con IA
-              </button>
-            )}
           </div>
         </div>
         
