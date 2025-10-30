@@ -206,60 +206,6 @@ const ProjectDetail = ({ user }) => {
     }
   };
 
-  const handleReorderDocuments = async () => {
-    if (!reorderInstructions.trim()) {
-      setError('Las instrucciones de reordenación son requeridas');
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('semantic_instructions', reorderInstructions);
-      
-      const response = await axios.post(`${API}/projects/${projectId}/documents/reorder`, formData);
-      
-      setReorderStatus({
-        taskId: response.data.task_id,
-        status: 'processing',
-        progress: 0
-      });
-      
-      setShowReorderModal(false);
-      setSuccess('Proceso de reordenación iniciado con IA');
-      
-      // Poll for status updates
-      pollReorderStatus(response.data.task_id);
-    } catch (error) {
-      setError(error.response?.data?.detail || 'Error al iniciar la reordenación');
-    }
-  };
-
-  const pollReorderStatus = async (taskId) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await axios.get(`${API}/projects/${projectId}/reorder-status/${taskId}`);
-        const status = response.data;
-        
-        setReorderStatus(status);
-        
-        if (status.status === 'completed') {
-          clearInterval(pollInterval);
-          setSuccess('Documentos reordenados exitosamente por IA');
-          fetchDocuments();
-        } else if (status.status === 'failed') {
-          clearInterval(pollInterval);
-          setError(`Error en reordenación: ${status.error}`);
-        }
-      } catch (error) {
-        clearInterval(pollInterval);
-        setError('Error al obtener estado de reordenación');
-      }
-    }, 2000);
-
-    // Clear interval after 5 minutes to prevent infinite polling
-    setTimeout(() => clearInterval(pollInterval), 300000);
-  };
-
   const handleDragOver = (e) => {
     e.preventDefault();
     setDragOver(true);
