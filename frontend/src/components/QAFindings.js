@@ -78,6 +78,69 @@ const QAFindings = ({ user }) => {
     }
   };
 
+  const handleDocumentToggle = (documentId) => {
+    setSelectedDocuments(prev => {
+      if (prev.includes(documentId)) {
+        return prev.filter(id => id !== documentId);
+      } else {
+        return [...prev, documentId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedDocuments.length === findings.length) {
+      setSelectedDocuments([]);
+    } else {
+      setSelectedDocuments(findings.map(doc => doc.id));
+    }
+  };
+
+  const handleBulkAction = (action) => {
+    if (selectedDocuments.length === 0) {
+      setError('Por favor selecciona al menos un documento');
+      return;
+    }
+    setBulkAction(action);
+    setBulkComments('');
+    setShowBulkModal(true);
+  };
+
+  const handleBulkApproval = async () => {
+    if (!bulkComments.trim()) {
+      setError('Por favor agrega un comentario para el procesamiento masivo');
+      return;
+    }
+
+    setProcessing(true);
+    setError('');
+    
+    try {
+      const promises = selectedDocuments.map(docId => {
+        const document = findings.find(f => f.id === docId);
+        return axios.post(
+          `${API}/projects/${document.project_id}/documents/${docId}/qa-review`,
+          {
+            action: bulkAction === 'approve' ? 'approved' : 'rejected',
+            comments: bulkComments
+          }
+        );
+      });
+
+      await Promise.all(promises);
+      
+      setSuccess(`${selectedDocuments.length} documento(s) ${bulkAction === 'approve' ? 'aprobado(s)' : 'rechazado(s)'} exitosamente`);
+      setShowBulkModal(false);
+      setBulkComments('');
+      setSelectedDocuments([]);
+      fetchFindings();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al procesar documentos');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       'failed': { color: 'bg-red-100 text-red-800', text: 'QA Falló' },
