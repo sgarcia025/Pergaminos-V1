@@ -876,6 +876,199 @@ const ProjectDetail = ({ user }) => {
           </div>
         </div>
       )}
+
+      {/* QA Review Modal */}
+      {showQAModal && selectedDocument && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">
+                    Revisión de Calidad (QA)
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedDocument.original_filename}
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowQAModal(false);
+                    setSelectedDocument(null);
+                    setQaComments('');
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* QA Score */}
+              {selectedDocument.qa_results && (
+                <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700">Puntuación General</h4>
+                      <p className={`text-3xl font-bold ${
+                        selectedDocument.qa_results.overall_score >= 80 ? 'text-green-600' :
+                        selectedDocument.qa_results.overall_score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                      }`}>
+                        {selectedDocument.qa_results.overall_score.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                        selectedDocument.qa_results.overall_score >= 80 ? 'bg-green-100 text-green-800' :
+                        selectedDocument.qa_results.overall_score >= 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedDocument.qa_results.overall_score >= 80 ? 'Aprobado' :
+                         selectedDocument.qa_results.overall_score >= 60 ? 'Revisión Requerida' : 'Fallido'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QA Findings */}
+              {selectedDocument.qa_results && selectedDocument.qa_results.agent_results && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">Hallazgos</h4>
+                  <div className="space-y-3">
+                    {selectedDocument.qa_results.agent_results.map((agentResult, idx) => (
+                      <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <h5 className="font-medium text-gray-900">{agentResult.agent_name}</h5>
+                          <span className="text-sm text-gray-600">
+                            Score: {agentResult.score?.toFixed(1) || 'N/A'}%
+                          </span>
+                        </div>
+                        {agentResult.findings && agentResult.findings.length > 0 && (
+                          <ul className="space-y-2 mt-3">
+                            {agentResult.findings.map((finding, findingIdx) => (
+                              <li key={findingIdx} className="flex items-start">
+                                <span className={`inline-block w-2 h-2 rounded-full mt-1.5 mr-2 ${
+                                  finding.severity === 'critical' ? 'bg-red-500' :
+                                  finding.severity === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                                }`}></span>
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-700">{finding.description}</p>
+                                  {finding.suggestion && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      <strong>Sugerencia:</strong> {finding.suggestion}
+                                    </p>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Previous Review Info */}
+              {selectedDocument.qa_review_action && (
+                <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Revisión Anterior</h4>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">
+                        <strong>Acción:</strong> 
+                        <span className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${
+                          selectedDocument.qa_review_action === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {selectedDocument.qa_review_action === 'approved' ? 'Aprobado' : 'Rechazado'}
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        <strong>Por:</strong> {selectedDocument.qa_reviewed_by_name || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="text-right text-xs text-gray-500">
+                      {selectedDocument.qa_approved_at && new Date(selectedDocument.qa_approved_at).toLocaleString('es-ES')}
+                    </div>
+                  </div>
+                  {selectedDocument.qa_review_comments && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <p className="text-sm text-gray-600">
+                        <strong>Comentarios:</strong>
+                      </p>
+                      <p className="text-sm text-gray-700 mt-1">{selectedDocument.qa_review_comments}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Comments Section */}
+              {user.role === 'staff' && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Comentarios de Revisión
+                  </label>
+                  <textarea
+                    value={qaComments}
+                    onChange={(e) => setQaComments(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    rows="4"
+                    placeholder="Agrega comentarios sobre la revisión (opcional)"
+                  />
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {user.role === 'staff' && (
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowQAModal(false);
+                      setSelectedDocument(null);
+                      setQaComments('');
+                    }}
+                    disabled={submittingReview}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    onClick={() => handleQAReview('rejected')}
+                    disabled={submittingReview}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {submittingReview ? 'Procesando...' : 'Rechazar'}
+                  </button>
+                  <button
+                    onClick={() => handleQAReview('approved')}
+                    disabled={submittingReview}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {submittingReview ? 'Procesando...' : 'Aprobar'}
+                  </button>
+                </div>
+              )}
+
+              {/* Info for non-staff users */}
+              {user.role !== 'staff' && (
+                <div className="flex justify-end pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowQAModal(false);
+                      setSelectedDocument(null);
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
         </>
       )}
     </div>
