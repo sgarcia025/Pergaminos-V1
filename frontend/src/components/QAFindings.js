@@ -17,6 +17,13 @@ const QAFindings = ({ user }) => {
     action: 'approve',
     comments: ''
   });
+  
+  // Bulk selection states
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkAction, setBulkAction] = useState(''); // 'approve' or 'reject'
+  const [bulkComments, setBulkComments] = useState('');
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     fetchProjects();
