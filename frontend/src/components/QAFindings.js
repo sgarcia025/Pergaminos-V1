@@ -247,15 +247,48 @@ const QAFindings = ({ user }) => {
       {findings.documents_with_findings && findings.documents_with_findings.length > 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Documentos con Hallazgos ({findings.documents_with_findings.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Documentos con Hallazgos ({findings.documents_with_findings.length})
+                {selectedDocuments.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-emerald-600">
+                    ({selectedDocuments.length} seleccionados)
+                  </span>
+                )}
+              </h3>
+              
+              {/* Bulk Action Buttons */}
+              {selectedDocuments.length > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleBulkAction('approve')}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    ✓ Aprobar Seleccionados ({selectedDocuments.length})
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('reject')}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    ✗ Rechazar Seleccionados ({selectedDocuments.length})
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedDocuments.length === findings.documents_with_findings.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Documento
                   </th>
