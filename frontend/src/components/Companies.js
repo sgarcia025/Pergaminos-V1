@@ -34,6 +34,9 @@ const Companies = ({ user }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [asesores, setAsesores] = useState([]);
   const [segmentos, setSegmentos] = useState([]);
+  const [corporations, setCorporations] = useState([]);
+  const [newCorporationName, setNewCorporationName] = useState('');
+  const [showNewCorporationInput, setShowNewCorporationInput] = useState(false);
   const [filterCorporacion, setFilterCorporacion] = useState('');
   const [filterEstado, setFilterEstado] = useState('');
 
@@ -41,6 +44,7 @@ const Companies = ({ user }) => {
     fetchCompanies();
     fetchAsesores();
     fetchSegmentos();
+    fetchCorporations();
   }, []);
 
   useEffect(() => {
