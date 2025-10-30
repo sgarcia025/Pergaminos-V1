@@ -760,22 +760,25 @@ const Companies = ({ user }) => {
                       </select>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                      <div className="text-sm font-medium text-emerald-800 mb-2">
+                        Crear Nueva Corporación
+                      </div>
+                      <input
+                        type="text"
+                        value={newCorporationName}
+                        onChange={(e) => setNewCorporationName(e.target.value)}
+                        placeholder="Escribe el nombre de la corporación"
+                        className="w-full px-4 py-3 text-base border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        autoFocus
+                      />
                       <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newCorporationName}
-                          onChange={(e) => setNewCorporationName(e.target.value)}
-                          placeholder="Nombre de la nueva corporación"
-                          className="form-input flex-1"
-                          autoFocus
-                        />
                         <button
                           type="button"
                           onClick={handleCreateCorporation}
-                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                          className="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
                         >
-                          Crear
+                          ✓ Crear y Seleccionar
                         </button>
                         <button
                           type="button"
@@ -783,13 +786,13 @@ const Companies = ({ user }) => {
                             setShowNewCorporationInput(false);
                             setNewCorporationName('');
                           }}
-                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          className="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition-colors"
                         >
                           Cancelar
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        La nueva corporación se agregará a la lista para uso futuro
+                      <p className="text-xs text-emerald-700 mt-1">
+                        💡 La nueva corporación se agregará a la lista para uso futuro
                       </p>
                     </div>
                   )}
