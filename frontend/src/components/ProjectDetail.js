@@ -324,7 +324,7 @@ const ProjectDetail = ({ user }) => {
 
       {/* Project Header */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Playfair Display' }}>
               {project.name}
@@ -332,24 +332,51 @@ const ProjectDetail = ({ user }) => {
             {project.description && (
               <p className="text-gray-600 mb-4">{project.description}</p>
             )}
-            
-            {project.semantic_instructions && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-emerald-900 mb-2 flex items-center">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                  Instrucciones para IA
-                </h3>
-                <p className="text-emerald-800 text-sm">{project.semantic_instructions}</p>
-              </div>
-            )}
           </div>
           
           <span className={`status-badge ${project.status === 'active' ? 'status-active' : 'status-completed'}`}>
             {project.status === 'active' ? 'Activo' : 'Completado'}
           </span>
         </div>
+
+        {/* Current User Processing */}
+        <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center mr-3">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-emerald-900">
+                Usuario Trabajando en este Proyecto
+              </h4>
+              <p className="text-emerald-800 font-medium text-base">
+                {user.name} ({user.email})
+              </p>
+              <p className="text-emerald-700 text-xs">
+                Rol: {user.role === 'staff' ? 'Staff' : user.role === 'asesor' ? 'Asesor' : 'Cliente'}
+              </p>
+            </div>
+            <div className="ml-4 px-3 py-1 bg-emerald-100 rounded-full">
+              <span className="text-xs font-semibold text-emerald-800">
+                🟢 Activo
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {project.semantic_instructions && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              Instrucciones para IA
+            </h3>
+            <p className="text-blue-800 text-sm">{project.semantic_instructions}</p>
+          </div>
+        )}
       </div>
 
       {/* Read-only notice for clients */}
