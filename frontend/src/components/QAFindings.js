@@ -117,9 +117,8 @@ const QAFindings = ({ user }) => {
     
     try {
       const promises = selectedDocuments.map(docId => {
-        const document = findings.documents_with_findings.find(f => f.document_id === docId);
         return axios.post(
-          `${API}/projects/${document.project_id}/documents/${docId}/qa-review`,
+          `${API}/projects/${selectedProject}/documents/${docId}/qa-review`,
           {
             action: bulkAction === 'approve' ? 'approved' : 'rejected',
             comments: bulkComments
