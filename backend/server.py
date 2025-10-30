@@ -500,6 +500,15 @@ async def create_company(company_data: CompanyCreate, current_user: User = Depen
     company = Company(**company_dict)
     
     await db.companies.insert_one(company.dict())
+    
+    # Increment corporation usage count if corporation is set
+    if company.corporation:
+        await db.corporations.update_one(
+            {"name": company.corporation},
+            {"$inc": {"usage_count": 1}},
+            upsert=False
+        )
+    
     return company
 
 @api_router.get("/companies", response_model=List[Company])
