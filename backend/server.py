@@ -129,6 +129,17 @@ class SegmentoCreate(BaseModel):
     nombre: str
     descripcion: Optional[str] = None
 
+class Corporation(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str  # staff user id who created it
+    usage_count: int = 0  # Track how many companies use this corporation
+
+class CorporationCreate(BaseModel):
+    name: str
+
 class ExtractedData(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     company_id: str  # Cliente al que pertenecen los datos
