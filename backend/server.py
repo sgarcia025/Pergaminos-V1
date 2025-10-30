@@ -3456,6 +3456,63 @@ async def delete_segmento(segmento_id: str, current_user: User = Depends(get_cur
     
     return {"message": "Segmento deleted successfully", "segmento_id": segmento_id}
 
+# ========== CORPORATION ENDPOINTS ==========
+
+@api_router.post("/corporations", response_model=Corporation)
+async def create_corporation(
+    corporation_data: CorporationCreate,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new corporation (staff only)"""
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can create corporations")
+    
+    # Check if corporation with same name already exists
+    existing = await db.corporations.find_one({"name": corporation_data.name.strip(), "is_active": True})
+    if existing:
+        raise HTTPException(status_code=400, detail="Corporation with this name already exists")
+    
+    corporation = Corporation(
+        name=corporation_data.name.strip(),
+        created_by=current_user.id
+    )
+    
+    await db.corporations.insert_one(corporation.dict())
+    logger.info(f"Corporation created: {corporation.name} by {current_user.email}")
+    
+    return corporation
+
+@api_router.get("/corporations", response_model=List[Corporation])
+async def get_corporations(current_user: User = Depends(get_current_user)):
+    """Get all active corporations"""
+    # All authenticated users can see corporations for selection
+    corporations = await db.corporations.find({"is_active": True}).sort("name", 1).to_list(1000)
+    return [Corporation(**corp) for corp in corporations]
+
+@api_router.delete("/corporations/{corporation_id}")
+async def delete_corporation(
+    corporation_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a corporation (staff only)"""
+    if current_user.role != "staff":
+        raise HTTPException(status_code=403, detail="Only staff can delete corporations")
+    
+    # Check if corporation is being used by any company
+    companies_using = await db.companies.count_documents({"corporation": corporation_id, "is_active": True})
+    if companies_using > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete corporation. {companies_using} companies are using this corporation."
+        )
+    
+    result = await db.corporations.delete_one({"id": corporation_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Corporation not found")
+    
+    logger.info(f"Corporation deleted: {corporation_id} by {current_user.email}")
+    return {"message": "Corporation deleted successfully", "corporation_id": corporation_id}
+
 # Endpoint to get users with specific role (for asesor assignment)
 @api_router.get("/users/asesores", response_model=List[User])
 async def get_asesores(current_user: User = Depends(get_current_user)):
