@@ -415,34 +415,103 @@ const PDFPageManager = ({ projectId, user }) => {
           </p>
         </div>
 
-        {/* Generate Plan Button */}
-        <div className="flex items-center justify-end">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3">
+          {/* Preview Plan Button (optional) */}
           <button
             onClick={handleGeneratePlan}
-            disabled={loading || !selectedPdf || (!instruction.trim() && !manualRange.trim())}
+            disabled={loading || selectedPdfs.length === 0 || (!instruction.trim() && !manualRange.trim()) || batchProcessing}
+            className="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Generando...' : 'Vista Previa (Primer PDF)'}
+          </button>
+
+          {/* Batch Process Button */}
+          <button
+            onClick={handleBatchProcess}
+            disabled={batchProcessing || selectedPdfs.length === 0 || (!instruction.trim() && !manualRange.trim())}
             className="btn-primary"
           >
-            {loading ? (
+            {batchProcessing ? (
               <>
                 <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Generando Plan...
+                Procesando {currentBatchIndex}/{selectedPdfs.length}...
               </>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Generar Plan con IA
+                Procesar {selectedPdfs.length} PDF{selectedPdfs.length !== 1 ? 's' : ''}
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Plan Preview */}
+      {/* Batch Progress Display */}
+      {batchProgress.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Progreso de Procesamiento ({currentBatchIndex}/{selectedPdfs.length})
+          </h3>
+          <div className="space-y-3">
+            {batchProgress.map((item, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center flex-1">
+                  {item.status === 'pending' && (
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded-full mr-3"></div>
+                  )}
+                  {item.status === 'generating_plan' && (
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+                  )}
+                  {item.status === 'executing' && (
+                    <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+                  )}
+                  {item.status === 'completed' && (
+                    <svg className="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {item.status === 'failed' && (
+                    <svg className="w-5 h-5 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{item.filename}</p>
+                    {item.status === 'generating_plan' && (
+                      <p className="text-xs text-blue-600">Generando plan...</p>
+                    )}
+                    {item.status === 'executing' && (
+                      <p className="text-xs text-emerald-600">Ejecutando...</p>
+                    )}
+                    {item.status === 'completed' && item.result && (
+                      <p className="text-xs text-green-600">Completado - Listo para descargar</p>
+                    )}
+                    {item.status === 'failed' && (
+                      <p className="text-xs text-red-600">{item.error || 'Error al procesar'}</p>
+                    )}
+                  </div>
+                </div>
+                {item.status === 'completed' && item.result && (
+                  <button
+                    onClick={() => handleDownloadFile(item.result.result_url, item.result.result_filename)}
+                    className="ml-3 px-3 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded hover:bg-emerald-200"
+                  >
+                    Descargar
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Plan Preview (for single PDF preview) */}
       {plan && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
