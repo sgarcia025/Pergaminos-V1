@@ -6,7 +6,7 @@ const API = `${BACKEND_URL}/api`;
 
 const PDFPageManager = ({ projectId, user }) => {
   const [documents, setDocuments] = useState([]);
-  const [selectedPdf, setSelectedPdf] = useState('');
+  const [selectedPdfs, setSelectedPdfs] = useState([]); // Changed to array for multiple selection
   const [mode, setMode] = useState('reorder'); // 'reorder' or 'extract'
   const [instruction, setInstruction] = useState('');
   const [manualRange, setManualRange] = useState(''); // For extract mode
@@ -16,6 +16,11 @@ const PDFPageManager = ({ projectId, user }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [executing, setExecuting] = useState(false);
+  
+  // Batch processing states
+  const [batchProcessing, setBatchProcessing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState([]);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
 
   useEffect(() => {
     if (projectId) {
