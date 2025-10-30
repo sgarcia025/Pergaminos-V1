@@ -490,7 +490,7 @@ const PDFPageManager = ({ projectId, user }) => {
                     {item.status === 'executing' && (
                       <p className="text-xs text-emerald-600">Ejecutando...</p>
                     )}
-                    {item.status === 'completed' && item.result && (
+                    {item.status === 'completed' && item.resultUrl && (
                       <p className="text-xs text-green-600">Completado - Listo para descargar</p>
                     )}
                     {item.status === 'failed' && (
@@ -498,9 +498,9 @@ const PDFPageManager = ({ projectId, user }) => {
                     )}
                   </div>
                 </div>
-                {item.status === 'completed' && item.result && (
+                {item.status === 'completed' && item.resultUrl && (
                   <button
-                    onClick={() => handleDownloadFile(item.result.result_url, item.result.result_filename)}
+                    onClick={() => handleDownloadFile(item.resultUrl, item.resultFilename)}
                     className="ml-3 px-3 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded hover:bg-emerald-200"
                   >
                     Descargar
