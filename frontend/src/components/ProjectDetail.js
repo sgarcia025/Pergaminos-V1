@@ -853,8 +853,10 @@ const ProjectDetail = ({ user }) => {
                 </div>
               )}
 
-              {/* Comments Section - Only for staff and documents that need review */}
-              {user.role === 'staff' && (selectedDocument.qa_status === 'failed' || selectedDocument.status === 'qa_failed' || selectedDocument.status === 'needs_review') && (
+              {/* Comments Section - Only for staff and documents that need review AND haven't been reviewed yet */}
+              {user.role === 'staff' && 
+               (selectedDocument.qa_status === 'failed' || selectedDocument.status === 'qa_failed' || selectedDocument.status === 'needs_review') && 
+               !selectedDocument.qa_review_action && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Comentarios de Revisión
@@ -869,8 +871,10 @@ const ProjectDetail = ({ user }) => {
                 </div>
               )}
 
-              {/* Action Buttons - Only for staff and documents that need review */}
-              {user.role === 'staff' && (selectedDocument.qa_status === 'failed' || selectedDocument.status === 'qa_failed' || selectedDocument.status === 'needs_review') && (
+              {/* Action Buttons - Only for staff and documents that need review AND haven't been reviewed yet */}
+              {user.role === 'staff' && 
+               (selectedDocument.qa_status === 'failed' || selectedDocument.status === 'qa_failed' || selectedDocument.status === 'needs_review') && 
+               !selectedDocument.qa_review_action && (
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
@@ -900,8 +904,10 @@ const ProjectDetail = ({ user }) => {
                 </div>
               )}
 
-              {/* Close button for documents in other states or non-staff users */}
-              {(user.role !== 'staff' || (selectedDocument.qa_status !== 'failed' && selectedDocument.status !== 'qa_failed' && selectedDocument.status !== 'needs_review')) && (
+              {/* Close button for documents already reviewed or in other states or non-staff users */}
+              {(user.role !== 'staff' || 
+                selectedDocument.qa_review_action || 
+                (selectedDocument.qa_status !== 'failed' && selectedDocument.status !== 'qa_failed' && selectedDocument.status !== 'needs_review')) && (
                 <div className="flex justify-end pt-4 border-t border-gray-200">
                   <button
                     onClick={() => {
