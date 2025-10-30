@@ -85,6 +85,42 @@ const Companies = ({ user }) => {
     }
   };
 
+  const fetchCorporations = async () => {
+    try {
+      const response = await axios.get(`${API}/corporations`);
+      setCorporations(response.data);
+    } catch (error) {
+      console.error('Error fetching corporations:', error);
+    }
+  };
+
+  const handleCreateCorporation = async () => {
+    if (!newCorporationName.trim()) {
+      setError('Por favor ingresa un nombre para la corporación');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API}/corporations`, {
+        name: newCorporationName.trim()
+      });
+      
+      // Add new corporation to list
+      setCorporations([...corporations, response.data]);
+      
+      // Set it as selected
+      setFormData({ ...formData, corporacion: response.data.name });
+      
+      // Reset and hide input
+      setNewCorporationName('');
+      setShowNewCorporationInput(false);
+      setSuccess('Corporación creada exitosamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al crear la corporación');
+    }
+  };
+
   const applyFilters = () => {
     let filtered = [...companies];
 
