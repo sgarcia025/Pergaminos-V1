@@ -282,8 +282,6 @@ const ProjectDetail = ({ user }) => {
     return texts[status] || status;
   };
 
-  const completedDocuments = documents.filter(doc => doc.status === 'completed');
-
   if (loading) {
     return (
       <div className="loading">
