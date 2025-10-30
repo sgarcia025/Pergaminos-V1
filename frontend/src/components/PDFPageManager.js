@@ -288,29 +288,51 @@ const PDFPageManager = ({ projectId, user }) => {
 
       {/* PDF Selection and Instruction */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 space-y-4">
-        {/* PDF Selector */}
+        {/* PDF Multi-Selector with Checkboxes */}
         <div>
-          <label htmlFor="pdf-select" className="block text-sm font-medium text-gray-700 mb-2">
-            Seleccionar PDF *
-          </label>
-          <select
-            id="pdf-select"
-            value={selectedPdf}
-            onChange={(e) => setSelectedPdf(e.target.value)}
-            className="form-select w-full"
-            disabled={loading || executing}
-          >
-            <option value="">-- Selecciona un PDF --</option>
-            {documents.map((doc) => (
-              <option key={doc.id} value={doc.original_filename}>
-                {doc.original_filename}
-              </option>
-            ))}
-          </select>
-          {documents.length === 0 && (
-            <p className="text-xs text-gray-500 mt-1">
+          <div className="flex items-center justify-between mb-3">
+            <label className="block text-sm font-medium text-gray-700">
+              Seleccionar PDFs * ({selectedPdfs.length} seleccionados)
+            </label>
+            {documents.length > 0 && (
+              <button
+                onClick={handleSelectAll}
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                disabled={loading || executing || batchProcessing}
+              >
+                {selectedPdfs.length === documents.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+              </button>
+            )}
+          </div>
+          
+          {documents.length === 0 ? (
+            <p className="text-sm text-gray-500 p-4 bg-gray-50 rounded-lg">
               No hay PDFs procesados en este proyecto
             </p>
+          ) : (
+            <div className="border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                >
+                  <input
+                    type="checkbox"
+                    id={`pdf-${doc.id}`}
+                    checked={selectedPdfs.includes(doc.original_filename)}
+                    onChange={() => handlePdfToggle(doc.original_filename)}
+                    disabled={loading || executing || batchProcessing}
+                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                  />
+                  <label
+                    htmlFor={`pdf-${doc.id}`}
+                    className="ml-3 text-sm text-gray-700 cursor-pointer flex-1"
+                  >
+                    {doc.original_filename}
+                  </label>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
