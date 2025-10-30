@@ -90,14 +90,15 @@ const PDFPageManager = ({ projectId, user }) => {
       // Step 2: Execute plan
       const executeResponse = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute/${jobId}`);
 
-      // Update progress
+      // Update progress with correct result structure
       setBatchProgress(prev => {
         const updated = [...prev];
         updated[index] = { 
           status: 'completed', 
           filename: pdfFilename, 
           jobId,
-          result: executeResponse.data
+          resultUrl: executeResponse.data.result_url,
+          resultFilename: executeResponse.data.result_filename
         };
         return updated;
       });
