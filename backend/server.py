@@ -820,8 +820,10 @@ async def update_qa_review(
         if action == "approved":
             update_data["status"] = "qa_passed"
             update_data["qa_status"] = "passed"
-            # Continue to AI processing
-            asyncio.create_task(process_document_with_ai(document_id))
+            # Continue to AI processing - get project first
+            project = await db.projects.find_one({"id": project_id})
+            if project:
+                asyncio.create_task(process_document_with_ai(document_id, project))
         else:  # rejected
             update_data["status"] = "qa_failed"
             update_data["qa_status"] = "failed"
