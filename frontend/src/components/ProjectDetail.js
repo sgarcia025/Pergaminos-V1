@@ -428,19 +428,6 @@ const ProjectDetail = ({ user }) => {
       {/* Tab Content: Documents */}
       {activeTab === 'documents' && (
         <>
-          {/* Reorder Status */}
-          {reorderStatus && reorderStatus.status === 'processing' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-3"></div>
-            <div className="flex-1">
-              <h4 className="text-blue-900 font-medium">Reordenando documentos con IA</h4>
-              <p className="text-blue-700 text-sm">Progreso: {reorderStatus.progress || 0}%</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* File Upload Area - Only for staff and asesor */}
       {user && (user.role === 'staff' || user.role === 'asesor') && (
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
