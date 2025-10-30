@@ -502,12 +502,12 @@ const Companies = ({ user }) => {
 
       {/* Create Company Modal */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">{isEditing ? 'Editar Empresa' : 'Nueva Empresa'}</h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleCloseModal}
                 className="modal-close"
               >
                 ×
