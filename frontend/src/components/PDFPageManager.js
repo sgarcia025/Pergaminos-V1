@@ -271,13 +271,13 @@ const PDFPageManager = ({ projectId, user }) => {
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">Cómo funciona</h3>
             <p className="text-sm text-blue-700 mt-1">
-              1) Selecciona un PDF del proyecto y elige el modo (Reordenar o Extraer)
+              1) Selecciona uno o varios PDFs del proyecto y elige el modo (Reordenar o Extraer)
               <br />
               2) Escribe una instrucción en lenguaje natural o usa rangos manuales
               <br />
-              3) Genera el plan con IA para revisar los cambios
+              3) Haz clic en "Procesar X PDFs" para procesar todos los seleccionados en secuencia
               <br />
-              4) Si estás conforme, ejecuta el plan para generar el nuevo PDF
+              4) Descarga cada PDF procesado cuando esté listo
             </p>
           </div>
         </div>
