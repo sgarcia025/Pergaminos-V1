@@ -243,8 +243,8 @@ const ClientPortal = ({ user }) => {
         </div>
       )}
 
-      {/* Documents Summary */}
-      {selectedProject && documents.length > 0 && (
+      {/* Documents Summary - Hidden for clients as they don't need technical data */}
+      {/* {selectedProject && documents.length > 0 && (
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Resumen de Documentos</h2>
@@ -285,7 +285,7 @@ const ClientPortal = ({ user }) => {
             )}
           </div>
         </div>
-      )}
+      )} */}
 
       {selectedProject && documents.length === 0 && (
         <div className="card text-center py-12">
