@@ -3226,6 +3226,64 @@ async def ask_ai_about_documents(
         logger.error(f"Error processing AI question: {str(e)}")
         raise HTTPException(status_code=500, detail="Error processing question")
 
+
+@api_router.get("/client/download-document/{document_id}")
+async def client_download_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Allow client to download a document PDF.
+    Only allows download if document belongs to client's company.
+    """
+    try:
+        # Get document
+        document = await db.documents.find_one({"id": document_id})
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # Get project to verify company
+        project = await db.projects.find_one({"id": document["project_id"]})
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+        
+        # Verify client has access (must be from same company)
+        if current_user.role == "client":
+            if current_user.company_id != project["company_id"]:
+                raise HTTPException(status_code=403, detail="Access denied to this document")
+        elif current_user.role == "asesor":
+            # Asesor can access if they manage the company
+            company = await db.companies.find_one({"id": project["company_id"]})
+            if company.get("asesor_comercial_id") != current_user.id:
+                raise HTTPException(status_code=403, detail="Access denied to this document")
+        # Staff can access all
+        
+        # Get file path
+        file_path = Path(document["file_path"])
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Document file not found on server")
+        
+        # Stream file
+        def iterfile():
+            with open(file_path, mode="rb") as file:
+                yield from file
+        
+        return StreamingResponse(
+            iterfile(),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={document['original_filename']}",
+                "Content-Type": "application/pdf"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading document for client: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Background processing functions
 async def process_qa_check(agent_id: str, task_id: str):
     """Process QA check with AI"""
