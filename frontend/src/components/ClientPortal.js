@@ -196,11 +196,36 @@ const ClientPortal = ({ user }) => {
                 }`}>
                   <div className="whitespace-pre-wrap">{message.content}</div>
                   {message.sources && message.sources.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-300">
-                      <p className="text-xs font-medium">Fuentes consultadas:</p>
-                      {message.sources.map((source, idx) => (
-                        <p key={idx} className="text-xs">• {source}</p>
-                      ))}
+                    <div className="mt-3 pt-3 border-t border-gray-300">
+                      <p className="text-sm font-semibold mb-2 flex items-center">
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Documentos Consultados:
+                      </p>
+                      <div className="space-y-2">
+                        {message.sources.map((source, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-white rounded px-3 py-2 text-sm">
+                            <div className="flex items-center flex-1">
+                              <svg className="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <span className="truncate">{source.filename || source}</span>
+                            </div>
+                            {source.document_id && (
+                              <button
+                                onClick={() => handleDownloadSource(source.document_id, source.filename)}
+                                className="ml-3 px-3 py-1 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors flex items-center"
+                              >
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Descargar PDF
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
