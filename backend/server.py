@@ -4052,6 +4052,48 @@ async def create_admin_user():
 # PDF MANAGER ENDPOINTS - PHASE 1: PLANNING
 # ============================================================================
 
+def fix_duplicate_target_names(plan: PDFManagerPlan) -> PDFManagerPlan:
+    """
+    Fix duplicate target names in rename operations by adding incremental suffixes.
+    For example: file.pdf, file.pdf, file.pdf -> file.pdf, file_2.pdf, file_3.pdf
+    """
+    from collections import Counter
+    
+    # Count occurrences of each target name
+    target_names = [op.to_name for op in plan.rename_operations]
+    name_counts = Counter(target_names)
+    
+    # Find duplicates
+    duplicates = {name for name, count in name_counts.items() if count > 1}
+    
+    if not duplicates:
+        return plan  # No duplicates, return as-is
+    
+    # Track how many times we've seen each duplicate name
+    seen_counts = {}
+    
+    # Fix duplicates by adding suffixes
+    for op in plan.rename_operations:
+        if op.to_name in duplicates:
+            if op.to_name not in seen_counts:
+                seen_counts[op.to_name] = 1
+            else:
+                seen_counts[op.to_name] += 1
+                
+                # Add suffix to make it unique
+                base_name, ext = op.to_name.rsplit('.', 1) if '.' in op.to_name else (op.to_name, '')
+                op.to_name = f"{base_name}_{seen_counts[op.to_name]}.{ext}" if ext else f"{base_name}_{seen_counts[op.to_name]}"
+                op.reasoning += f" (Renamed to avoid duplicate)"
+    
+    # Add warning to validation
+    if duplicates:
+        plan.validation.warnings.append(
+            f"Fixed {len(duplicates)} duplicate filename(s) by adding numeric suffixes"
+        )
+    
+    return plan
+
+
 async def generate_pdf_plan_with_ai(
     project: dict,
     company: dict,
