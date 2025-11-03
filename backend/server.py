@@ -3198,7 +3198,11 @@ async def ask_ai_about_documents(
             if doc.get("extracted_data"):
                 context += f"Document: {doc['original_filename']}\n"
                 context += f"Data: {json.dumps(doc['extracted_data'], indent=2)}\n\n"
-                sources.append(doc['original_filename'])
+                sources.append({
+                    "document_id": doc['id'],
+                    "filename": doc['original_filename'],
+                    "file_path": doc.get('file_path', '')
+                })
         
         prompt = f"""
         Based on the following document data, answer this question: {question_data.question}
@@ -3206,6 +3210,7 @@ async def ask_ai_about_documents(
         {context}
         
         Please provide a clear, helpful answer based only on the data shown above. If the data doesn't contain information to answer the question, say so clearly.
+        Responde en español.
         """
         
         user_message = UserMessage(text=prompt)
@@ -3213,7 +3218,7 @@ async def ask_ai_about_documents(
         
         return {
             "answer": response,
-            "sources": sources[:5],  # Limit sources
+            "sources": sources[:5],  # Limit to 5 most relevant sources
             "documents_consulted": len(documents)
         }
         
