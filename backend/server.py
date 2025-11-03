@@ -3187,38 +3187,67 @@ async def ask_ai_about_documents(
         chat = LlmChat(
             api_key=api_key,
             session_id=f"client_query_{current_user.id}_{project_id}",
-            system_message="You are a helpful AI assistant that answers questions about document data. Provide clear, accurate answers based on the extracted document data provided."
+            system_message="You are a helpful AI assistant that answers questions about document data. Provide clear, accurate answers based on the extracted document data provided. Always cite which documents you used to answer."
         ).with_model("openai", "gpt-4o")
         
-        # Prepare context from extracted data
-        context = "Available document data:\n\n"
-        sources = []
+        # Prepare context from extracted data with document IDs
+        context = "Available documents:\n\n"
+        doc_map = {}  # Map filename to document data
         
-        for doc in documents:
+        for idx, doc in enumerate(documents):
             if doc.get("extracted_data"):
-                context += f"Document: {doc['original_filename']}\n"
+                doc_id = f"DOC_{idx}"
+                context += f"[{doc_id}] Filename: {doc['original_filename']}\n"
                 context += f"Data: {json.dumps(doc['extracted_data'], indent=2)}\n\n"
-                sources.append({
+                doc_map[doc_id] = {
                     "document_id": doc['id'],
                     "filename": doc['original_filename'],
                     "file_path": doc.get('file_path', '')
-                })
+                }
         
         prompt = f"""
-        Based on the following document data, answer this question: {question_data.question}
+        Based on the document data above, answer this question: {question_data.question}
         
         {context}
         
-        Please provide a clear, helpful answer based only on the data shown above. If the data doesn't contain information to answer the question, say so clearly.
-        Responde en español.
+        IMPORTANT: At the end of your answer, list ONLY the document IDs (e.g., [DOC_0], [DOC_1]) that you actually used to answer this question.
+        Format your response like this:
+        
+        [Your answer here]
+        
+        USED_DOCS: [DOC_X, DOC_Y, ...]
+        
+        If no documents contain relevant information, say so clearly and use USED_DOCS: []
+        Responde en español, pero mantén el formato USED_DOCS en inglés.
         """
         
         user_message = UserMessage(text=prompt)
         response = await chat.send_message(user_message)
         
+        # Parse response to extract used documents
+        used_sources = []
+        answer = response
+        
+        if "USED_DOCS:" in response:
+            parts = response.split("USED_DOCS:")
+            answer = parts[0].strip()
+            
+            # Extract document IDs from the USED_DOCS line
+            used_docs_str = parts[1].strip()
+            import re
+            doc_ids = re.findall(r'DOC_\d+', used_docs_str)
+            
+            # Map back to actual documents
+            for doc_id in doc_ids:
+                if doc_id in doc_map:
+                    used_sources.append(doc_map[doc_id])
+        else:
+            # Fallback: if AI didn't follow format, limit to first 3 docs
+            used_sources = list(doc_map.values())[:3]
+        
         return {
-            "answer": response,
-            "sources": sources[:5],  # Limit to 5 most relevant sources
+            "answer": answer,
+            "sources": used_sources,
             "documents_consulted": len(documents)
         }
         
