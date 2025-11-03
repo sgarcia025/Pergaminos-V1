@@ -4222,11 +4222,16 @@ Generate the plan:"""
             warnings=plan_data.get("validation", {}).get("warnings", [])
         )
         
-        return PDFManagerPlan(
+        plan = PDFManagerPlan(
             rename_operations=rename_ops,
             reorder_ids=reorder_ids,
             validation=validation
         )
+        
+        # Fix duplicate target names by adding incremental suffixes
+        plan = fix_duplicate_target_names(plan)
+        
+        return plan
         
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse LLM response as JSON: {str(e)}")
