@@ -250,6 +250,8 @@ class Project(BaseModel):
     company_id: str
     status: str = "active"  # active, completed, paused
     semantic_instructions: Optional[str] = None  # Instructions for AI processing
+    pdf_history_retention_months: int = 6  # How long to keep PDF history (3, 6, or 12 months)
+    pdf_history_retention_until: Optional[datetime] = None  # Manual extension date
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: str  # user id
 
@@ -259,6 +261,8 @@ class ProjectCreate(BaseModel):
     description: Optional[str] = None
     company_id: str
     semantic_instructions: Optional[str] = None
+    pdf_history_retention_months: int = 6
+    pdf_history_retention_until: Optional[datetime] = None
 
 class Document(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
