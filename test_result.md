@@ -113,7 +113,31 @@
 #====================================================================================================
 
 user_problem_statement: |
-  El usuario solicita implementar HISTORIAL DE PDFs PROCESADOS para poder ver y descargar PDFs que han sido renombrados, reordenados o extraídos:
+  NUEVA FUNCIONALIDAD IMPLEMENTADA: Toggle de activación y retención de historial en cards de proyectos
+  
+  El usuario solicita:
+  1. Toggle para activar/desactivar proyectos en el card
+  2. Dropdown para seleccionar tiempo de retención del historial PDF (3, 6, 12 meses)
+  3. Permitir extensión manual con fecha de vencimiento
+  
+  IMPLEMENTACIÓN COMPLETADA:
+  
+  BACKEND (/app/backend/server.py):
+  - Agregado campo `is_active: bool = True` al modelo Project (línea 252)
+  - Agregado campo `is_active: bool = True` al modelo ProjectCreate (línea 264)
+  - Los campos de retención ya existían: `pdf_history_retention_months` y `pdf_history_retention_until`
+  - Endpoints PUT /api/projects/{project_id} ya soportan estos campos
+  
+  FRONTEND (/app/frontend/src/components/Projects.js):
+  - Agregado toggle switch para is_active en cada card de proyecto
+  - Agregado dropdown para pdf_history_retention_months (3, 6, 12 meses)
+  - Agregado botón "Extender manualmente" para configurar pdf_history_retention_until
+  - Display de fecha de vencimiento cuando hay extensión manual
+  - Funciones implementadas: handleToggleActive(), handleRetentionChange(), handleExtendRetention()
+  
+  ============================================
+  
+  HISTORIAL PREVIO: HISTORIAL DE PDFs PROCESADOS para poder ver y descargar PDFs que han sido renombrados, reordenados o extraídos:
 
   FUNCIONALIDADES IMPLEMENTADAS:
 
