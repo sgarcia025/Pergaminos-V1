@@ -391,6 +391,72 @@ const Projects = ({ user }) => {
                 )}
               </div>
               
+              {/* Project Settings */}
+              <div className="pt-3 space-y-3 border-t border-gray-200">
+                {/* Toggle Activación */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Estado del Proyecto
+                  </label>
+                  <button
+                    onClick={(e) => handleToggleActive(e, project)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                      project.is_active ? 'bg-emerald-600' : 'bg-gray-300'
+                    }`}
+                    title={project.is_active ? 'Proyecto activo' : 'Proyecto inactivo'}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        project.is_active ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Retención de Historial */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center">
+                    <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Retención de Historial PDF
+                  </label>
+                  <select
+                    value={project.pdf_history_retention_months || 6}
+                    onChange={(e) => handleRetentionChange(e, project)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="form-input text-sm w-full"
+                  >
+                    <option value={3}>3 meses</option>
+                    <option value={6}>6 meses</option>
+                    <option value={12}>12 meses</option>
+                  </select>
+                  
+                  {/* Manual Extension */}
+                  {project.pdf_history_retention_until && (
+                    <div className="flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Extensión hasta: {new Date(project.pdf_history_retention_until).toLocaleDateString()}
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={(e) => handleExtendRetention(e, project)}
+                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center"
+                  >
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Extender manualmente
+                  </button>
+                </div>
+              </div>
+              
               <div className="pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-500">
