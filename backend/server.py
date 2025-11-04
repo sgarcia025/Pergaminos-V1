@@ -433,7 +433,7 @@ class RetentionPolicyUpdate(BaseModel):
 # Create uploads directory - use absolute path to ensure consistency
 UPLOAD_DIR = Path("/app/backend/uploads").resolve()
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-logger.info(f"Upload directory configured at: {UPLOAD_DIR}")
+print(f"[INIT] Upload directory configured at: {UPLOAD_DIR}")
 
 # Authentication endpoints
 @api_router.post("/auth/register", response_model=User)
