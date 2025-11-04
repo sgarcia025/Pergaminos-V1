@@ -208,9 +208,11 @@ const Projects = ({ user }) => {
     e.stopPropagation();
     
     try {
+      // Si is_active es undefined, se considera true por defecto
+      const currentIsActive = project.is_active !== false;
       const updatedProject = {
         ...project,
-        is_active: !project.is_active
+        is_active: !currentIsActive
       };
       
       await axios.put(`${API}/projects/${project.id}`, updatedProject);
