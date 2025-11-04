@@ -5555,11 +5555,30 @@ async def create_pdf_page_plan(
         
         # Get PDF file path
         pdf_path = Path(document["file_path"])
+        logger.info(f"Looking for PDF at: {pdf_path} (absolute: {pdf_path.resolve()})")
+        logger.info(f"PDF path exists: {pdf_path.exists()}")
+        
         if not pdf_path.exists():
-            raise HTTPException(
-                status_code=404,
-                detail="PDF file not found on server"
-            )
+            # Try to find the file in the upload directory
+            filename = Path(document["file_path"]).name
+            alternative_path = UPLOAD_DIR / filename
+            logger.info(f"Trying alternative path: {alternative_path}")
+            
+            if alternative_path.exists():
+                logger.info(f"Found PDF at alternative location: {alternative_path}")
+                pdf_path = alternative_path
+                # Update document path in database
+                await db.documents.update_one(
+                    {"id": document["id"]},
+                    {"$set": {"file_path": str(alternative_path)}}
+                )
+            else:
+                logger.error(f"PDF not found at {pdf_path} or {alternative_path}")
+                logger.error(f"Upload directory contents: {list(UPLOAD_DIR.glob('*')) if UPLOAD_DIR.exists() else 'Directory not found'}")
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"PDF file not found on server. Searched in: {pdf_path} and {alternative_path}"
+                )
         
         logger.info(f"Generating PDF page plan for {plan_request.pdf_filename}, mode: {plan_request.mode}")
         
