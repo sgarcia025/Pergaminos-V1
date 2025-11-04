@@ -519,12 +519,15 @@ const Projects = ({ user }) => {
                     Creado {new Date(project.created_at).toLocaleDateString()}
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center text-emerald-600 text-sm font-medium">
+                    <Link 
+                      to={`/projects/${project.id}`}
+                      className="flex items-center text-emerald-600 text-sm font-medium hover:text-emerald-700"
+                    >
                       Ver detalles
                       <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    </div>
+                    </Link>
                     {user.role === 'staff' && (
                       <button
                         onClick={(e) => handleDeleteClick(e, project)}
@@ -540,7 +543,6 @@ const Projects = ({ user }) => {
                 </div>
               </div>
             </div>
-          </Link>
         ))}
       </div>
 
