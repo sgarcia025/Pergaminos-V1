@@ -681,6 +681,30 @@ frontend:
         - agent: "testing"
         - comment: "✅ QA ERROR HANDLING TESTED SUCCESSFULLY: All QA error scenarios handled correctly. Verified: (1) Edit non-existent QA agent returns 404 Not Found, (2) Delete non-existent QA agent returns 404 Not Found, (3) Proper error messages and status codes, (4) Graceful handling of invalid agent IDs, (5) Consistent error response format across QA endpoints. QA error handling ready for production use."
 
+  - task: "Campo is_active en modelo Project"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Agregado campo is_active (bool, default True) al modelo Project (línea 252) y ProjectCreate (línea 264) para toggle de activación/desactivación de proyectos"
+
+  - task: "Campos de retención PDF en modelo Project"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Verificados campos existentes: pdf_history_retention_months (int, default 6, opciones: 3/6/12) y pdf_history_retention_until (datetime opcional) para extensión manual. Endpoints POST/PUT ya soportan estos campos."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
