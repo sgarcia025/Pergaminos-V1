@@ -141,6 +141,71 @@ const PDFHistory = ({ user }) => {
     setItemToDelete(null);
   };
 
+  // Batch selection handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = currentItems.map(item => item.id);
+      setSelectedItems(allIds);
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (itemId) => {
+    setSelectedItems(prev => {
+      if (prev.includes(itemId)) {
+        return prev.filter(id => id !== itemId);
+      } else {
+        return [...prev, itemId];
+      }
+    });
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedItems.length === 0) {
+      alert('Por favor selecciona al menos un documento para descargar');
+      return;
+    }
+
+    try {
+      setDownloadingBatch(true);
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/api/pdf-history/download-batch`,
+        selectedItems,
+        { 
+          responseType: 'blob',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `historial_pdfs_${timestamp}.zip`);
+      
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      // Clear selection after successful download
+      setSelectedItems([]);
+      
+      alert(`${selectedItems.length} documento(s) descargado(s) exitosamente`);
+    } catch (error) {
+      console.error('Error downloading batch:', error);
+      alert('Error al descargar los documentos: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setDownloadingBatch(false);
+    }
+  };
+
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
