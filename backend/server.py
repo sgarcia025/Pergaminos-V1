@@ -6087,6 +6087,8 @@ async def download_batch_pdfs_from_history(
 ):
     """Download multiple PDFs from history as a ZIP file"""
     try:
+        logger.info(f"Batch download request from user {current_user.email} for {len(history_ids)} files")
+        
         if not history_ids:
             raise HTTPException(status_code=400, detail="No history IDs provided")
         
@@ -6095,36 +6097,49 @@ async def download_batch_pdfs_from_history(
         
         # Collect valid files
         files_to_zip = []
+        not_found_count = 0
+        access_denied_count = 0
+        missing_file_count = 0
         
         for history_id in history_ids:
             history_entry = await db.pdf_history.find_one({"id": history_id})
             if not history_entry:
                 logger.warning(f"History entry not found: {history_id}")
+                not_found_count += 1
                 continue
             
             # Verify access
             if current_user.role == "client":
                 if current_user.company_id != history_entry["company_id"]:
                     logger.warning(f"Access denied for client to history: {history_id}")
+                    access_denied_count += 1
                     continue
             elif current_user.role == "asesor":
                 company = await db.companies.find_one({"id": history_entry["company_id"]})
                 if company and company.get("asesor_comercial_id") != current_user.id:
                     logger.warning(f"Access denied for asesor to history: {history_id}")
+                    access_denied_count += 1
                     continue
             
             # Check if file exists
             file_path = Path(history_entry["result_pdf_path"])
+            logger.info(f"Checking file path: {file_path}")
             if file_path.exists():
                 files_to_zip.append({
                     "path": file_path,
                     "name": history_entry["result_pdf_name"]
                 })
+                logger.info(f"File found and added: {history_entry['result_pdf_name']}")
             else:
-                logger.warning(f"File not found in history: {file_path}")
+                logger.warning(f"File not found at path: {file_path}")
+                missing_file_count += 1
+        
+        logger.info(f"Batch download summary: {len(files_to_zip)} valid, {not_found_count} not found, {access_denied_count} access denied, {missing_file_count} files missing")
         
         if not files_to_zip:
-            raise HTTPException(status_code=404, detail="No valid files found to download")
+            error_msg = f"No valid files found. History entries not found: {not_found_count}, Access denied: {access_denied_count}, Files missing: {missing_file_count}"
+            logger.error(error_msg)
+            raise HTTPException(status_code=404, detail=error_msg)
         
         # Create ZIP in memory
         zip_buffer = io.BytesIO()
