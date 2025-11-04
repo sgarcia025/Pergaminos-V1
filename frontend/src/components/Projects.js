@@ -203,6 +203,63 @@ const Projects = ({ user }) => {
     }
   };
 
+  const handleToggleActive = async (e, project) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const updatedProject = {
+        ...project,
+        is_active: !project.is_active
+      };
+      
+      await axios.put(`${API}/projects/${project.id}`, updatedProject);
+      setSuccess(`Proyecto ${updatedProject.is_active ? 'activado' : 'desactivado'} exitosamente`);
+      fetchProjects();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al actualizar el estado del proyecto');
+    }
+  };
+
+  const handleRetentionChange = async (e, project) => {
+    e.stopPropagation();
+    const newRetentionMonths = parseInt(e.target.value);
+    
+    try {
+      const updatedProject = {
+        ...project,
+        pdf_history_retention_months: newRetentionMonths
+      };
+      
+      await axios.put(`${API}/projects/${project.id}`, updatedProject);
+      setSuccess(`Retención de historial actualizada a ${newRetentionMonths} meses`);
+      fetchProjects();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al actualizar la retención');
+    }
+  };
+
+  const handleExtendRetention = async (e, project) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const customDate = prompt('Ingrese la fecha de vencimiento (YYYY-MM-DD):');
+    if (!customDate) return;
+    
+    try {
+      const updatedProject = {
+        ...project,
+        pdf_history_retention_until: new Date(customDate).toISOString()
+      };
+      
+      await axios.put(`${API}/projects/${project.id}`, updatedProject);
+      setSuccess('Extensión de retención configurada exitosamente');
+      fetchProjects();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al extender la retención');
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading">
