@@ -6078,6 +6078,82 @@ async def download_pdf_from_history(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@api_router.post("/pdf-history/download-batch")
+async def download_batch_pdfs_from_history(
+    history_ids: List[str],
+    current_user: User = Depends(get_current_user)
+):
+    """Download multiple PDFs from history as a ZIP file"""
+    try:
+        if not history_ids:
+            raise HTTPException(status_code=400, detail="No history IDs provided")
+        
+        if len(history_ids) > 50:
+            raise HTTPException(status_code=400, detail="Maximum 50 files can be downloaded at once")
+        
+        # Collect valid files
+        files_to_zip = []
+        
+        for history_id in history_ids:
+            history_entry = await db.pdf_history.find_one({"id": history_id})
+            if not history_entry:
+                logger.warning(f"History entry not found: {history_id}")
+                continue
+            
+            # Verify access
+            if current_user.role == "client":
+                if current_user.company_id != history_entry["company_id"]:
+                    logger.warning(f"Access denied for client to history: {history_id}")
+                    continue
+            elif current_user.role == "asesor":
+                company = await db.companies.find_one({"id": history_entry["company_id"]})
+                if company and company.get("asesor_comercial_id") != current_user.id:
+                    logger.warning(f"Access denied for asesor to history: {history_id}")
+                    continue
+            
+            # Check if file exists
+            file_path = Path(history_entry["result_pdf_path"])
+            if file_path.exists():
+                files_to_zip.append({
+                    "path": file_path,
+                    "name": history_entry["result_pdf_name"]
+                })
+            else:
+                logger.warning(f"File not found in history: {file_path}")
+        
+        if not files_to_zip:
+            raise HTTPException(status_code=404, detail="No valid files found to download")
+        
+        # Create ZIP in memory
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for file_info in files_to_zip:
+                # Add file to ZIP with its name
+                zip_file.write(file_info["path"], arcname=file_info["name"])
+        
+        zip_buffer.seek(0)
+        
+        # Generate filename
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        zip_filename = f"historial_pdfs_{timestamp}.zip"
+        
+        return StreamingResponse(
+            iter([zip_buffer.getvalue()]),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f"attachment; filename={zip_filename}",
+                "Content-Type": "application/zip"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating batch download: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @api_router.delete("/pdf-history/{history_id}")
 async def delete_pdf_from_history(
     history_id: str,
