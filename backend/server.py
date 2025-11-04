@@ -261,6 +261,7 @@ class ProjectCreate(BaseModel):
     name: str
     description: Optional[str] = None
     company_id: str
+    is_active: bool = True  # Toggle to activate/deactivate project
     semantic_instructions: Optional[str] = None
     pdf_history_retention_months: int = 6
     pdf_history_retention_until: Optional[datetime] = None
