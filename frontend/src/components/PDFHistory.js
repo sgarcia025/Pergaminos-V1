@@ -17,6 +17,10 @@ const PDFHistory = ({ user }) => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   
+  // Batch download
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [downloadingBatch, setDownloadingBatch] = useState(false);
+  
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
