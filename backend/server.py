@@ -430,9 +430,10 @@ class RetentionPolicyConfig(BaseModel):
 class RetentionPolicyUpdate(BaseModel):
     retention_months: int  # 6 or 12 months
 
-# Create uploads directory
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+# Create uploads directory - use absolute path to ensure consistency
+UPLOAD_DIR = Path("/app/backend/uploads").resolve()
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+logger.info(f"Upload directory configured at: {UPLOAD_DIR}")
 
 # Authentication endpoints
 @api_router.post("/auth/register", response_model=User)
