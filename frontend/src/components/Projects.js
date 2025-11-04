@@ -392,8 +392,7 @@ const Projects = ({ user }) => {
       {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.map((project) => (
-          <Link key={project.id} to={`/projects/${project.id}`}>
-            <div className="card hover:shadow-lg transition-all cursor-pointer">
+          <div key={project.id} className="card hover:shadow-lg transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   {project.project_code && (
