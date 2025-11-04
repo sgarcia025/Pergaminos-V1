@@ -449,6 +449,14 @@ const PDFHistory = ({ user }) => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentItems.map((entry) => (
                     <tr key={entry.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(entry.id)}
+                          onChange={() => handleSelectItem(entry.id)}
+                          className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(entry.performed_at)}
                       </td>
