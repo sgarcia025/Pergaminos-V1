@@ -5904,18 +5904,41 @@ async def save_pdf_history(
 ):
     """Helper function to save PDF operation history"""
     try:
-        # Get file size and page count
+        # Create history directory if it doesn't exist
+        history_dir = Path("pdf_history")
+        history_dir.mkdir(exist_ok=True)
+        
+        # Create subdirectory by company and project
+        company_dir = history_dir / company_id / project_id
+        company_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Copy the PDF to permanent history location
+        source_path = Path(result_pdf_path)
+        permanent_path = None
         file_size = None
         page_count = None
         
-        if Path(result_pdf_path).exists():
-            file_size = Path(result_pdf_path).stat().st_size
+        if source_path.exists():
+            # Create unique filename with timestamp
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            unique_filename = f"{timestamp}_{result_pdf_name}"
+            permanent_path = company_dir / unique_filename
+            
+            # Copy file to permanent location
+            shutil.copy2(source_path, permanent_path)
+            logger.info(f"PDF copied to history: {permanent_path}")
+            
+            # Get file size and page count
+            file_size = permanent_path.stat().st_size
             try:
                 from PyPDF2 import PdfReader
-                pdf_reader = PdfReader(result_pdf_path)
+                pdf_reader = PdfReader(str(permanent_path))
                 page_count = len(pdf_reader.pages)
             except Exception as e:
                 logger.warning(f"Could not get page count: {str(e)}")
+        else:
+            logger.warning(f"Source file not found for history: {source_path}")
+            permanent_path = source_path  # Use original path as fallback
         
         history_entry = PDFHistory(
             company_id=company_id,
@@ -5925,7 +5948,7 @@ async def save_pdf_history(
             operation_type=operation_type,
             original_pdf_name=original_pdf_name,
             result_pdf_name=result_pdf_name,
-            result_pdf_path=result_pdf_path,
+            result_pdf_path=str(permanent_path),
             instruction=instruction,
             job_id=job_id,
             performed_by=performed_by,
