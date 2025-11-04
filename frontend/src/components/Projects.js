@@ -460,13 +460,13 @@ const Projects = ({ user }) => {
                   <button
                     onClick={(e) => handleToggleActive(e, project)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-                      project.is_active ? 'bg-emerald-600' : 'bg-gray-300'
+                      (project.is_active !== false) ? 'bg-emerald-600' : 'bg-gray-300'
                     }`}
-                    title={project.is_active ? 'Proyecto activo' : 'Proyecto inactivo'}
+                    title={(project.is_active !== false) ? 'Proyecto activo' : 'Proyecto inactivo'}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        project.is_active ? 'translate-x-6' : 'translate-x-1'
+                        (project.is_active !== false) ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>
