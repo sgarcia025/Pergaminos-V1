@@ -249,6 +249,7 @@ class Project(BaseModel):
     description: Optional[str] = None
     company_id: str
     status: str = "active"  # active, completed, paused
+    is_active: bool = True  # Toggle to activate/deactivate project
     semantic_instructions: Optional[str] = None  # Instructions for AI processing
     pdf_history_retention_months: int = 6  # How long to keep PDF history (3, 6, or 12 months)
     pdf_history_retention_until: Optional[datetime] = None  # Manual extension date
