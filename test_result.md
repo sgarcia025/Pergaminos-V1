@@ -402,6 +402,18 @@ frontend:
         - agent: "main"
         - comment: "Agregado botón de eliminación con modal de confirmación, visible solo para usuarios staff"
 
+  - task: "Descarga por lotes en PDFHistory frontend"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/PDFHistory.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Agregadas funcionalidades de selección múltiple: (1) Checkbox en cada fila de historial, (2) Checkbox 'seleccionar todo' en encabezado, (3) Estado selectedItems para tracking de selecciones, (4) Barra de acciones flotante mostrando N documentos seleccionados, (5) Botón 'Limpiar selección', (6) Botón 'Descargar ZIP (N)' que llama al endpoint batch, (7) Indicador de loading durante descarga. Disponible para staff, asesor y client según permisos."
+
   - task: "Endpoint DELETE para usuarios"
     implemented: true
     working: true
