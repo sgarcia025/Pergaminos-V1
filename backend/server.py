@@ -5731,8 +5731,33 @@ async def execute_pdf_page_plan(
         
         # file_path is stored as absolute path, so use it directly
         pdf_path = Path(document["file_path"])
+        logger.info(f"Execute: Looking for PDF at: {pdf_path} (absolute: {pdf_path.resolve()})")
+        logger.info(f"Execute: PDF path exists: {pdf_path.exists()}")
+        
         if not pdf_path.exists():
-            raise HTTPException(status_code=404, detail="PDF file not found on server")
+            # Try to find the file in the upload directory
+            filename = Path(document["file_path"]).name
+            alternative_path = UPLOAD_DIR / filename
+            logger.info(f"Execute: Trying alternative path: {alternative_path}")
+            
+            if alternative_path.exists():
+                logger.info(f"Execute: Found PDF at alternative location: {alternative_path}")
+                pdf_path = alternative_path
+                # Update document path in database
+                await db.documents.update_one(
+                    {"id": document["id"]},
+                    {"$set": {"file_path": str(alternative_path)}}
+                )
+            else:
+                logger.error(f"Execute: PDF not found at {pdf_path} or {alternative_path}")
+                logger.error(f"Execute: Upload directory: {UPLOAD_DIR}")
+                logger.error(f"Execute: Upload directory exists: {UPLOAD_DIR.exists()}")
+                if UPLOAD_DIR.exists():
+                    logger.error(f"Execute: Upload directory contents: {list(UPLOAD_DIR.glob('*'))[:10]}")  # Show first 10 files
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"PDF file not found on server. Searched in: {pdf_path} and {alternative_path}"
+                )
         
         # Update job status to executing
         await db.pdf_page_manager_jobs.update_one(
