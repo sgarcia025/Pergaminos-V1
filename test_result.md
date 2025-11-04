@@ -705,6 +705,18 @@ frontend:
         - agent: "main"
         - comment: "Verificados campos existentes: pdf_history_retention_months (int, default 6, opciones: 3/6/12) y pdf_history_retention_until (datetime opcional) para extensión manual. Endpoints POST/PUT ya soportan estos campos."
 
+  - task: "Endpoint descarga por lotes PDF History"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Creado endpoint POST /api/pdf-history/download-batch que recibe array de history_ids y devuelve ZIP con múltiples PDFs. Límite: 50 archivos por descarga. Verifica permisos (staff/asesor/client) para cada archivo. Genera ZIP en memoria con nombres originales de archivos."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
