@@ -511,9 +511,9 @@ async def create_company(company_data: CompanyCreate, current_user: User = Depen
     await db.companies.insert_one(company.dict())
     
     # Increment corporation usage count if corporation is set
-    if company.corporation:
+    if company.corporacion:
         await db.corporations.update_one(
-            {"name": company.corporation},
+            {"name": company.corporacion},
             {"$inc": {"usage_count": 1}},
             upsert=False
         )
