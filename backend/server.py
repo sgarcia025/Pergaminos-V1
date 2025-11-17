@@ -577,8 +577,16 @@ async def get_company(company_id: str, current_user: User = Depends(get_current_
         raise HTTPException(status_code=404, detail="Company not found")
     
     # Check access permissions
-    if current_user.role == "client" and current_user.company_id != company_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if current_user.role == "client":
+        # Check if user has access through company_ids, company_id, or corporation
+        has_access = (
+            company_id in current_user.company_ids or
+            company_id == current_user.company_id or
+            (current_user.assigned_corporation and 
+             company.get("corporacion") == current_user.assigned_corporation)
+        )
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
