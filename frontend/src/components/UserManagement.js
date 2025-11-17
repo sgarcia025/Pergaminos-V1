@@ -390,24 +390,84 @@ const UserManagement = ({ user }) => {
               </div>
 
               {formData.role === 'client' && (
-                <div className="form-group">
-                  <label htmlFor="company_id" className="form-label">
-                    Empresa
-                  </label>
-                  <select
-                    id="company_id"
-                    value={formData.company_id}
-                    onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
-                    className="form-input"
-                  >
-                    <option value="">Sin empresa asignada</option>
-                    {companies.map((company) => (
-                      <option key={company.id} value={company.id}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <>
+                  {/* Corporation Assignment */}
+                  <div className="form-group">
+                    <label htmlFor="assigned_corporation" className="form-label">
+                      Corporación (acceso a todas las empresas de la corporación)
+                    </label>
+                    <select
+                      id="assigned_corporation"
+                      value={formData.assigned_corporation}
+                      onChange={(e) => setFormData({ ...formData, assigned_corporation: e.target.value })}
+                      className="form-input"
+                    >
+                      <option value="">Sin corporación asignada</option>
+                      {corporations.map((corp) => (
+                        <option key={corp.name} value={corp.name}>
+                          {corp.name} ({corp.usage_count} empresas)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Multiple Companies Assignment */}
+                  <div className="form-group">
+                    <label className="form-label">
+                      Empresas Específicas (selección múltiple)
+                    </label>
+                    <div className="border border-gray-300 rounded-lg p-3 max-h-60 overflow-y-auto">
+                      {companies.length === 0 ? (
+                        <p className="text-sm text-gray-500">No hay empresas disponibles</p>
+                      ) : (
+                        companies.map((company) => (
+                          <label key={company.id} className="flex items-center py-2 hover:bg-gray-50 px-2 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.company_ids.includes(company.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({
+                                    ...formData,
+                                    company_ids: [...formData.company_ids, company.id]
+                                  });
+                                } else {
+                                  setFormData({
+                                    ...formData,
+                                    company_ids: formData.company_ids.filter(id => id !== company.id)
+                                  });
+                                }
+                              }}
+                              className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 mr-3"
+                            />
+                            <span className="text-sm text-gray-700">
+                              {company.name}
+                              {company.corporacion && (
+                                <span className="text-xs text-gray-500 ml-2">
+                                  ({company.corporacion})
+                                </span>
+                              )}
+                            </span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                    {formData.company_ids.length > 0 && (
+                      <p className="text-sm text-gray-600 mt-2">
+                        {formData.company_ids.length} empresa(s) seleccionada(s)
+                      </p>
+                    )}
+                  </div>
+
+                  {formData.assigned_corporation && formData.company_ids.length > 0 && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-sm text-blue-800">
+                        <strong>Nota:</strong> Este usuario tendrá acceso a todas las empresas de la corporación "{formData.assigned_corporation}" 
+                        más las {formData.company_ids.length} empresa(s) específica(s) seleccionada(s).
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="flex justify-end space-x-3 pt-4">
