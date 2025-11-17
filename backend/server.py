@@ -688,9 +688,25 @@ async def get_project(project_id: str, current_user: User = Depends(get_current_
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Check access permissions
-    if current_user.role == "client" and current_user.company_id != project["company_id"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # Check access permissions for clients
+    if current_user.role == "client":
+        # Get company of this project
+        project_company_id = project["company_id"]
+        
+        # Check if user has access
+        has_access = (
+            project_company_id in current_user.company_ids or
+            project_company_id == current_user.company_id
+        )
+        
+        # Check corporation access if not directly assigned
+        if not has_access and current_user.assigned_corporation:
+            company = await db.companies.find_one({"id": project_company_id})
+            if company and company.get("corporacion") == current_user.assigned_corporation:
+                has_access = True
+        
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     
     return Project(**project)
 
@@ -700,9 +716,25 @@ async def get_project_documents(project_id: str, current_user: User = Depends(ge
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Check access permissions
-    if current_user.role == "client" and current_user.company_id != project["company_id"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # Check access permissions for clients
+    if current_user.role == "client":
+        # Get company of this project
+        project_company_id = project["company_id"]
+        
+        # Check if user has access
+        has_access = (
+            project_company_id in current_user.company_ids or
+            project_company_id == current_user.company_id
+        )
+        
+        # Check corporation access if not directly assigned
+        if not has_access and current_user.assigned_corporation:
+            company = await db.companies.find_one({"id": project_company_id})
+            if company and company.get("corporacion") == current_user.assigned_corporation:
+                has_access = True
+        
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     
     # Get documents, ordered by display_order if available, then by created_at
     documents = await db.documents.find({"project_id": project_id}).to_list(1000)
@@ -2311,9 +2343,25 @@ async def rename_document(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Check access permissions
-    if current_user.role == "client" and current_user.company_id != project["company_id"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # Check access permissions for clients
+    if current_user.role == "client":
+        # Get company of this project
+        project_company_id = project["company_id"]
+        
+        # Check if user has access
+        has_access = (
+            project_company_id in current_user.company_ids or
+            project_company_id == current_user.company_id
+        )
+        
+        # Check corporation access if not directly assigned
+        if not has_access and current_user.assigned_corporation:
+            company = await db.companies.find_one({"id": project_company_id})
+            if company and company.get("corporacion") == current_user.assigned_corporation:
+                has_access = True
+        
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     
     # Update document name
     await db.documents.update_one(
@@ -4128,9 +4176,25 @@ async def update_project(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Check access permissions
-    if current_user.role == "client" and current_user.company_id != project["company_id"]:
-        raise HTTPException(status_code=403, detail="Access denied")
+    # Check access permissions for clients
+    if current_user.role == "client":
+        # Get company of this project
+        project_company_id = project["company_id"]
+        
+        # Check if user has access
+        has_access = (
+            project_company_id in current_user.company_ids or
+            project_company_id == current_user.company_id
+        )
+        
+        # Check corporation access if not directly assigned
+        if not has_access and current_user.assigned_corporation:
+            company = await db.companies.find_one({"id": project_company_id})
+            if company and company.get("corporacion") == current_user.assigned_corporation:
+                has_access = True
+        
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
     
     # Validate project_code uniqueness if changed
     if project_data.project_code and project_data.project_code != project.get("project_code"):
