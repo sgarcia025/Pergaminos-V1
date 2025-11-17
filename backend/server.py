@@ -451,11 +451,23 @@ async def register_user(user_data: UserCreate, current_user: User = Depends(get_
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Validate company_id for client users
-    if user_data.role == "client" and user_data.company_id:
-        company = await db.companies.find_one({"id": user_data.company_id})
-        if not company:
-            raise HTTPException(status_code=400, detail="Company not found")
+    # Validate company assignments for client users
+    if user_data.role == "client":
+        # Handle backward compatibility: if company_id is set, add to company_ids
+        if user_data.company_id and user_data.company_id not in user_data.company_ids:
+            user_data.company_ids.append(user_data.company_id)
+        
+        # Validate all company_ids
+        for company_id in user_data.company_ids:
+            company = await db.companies.find_one({"id": company_id})
+            if not company:
+                raise HTTPException(status_code=400, detail=f"Company {company_id} not found")
+        
+        # Validate corporation if assigned
+        if user_data.assigned_corporation:
+            corp = await db.corporations.find_one({"name": user_data.assigned_corporation})
+            if not corp:
+                raise HTTPException(status_code=400, detail=f"Corporation {user_data.assigned_corporation} not found")
     
     # Create user
     hashed_password = get_password_hash(user_data.password)
