@@ -32,6 +32,7 @@ const UserManagement = ({ user }) => {
     if (user.role === 'staff') {
       fetchUsers();
       fetchCompanies();
+      fetchCorporations();
     }
   }, [user]);
 
