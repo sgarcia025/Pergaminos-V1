@@ -80,7 +80,9 @@ const UserManagement = ({ user }) => {
         name: '',
         password: '',
         role: 'client',
-        company_id: ''
+        company_id: '',
+        company_ids: [],
+        assigned_corporation: ''
       });
       fetchUsers();
     } catch (error) {
