@@ -104,7 +104,9 @@ class User(BaseModel):
     email: EmailStr
     name: str
     role: str  # "staff", "asesor", or "client"
-    company_id: Optional[str] = None  # Only for client users
+    company_id: Optional[str] = None  # Deprecated: use company_ids instead
+    company_ids: List[str] = []  # Multiple companies for client users
+    assigned_corporation: Optional[str] = None  # Corporation assignment for client users
     is_active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
