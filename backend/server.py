@@ -538,9 +538,29 @@ async def create_company(company_data: CompanyCreate, current_user: User = Depen
 
 @api_router.get("/companies", response_model=List[Company])
 async def get_companies(current_user: User = Depends(get_current_user)):
-    if current_user.role == "client" and current_user.company_id:
-        # Clients can only see their own company
-        companies = await db.companies.find({"id": current_user.company_id}).to_list(1000)
+    if current_user.role == "client":
+        # Clients can see companies based on assignment
+        query_conditions = []
+        
+        # Add companies from company_ids list
+        if current_user.company_ids:
+            query_conditions.append({"id": {"$in": current_user.company_ids}})
+        
+        # Add backward compatibility for single company_id
+        elif current_user.company_id:
+            query_conditions.append({"id": current_user.company_id})
+        
+        # Add companies from assigned corporation
+        if current_user.assigned_corporation:
+            query_conditions.append({"corporacion": current_user.assigned_corporation})
+        
+        # Combine conditions with $or
+        if query_conditions:
+            query = {"$or": query_conditions} if len(query_conditions) > 1 else query_conditions[0]
+            companies = await db.companies.find(query).to_list(1000)
+        else:
+            companies = []
+            
     elif current_user.role == "asesor":
         # Asesores can only see companies assigned to them
         companies = await db.companies.find({"asesor_comercial_id": current_user.id}).to_list(1000)
