@@ -6160,10 +6160,35 @@ async def get_pdf_history(
         
         # Apply role-based filtering
         if current_user.role == "client":
-            # Clients can only see their company's history
-            if not current_user.company_id:
-                raise HTTPException(status_code=403, detail="Client user has no company assigned")
-            query_filter["company_id"] = current_user.company_id
+            # Get all companies the client has access to
+            accessible_company_ids = set()
+            
+            # Add from company_ids list
+            if current_user.company_ids:
+                accessible_company_ids.update(current_user.company_ids)
+            
+            # Add backward compatibility for single company_id
+            if current_user.company_id:
+                accessible_company_ids.add(current_user.company_id)
+            
+            # Add companies from assigned corporation
+            if current_user.assigned_corporation:
+                corp_companies = await db.companies.find(
+                    {"corporacion": current_user.assigned_corporation}
+                ).to_list(1000)
+                accessible_company_ids.update([c["id"] for c in corp_companies])
+            
+            if not accessible_company_ids:
+                raise HTTPException(status_code=403, detail="Client user has no companies assigned")
+            
+            # Filter to accessible companies
+            if company_id:
+                # Verify client has access to this specific company
+                if company_id not in accessible_company_ids:
+                    raise HTTPException(status_code=403, detail="Access denied to this company")
+                query_filter["company_id"] = company_id
+            else:
+                query_filter["company_id"] = {"$in": list(accessible_company_ids)}
         elif current_user.role == "asesor":
             # Asesores can only see their assigned companies' history
             assigned_companies = await db.companies.find(
