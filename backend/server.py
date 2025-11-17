@@ -650,11 +650,34 @@ async def create_project(project_data: ProjectCreate, current_user: User = Depen
 
 @api_router.get("/projects", response_model=List[Project])
 async def get_projects(current_user: User = Depends(get_current_user)):
-    if current_user.role == "client" and current_user.company_id:
-        # Clients can only see projects from their company
-        projects = await db.projects.find({"company_id": current_user.company_id}).to_list(1000)
+    if current_user.role == "client":
+        # Get all companies the client has access to
+        accessible_company_ids = set()
+        
+        # Add from company_ids list
+        if current_user.company_ids:
+            accessible_company_ids.update(current_user.company_ids)
+        
+        # Add backward compatibility for single company_id
+        if current_user.company_id:
+            accessible_company_ids.add(current_user.company_id)
+        
+        # Add companies from assigned corporation
+        if current_user.assigned_corporation:
+            corp_companies = await db.companies.find(
+                {"corporacion": current_user.assigned_corporation}
+            ).to_list(1000)
+            accessible_company_ids.update([c["id"] for c in corp_companies])
+        
+        # Get projects from accessible companies
+        if accessible_company_ids:
+            projects = await db.projects.find(
+                {"company_id": {"$in": list(accessible_company_ids)}}
+            ).to_list(1000)
+        else:
+            projects = []
     else:
-        # Staff can see all projects
+        # Staff and asesor can see all projects
         projects = await db.projects.find().to_list(1000)
     
     return [Project(**project) for project in projects]
