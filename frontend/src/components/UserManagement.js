@@ -7,6 +7,7 @@ const API = `${BACKEND_URL}/api`;
 const UserManagement = ({ user }) => {
   const [users, setUsers] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [corporations, setCorporations] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +23,9 @@ const UserManagement = ({ user }) => {
     name: '',
     password: '',
     role: 'client',
-    company_id: ''
+    company_id: '',
+    company_ids: [],
+    assigned_corporation: ''
   });
 
   useEffect(() => {
