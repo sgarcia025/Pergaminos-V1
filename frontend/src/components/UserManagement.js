@@ -57,6 +57,15 @@ const UserManagement = ({ user }) => {
     }
   };
 
+  const fetchCorporations = async () => {
+    try {
+      const response = await axios.get(`${API}/corporations`);
+      setCorporations(response.data);
+    } catch (error) {
+      console.error('Error fetching corporations:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
