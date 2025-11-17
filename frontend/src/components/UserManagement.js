@@ -250,10 +250,38 @@ const UserManagement = ({ user }) => {
                   </span>
                 </td>
                 <td className="text-gray-600">
-                  {userItem.company_id ? (
-                    companies.find(c => c.id === userItem.company_id)?.name || 'N/A'
+                  {userItem.role === 'client' ? (
+                    <div className="space-y-1">
+                      {userItem.assigned_corporation && (
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 text-blue-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="text-sm font-medium text-blue-600">
+                            Corp: {userItem.assigned_corporation}
+                          </span>
+                        </div>
+                      )}
+                      {userItem.company_ids && userItem.company_ids.length > 0 ? (
+                        <div className="text-sm text-gray-700">
+                          <span className="font-medium">{userItem.company_ids.length} empresa(s)</span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {userItem.company_ids.slice(0, 2).map(id => 
+                              companies.find(c => c.id === id)?.name
+                            ).filter(Boolean).join(', ')}
+                            {userItem.company_ids.length > 2 && ` +${userItem.company_ids.length - 2} más`}
+                          </div>
+                        </div>
+                      ) : userItem.company_id ? (
+                        <span className="text-sm">
+                          {companies.find(c => c.id === userItem.company_id)?.name || 'N/A'}
+                        </span>
+                      ) : (
+                        !userItem.assigned_corporation && <span className="text-gray-400">Sin asignar</span>
+                      )}
+                    </div>
                   ) : (
-                    'N/A'
+                    <span className="text-gray-400">N/A</span>
                   )}
                 </td>
                 <td>
