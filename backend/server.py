@@ -115,7 +115,9 @@ class UserCreate(BaseModel):
     name: str
     password: str
     role: str  # "staff", "asesor", or "client"
-    company_id: Optional[str] = None
+    company_id: Optional[str] = None  # Deprecated: use company_ids instead
+    company_ids: List[str] = []  # Multiple companies for client users
+    assigned_corporation: Optional[str] = None  # Corporation assignment for client users
 
 class UserLogin(BaseModel):
     email: EmailStr
