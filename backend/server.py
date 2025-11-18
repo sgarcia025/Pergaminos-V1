@@ -538,6 +538,9 @@ async def create_company(company_data: CompanyCreate, current_user: User = Depen
 
 @api_router.get("/companies", response_model=List[Company])
 async def get_companies(current_user: User = Depends(get_current_user)):
+    logger.info(f"Get companies request from user: {current_user.email}, role: {current_user.role}")
+    logger.info(f"User company_ids: {current_user.company_ids}, assigned_corporation: {current_user.assigned_corporation}")
+    
     if current_user.role == "client":
         # Clients can see companies based on assignment
         query_conditions = []
