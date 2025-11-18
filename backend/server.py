@@ -6821,6 +6821,49 @@ app.mount("/uploads/pdf_manager_output", StaticFiles(directory=str(pdf_manager_o
 # Include the router in the main app
 app.include_router(api_router)
 
+
+# DEBUG ENDPOINT - Remove after fixing production issue
+@api_router.get("/debug/user-model")
+async def debug_user_model(current_user: User = Depends(get_current_user)):
+    """Debug endpoint to check user model serialization"""
+    try:
+        return {
+            "status": "ok",
+            "user": {
+                "id": current_user.id,
+                "email": current_user.email,
+                "role": current_user.role,
+                "company_id": current_user.company_id,
+                "company_ids": current_user.company_ids,
+                "assigned_corporation": current_user.assigned_corporation,
+                "is_active": current_user.is_active
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+@api_router.get("/debug/health")
+async def debug_health():
+    """Simple health check - no auth required"""
+    try:
+        # Test MongoDB connection
+        await db.users.find_one({})
+        return {
+            "status": "ok",
+            "database": "connected",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
