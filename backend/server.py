@@ -2890,7 +2890,16 @@ async def get_users(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Only staff can view users")
     
     users = await db.users.find().to_list(1000)
-    return [User(**user) for user in users]
+    # Ensure backward compatibility with users missing new fields
+    result = []
+    for user in users:
+        # Set defaults for new fields if they don't exist
+        if 'company_ids' not in user:
+            user['company_ids'] = []
+        if 'assigned_corporation' not in user:
+            user['assigned_corporation'] = None
+        result.append(User(**user))
+    return result
 
 @api_router.put("/users/{user_id}/toggle-status")
 async def toggle_user_status(user_id: str, status_data: dict, current_user: User = Depends(get_current_user)):
