@@ -93,6 +93,13 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     user = await db.users.find_one({"id": user_id})
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    
+    # Ensure backward compatibility with users missing new fields
+    if 'company_ids' not in user:
+        user['company_ids'] = []
+    if 'assigned_corporation' not in user:
+        user['assigned_corporation'] = None
+    
     return User(**user)
 
 # Pydantic Models
