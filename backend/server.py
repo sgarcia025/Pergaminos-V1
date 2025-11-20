@@ -2158,15 +2158,22 @@ async def process_document_with_ai(document_id: str, project: dict):
                     # Get AI config for data extraction
                     extraction_config = await get_ai_config_for_task(project["id"], "data_extraction")
                     
+                    # Calculate chunk-relative page numbers (chunk PDFs start at page 1)
+                    chunk_pages = end_page - start_page + 1
+                    
                     # Process this chunk with AI
+                    # Note: We pass the original page numbers for display purposes,
+                    # but the chunk file itself contains pages 1 to chunk_pages
                     chunk_result = await process_single_chunk(
                         str(chunk_path), 
                         semantic_instructions, 
                         extraction_config,
                         chunk_idx + 1,
-                        start_page + 1,
-                        end_page + 1,
-                        project["id"]
+                        1,  # Chunk PDF always starts at page 1
+                        chunk_pages,  # Last page of chunk PDF
+                        project["id"],
+                        original_start=start_page + 1,  # Pass original page numbers for display
+                        original_end=end_page + 1
                     )
                     
                     if chunk_result:
