@@ -1905,18 +1905,30 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         )
         
         prompt = f"""
-        Analyze this PDF chunk (pages {start_page} to {end_page}) and extract structured data based on these instructions:
+        CRITICAL INSTRUCTIONS - READ CAREFULLY:
         
+        You MUST extract ONLY the REAL DATA that is ACTUALLY PRESENT in the document text provided below.
+        DO NOT generate example data, fictitious data, or placeholder data.
+        DO NOT invent names, numbers, dates, or any information that is not explicitly written in the document.
+        
+        If a field cannot be found in the document text, set it to null - DO NOT make up data.
+        
+        EXTRACTION INSTRUCTIONS:
         {semantic_instructions}
         
-        DOCUMENT TEXT CONTENT:
+        DOCUMENT TEXT CONTENT (Pages {start_page} to {end_page}):
+        ===START OF DOCUMENT TEXT===
         {pdf_text}
+        ===END OF DOCUMENT TEXT===
         
-        Please provide the extracted data in JSON format with clear field names and values.
-        If certain information is not available, mark it as null.
-        Focus on accuracy and completeness.
+        RESPONSE FORMAT:
+        Provide the extracted data in JSON format with clear field names and values.
+        Only include fields where you found REAL data in the document text above.
+        If certain information is not available in the text, mark it as null.
         
-        Note: This is chunk {chunk_number} of a larger document. Extract all relevant data from these specific pages.
+        REMINDER: Extract ONLY what is actually written in the document. NO examples, NO placeholders, NO invented data.
+        
+        This is chunk {chunk_number} of a larger document. Extract all relevant data from these specific pages.
         """
         
         user_message = UserMessage(text=prompt)
