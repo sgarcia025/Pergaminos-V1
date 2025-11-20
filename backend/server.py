@@ -1964,24 +1964,24 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
                 extracted_data = json.loads(json_match.group())
                 return {
                     "chunk_number": chunk_number,
-                    "start_page": start_page,
-                    "end_page": end_page,
+                    "start_page": display_start,
+                    "end_page": display_end,
                     "data": extracted_data,
                     "status": "success"
                 }
             except json.JSONDecodeError:
                 return {
                     "chunk_number": chunk_number,
-                    "start_page": start_page,
-                    "end_page": end_page,
+                    "start_page": display_start,
+                    "end_page": display_end,
                     "raw_response": response,
                     "status": "needs_review"
                 }
         else:
             return {
                 "chunk_number": chunk_number,
-                "start_page": start_page,
-                "end_page": end_page,
+                "start_page": display_start,
+                "end_page": display_end,
                 "raw_response": response,
                 "status": "needs_review"
             }
@@ -1990,8 +1990,8 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         logger.error(f"Error processing chunk {chunk_number}: {str(e)}")
         return {
             "chunk_number": chunk_number,
-            "start_page": start_page,
-            "end_page": end_page,
+            "start_page": display_start if original_start else start_page,
+            "end_page": display_end if original_end else end_page,
             "error": str(e),
             "status": "failed"
         }
