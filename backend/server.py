@@ -1934,7 +1934,7 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         EXTRACTION INSTRUCTIONS:
         {semantic_instructions}
         
-        DOCUMENT TEXT CONTENT (Pages {start_page} to {end_page}):
+        DOCUMENT TEXT CONTENT (Pages {display_start} to {display_end}):
         ===START OF DOCUMENT TEXT===
         {pdf_text}
         ===END OF DOCUMENT TEXT===
