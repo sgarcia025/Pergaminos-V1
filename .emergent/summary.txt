@@ -1,195 +1,101 @@
 <analysis>
-The AI engineer's work focused on enhancing the Pergaminos digitalización application, particularly around AI-driven PDF processing. Initial efforts resolved Tesseract OCR integration issues, expanding it from just the PDF Page Manager to the main document upload/QA pipeline. This involved installing  and  system dependencies and updating backend logic for conditional OCR fallback (PyPDF2 first, then Tesseract/GPT-4o Vision). A global OCR configuration (toggle, method selection) was implemented, along with PDF page extraction/reordering capabilities. Progress messages were added to improve user experience during long processing times. The integration of GPT-4o Vision OCR was also a significant part, requiring careful backend modifications. The immediate preceding problem involved the user asking where the history of reordered/extracted documents is saved, implying a need for a document history or audit trail feature. The engineer is currently in the process of investigating this.
+The trajectory details an iterative development process, starting with feature enhancements and transitioning into critical production debugging. The initial task was to add an activation toggle and history retention settings to project cards. This involved backend model changes in  and frontend updates in . Following this, a user-reported bug regarding inconsistent UI state (toggle vs. status badge) and unintended navigation on click was addressed by refactoring the project card component and adding .
+
+Subsequently, the developer implemented a feature for batch downloading documents from the PDF history page, adding a backend endpoint () and frontend UI with checkboxes in . A bug related to temporary file paths causing 404 errors on download was fixed by moving processed files to a permanent history directory.
+
+A major feature request followed: allowing 'client' users to be assigned to multiple companies or an entire corporation. This required significant backend refactoring: updating the  model, modifying permission checks across multiple endpoints (, , ), and ensuring backward compatibility in the  function for old user documents in the database. The frontend  component was overhauled to support this new assignment logic.
+
+The final and most critical phase involved debugging a production environment where the application was throwing 500 Internal Server Error when fetching users and companies. After multiple failed attempts to fix the code (assuming a data model issue), the root cause was identified as incorrect production environment variables ( missing the database name and an incomplete ). The work concluded with providing the user explicit instructions to correct these variables, redeploy, and run a database-reset script.
+
+The user primarily communicates in Spanish, and the AI engineer has been responding in Spanish. The next agent must continue to communicate in **Spanish**.
 </analysis>
 
 <product_requirements>
-The Pergaminos digitalización app manages clients and projects, providing AI-driven PDF processing and user management. Recent enhancements included: custom project IDs, multi-contact support for companies, dashboard date filters, client read-only access, admin password reset, and Spanish localization of AI outputs. A key focus was developing PDF Manager and PDF Manager IA por Página modules for semantic PDF renaming, reordering, and extraction using natural language, supporting multi-tenancy. A Manual de Uso with AI chat and PDF download was added. A configurable AI module manages OpenAI keys. The system needs to handle large files and image-based PDFs via OCR. Current work involved enabling a global OCR toggle, allowing users to select between Tesseract and GPT-4o Vision, which applies only if the PDF has no embedded text. Additionally, functionality to extract pages and create new PDFs from existing ones was implemented. The system now needs to store and manage the history of these reordered and extracted documents.
+The Pergaminos digitalización application is a multi-tenant, AI-driven document management platform. Its purpose is to streamline the processing, organization, and analysis of PDF documents for various companies and projects.
+
+Core features implemented include:
+-   **User, Company, and Project Management**: Admins can manage companies, projects with custom codes, and users with different roles (staff, client).
+-   **AI-Powered PDF Processing**: Modules like PDF Manager IA allow users to rename, reorder, and extract pages from PDFs using natural language instructions.
+-   **Multi-Tenancy and Client Access**: Client-role users were initially tied to a single company. This has been enhanced to allow clients to be assigned to either an entire corporation (granting access to all its companies) or a specific list of multiple companies.
+-   **Document History and Auditing**: An audit trail () logs all PDF manipulation operations (rename, extract, reorder). This history includes batch download functionality via checkboxes.
+-   **Project Lifecycle Management**: Projects can be activated or deactivated via a toggle on their card. A configurable history retention policy (3, 6, 12 months) is set per project.
+-   **QA and AI Interaction**: The system includes a QA review process for AI-processed documents and a client-facing portal for asking AI questions about the documents, with links to download source files.
 </product_requirements>
 
 <key_technical_concepts>
-- FastAPI (Backend)
-- React (Frontend)
-- MongoDB (Database)
-- Tesseract OCR, , ,  (Image-based PDF text extraction)
-- OpenAI GPT-4o Vision (Advanced OCR and AI processing)
-- PyPDF2 (Standard PDF text extraction)
--  (LLM Integration library)
--  (HTTP client with interceptors for authentication)
-- Supervisor (Service management for frontend/backend)
+- **Backend**: FastAPI, Pydantic, Motor (async MongoDB driver)
+- **Frontend**: React, Axios, Tailwind CSS
+- **Database**: MongoDB
+- **Architecture**: MERN-like stack (MongoDB, Express-like FastAPI, React, Node.js environment)
+- **Process Management**: Supervisor
+- **Core Concepts**: REST API design, asynchronous programming, JWT authentication, data modeling for backward compatibility, environment variable management.
 </key_technical_concepts>
 
 <code_architecture>
-The application utilizes a standard MERN-like stack with React for the frontend, FastAPI for the backend, and MongoDB for data storage.
+The application follows a standard frontend-backend separation architecture.
 
 
 
--   : Core FastAPI application containing API endpoints, Pydantic models, and business logic.
-    -   **Importance**: Centralizes all backend functionality.
-    -   **Changes**:
-        -   Added  to  model for progress updates.
-        -   Introduced  and  Pydantic models for global OCR settings.
-        -   New endpoints  for managing global OCR settings (GET/POST).
-        -   Modified  to incorporate global OCR configuration (toggle, Tesseract/GPT-4o Vision selection).
-        -   Implemented  helper function for Vision OCR.
-        -   Updated  and  to use the enhanced  and pass  and .
-        -   Added  Pydantic model and updated  to include  and .
-        -   Modified  and  endpoints in PDF Page Manager to support both reorder and extract modes.
-        -   Created  function for page extraction logic.
-        -   Updated  endpoint to handle both reordered and extracted PDFs.
-        -   Added progress message updates to various document processing functions.
-        -   Modified  for intelligent renaming by reading PDF content.
-        -   Updated  chat prompt to dynamically handle language.
--   : Python dependencies.
-    -   **Importance**: Specifies backend Python packages.
-    -   **Changes**: , ,  added,  is used for LLM interactions.
--   : Main React component.
-    -   **Importance**: Handles global configurations and Axios defaults.
-    -   **Changes**: Increased global Axios timeout to 120000ms.
--   : Manages AI-related settings.
-    -   **Importance**: User interface for AI and OCR configurations.
-    -   **Changes**: Added UI for global OCR configuration (toggle, method selection for Tesseract/GPT-4o Vision). Hidden Sistema Universal (Emergent LLM key) option.
--   : Displays project details and document status.
-    -   **Importance**: Provides document overview and progress.
-    -   **Changes**: Added document processing progress messages and automatic polling to update document status.
--   : Frontend for PDF Page Manager.
-    -   **Importance**: Enables PDF reordering and extraction.
-    -   **Changes**: Implemented UI for switching between Reordenar páginas and Extraer páginas modes, including manual range input and dynamic instruction placeholders. Fixed multiple JSX syntax errors.
--   : User manual.
-    -   **Importance**: Provides instructions and AI chat.
-    -   **Changes**: Updated content to reflect new features (OCR, PDF page management, password reset).
--   , Installing OCR system dependencies...
-Hit:1 http://deb.debian.org/debian bookworm InRelease
-Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
-Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
-Hit:4 https://deb.nodesource.com/node_20.x nodistro InRelease
-Hit:5 https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 InRelease
-Get:6 http://deb.debian.org/debian-security bookworm-security/main arm64 Packages [280 kB]
-Fetched 384 kB in 1s (292 kB/s)
-Reading package lists...
-Reading package lists...
-Building dependency tree...
-Reading state information...
-The following additional packages will be installed:
-  libarchive13 libgif7 liblcms2-2 liblept5 libopenjp2-7 libpangocairo-1.0-0
-  libpangoft2-1.0-0 libpoppler126 libtesseract5 libwebpmux3 poppler-data
-  tesseract-ocr-osd
-Suggested packages:
-  lrzip liblcms2-utils ghostscript fonts-japanese-mincho
-  | fonts-ipafont-mincho fonts-arphic-ukai fonts-arphic-uming fonts-nanum
-The following NEW packages will be installed:
-  libarchive13 libgif7 liblcms2-2 liblept5 libopenjp2-7 libpangocairo-1.0-0
-  libpangoft2-1.0-0 libpoppler126 libtesseract5 libwebpmux3 poppler-data
-  poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd
-  tesseract-ocr-spa
-0 upgraded, 16 newly installed, 0 to remove and 2 not upgraded.
-Need to get 12.4 MB of archives.
-After this operation, 47.6 MB of additional disk space will be used.
-Get:1 http://deb.debian.org/debian bookworm/main arm64 poppler-data all 0.4.12-1 [1601 kB]
-Get:2 http://deb.debian.org/debian bookworm/main arm64 libarchive13 arm64 3.6.2-1+deb12u3 [317 kB]
-Get:3 http://deb.debian.org/debian bookworm/main arm64 libgif7 arm64 5.2.1-2.5 [46.7 kB]
-Get:4 http://deb.debian.org/debian bookworm/main arm64 liblcms2-2 arm64 2.14-2 [143 kB]
-Get:5 http://deb.debian.org/debian bookworm/main arm64 libopenjp2-7 arm64 2.5.0-2+deb12u2 [176 kB]
-Get:6 http://deb.debian.org/debian bookworm/main arm64 libwebpmux3 arm64 1.2.4-0.2+deb12u1 [109 kB]
-Get:7 http://deb.debian.org/debian bookworm/main arm64 liblept5 arm64 1.82.0-3+b3 [973 kB]
-Get:8 http://deb.debian.org/debian bookworm/main arm64 libpangoft2-1.0-0 arm64 1.50.12+ds-1 [44.5 kB]
-Get:9 http://deb.debian.org/debian bookworm/main arm64 libpangocairo-1.0-0 arm64 1.50.12+ds-1 [32.0 kB]
-Get:10 http://deb.debian.org/debian bookworm/main arm64 libpoppler126 arm64 22.12.0-2+deb12u1 [1753 kB]
-Get:11 http://deb.debian.org/debian bookworm/main arm64 libtesseract5 arm64 5.3.0-2 [1123 kB]
-Get:12 http://deb.debian.org/debian bookworm/main arm64 poppler-utils arm64 22.12.0-2+deb12u1 [177 kB]
-Get:13 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-eng all 1:4.1.0-2 [1594 kB]
-Get:14 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-osd all 1:4.1.0-2 [2992 kB]
-Get:15 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr arm64 5.3.0-2 [363 kB]
-Get:16 http://deb.debian.org/debian bookworm/main arm64 tesseract-ocr-spa all 1:4.1.0-2 [954 kB]
-Fetched 12.4 MB in 0s (62.9 MB/s)
-Selecting previously unselected package poppler-data.
-(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 38433 files and directories currently installed.)
-Preparing to unpack .../00-poppler-data_0.4.12-1_all.deb ...
-Unpacking poppler-data (0.4.12-1) ...
-Selecting previously unselected package libarchive13:arm64.
-Preparing to unpack .../01-libarchive13_3.6.2-1+deb12u3_arm64.deb ...
-Unpacking libarchive13:arm64 (3.6.2-1+deb12u3) ...
-Selecting previously unselected package libgif7:arm64.
-Preparing to unpack .../02-libgif7_5.2.1-2.5_arm64.deb ...
-Unpacking libgif7:arm64 (5.2.1-2.5) ...
-Selecting previously unselected package liblcms2-2:arm64.
-Preparing to unpack .../03-liblcms2-2_2.14-2_arm64.deb ...
-Unpacking liblcms2-2:arm64 (2.14-2) ...
-Selecting previously unselected package libopenjp2-7:arm64.
-Preparing to unpack .../04-libopenjp2-7_2.5.0-2+deb12u2_arm64.deb ...
-Unpacking libopenjp2-7:arm64 (2.5.0-2+deb12u2) ...
-Selecting previously unselected package libwebpmux3:arm64.
-Preparing to unpack .../05-libwebpmux3_1.2.4-0.2+deb12u1_arm64.deb ...
-Unpacking libwebpmux3:arm64 (1.2.4-0.2+deb12u1) ...
-Selecting previously unselected package liblept5:arm64.
-Preparing to unpack .../06-liblept5_1.82.0-3+b3_arm64.deb ...
-Unpacking liblept5:arm64 (1.82.0-3+b3) ...
-Selecting previously unselected package libpangoft2-1.0-0:arm64.
-Preparing to unpack .../07-libpangoft2-1.0-0_1.50.12+ds-1_arm64.deb ...
-Unpacking libpangoft2-1.0-0:arm64 (1.50.12+ds-1) ...
-Selecting previously unselected package libpangocairo-1.0-0:arm64.
-Preparing to unpack .../08-libpangocairo-1.0-0_1.50.12+ds-1_arm64.deb ...
-Unpacking libpangocairo-1.0-0:arm64 (1.50.12+ds-1) ...
-Selecting previously unselected package libpoppler126:arm64.
-Preparing to unpack .../09-libpoppler126_22.12.0-2+deb12u1_arm64.deb ...
-Unpacking libpoppler126:arm64 (22.12.0-2+deb12u1) ...
-Selecting previously unselected package libtesseract5:arm64.
-Preparing to unpack .../10-libtesseract5_5.3.0-2_arm64.deb ...
-Unpacking libtesseract5:arm64 (5.3.0-2) ...
-Selecting previously unselected package poppler-utils.
-Preparing to unpack .../11-poppler-utils_22.12.0-2+deb12u1_arm64.deb ...
-Unpacking poppler-utils (22.12.0-2+deb12u1) ...
-Selecting previously unselected package tesseract-ocr-eng.
-Preparing to unpack .../12-tesseract-ocr-eng_1%3a4.1.0-2_all.deb ...
-Unpacking tesseract-ocr-eng (1:4.1.0-2) ...
-Selecting previously unselected package tesseract-ocr-osd.
-Preparing to unpack .../13-tesseract-ocr-osd_1%3a4.1.0-2_all.deb ...
-Unpacking tesseract-ocr-osd (1:4.1.0-2) ...
-Selecting previously unselected package tesseract-ocr.
-Preparing to unpack .../14-tesseract-ocr_5.3.0-2_arm64.deb ...
-Unpacking tesseract-ocr (5.3.0-2) ...
-Selecting previously unselected package tesseract-ocr-spa.
-Preparing to unpack .../15-tesseract-ocr-spa_1%3a4.1.0-2_all.deb ...
-Unpacking tesseract-ocr-spa (1:4.1.0-2) ...
-Setting up liblcms2-2:arm64 (2.14-2) ...
-Setting up libarchive13:arm64 (3.6.2-1+deb12u3) ...
-Setting up tesseract-ocr-eng (1:4.1.0-2) ...
-Setting up poppler-data (0.4.12-1) ...
-Setting up libgif7:arm64 (5.2.1-2.5) ...
-Setting up tesseract-ocr-spa (1:4.1.0-2) ...
-Setting up libopenjp2-7:arm64 (2.5.0-2+deb12u2) ...
-Setting up tesseract-ocr-osd (1:4.1.0-2) ...
-Setting up libpangoft2-1.0-0:arm64 (1.50.12+ds-1) ...
-Setting up libwebpmux3:arm64 (1.2.4-0.2+deb12u1) ...
-Setting up libpangocairo-1.0-0:arm64 (1.50.12+ds-1) ...
-Setting up liblept5:arm64 (1.82.0-3+b3) ...
-Setting up libpoppler126:arm64 (22.12.0-2+deb12u1) ...
-Setting up libtesseract5:arm64 (5.3.0-2) ...
-Setting up poppler-utils (22.12.0-2+deb12u1) ...
-Setting up tesseract-ocr (5.3.0-2) ...
-Processing triggers for libc-bin (2.36-9+deb12u13) ...
-Processing triggers for fontconfig (2.14.1-4) ...
-Verifying installations...
-✓ poppler-utils installed successfully
-✓ tesseract-ocr installed successfully
-tesseract 5.3.0
-Available languages:
-List of available languages in "/usr/share/tesseract-ocr/5/tessdata/" (3):
-eng
-osd
-spa
-Installation complete!, , : New files created to document and facilitate system dependency installation (, ) for deployment.
+-   :
+    -   **Importance**: The single source of truth for all backend logic, API endpoints, and Pydantic data models. It handles database interactions, business logic, and authentication.
+    -   **Summary of Changes**:
+        1.  Added  and  to the  model.
+        2.  Added a  POST endpoint to create and stream a ZIP file of multiple selected history documents.
+        3.  Fixed a bug where temporary file paths were saved to history, leading to 404s. The fix involves copying processed files to a permanent  directory.
+        4.  Modified the  model to replace  with  and  to support multi-company access for clients.
+        5.  Crucially updated the  function to manually check for and add default values for  and  when fetching user data from MongoDB. This ensures backward compatibility for user documents created before the model change and was the key fix for the production errors.
+        6.  Updated permission logic in , , and  endpoints to respect the new multi-company/corporation access rights.
+        7.  Fixed an  in the company creation endpoint by correcting  to .
+        8.  A debug endpoint  was temporarily added to diagnose deployment issues.
+
+-   :
+    -   **Importance**: Renders the list of project cards and the project creation modal.
+    -   **Summary of Changes**:
+        1.  Added a toggle switch for the  status and a dropdown for  to each project card.
+        2.  Implemented  and  functions to call the backend and update the project state.
+        3.  Refactored the card's JSX to prevent the entire card from acting as a navigation link, which fixed a bug where interacting with the new controls would navigate away.  was added to the control event handlers.
+
+-   :
+    -   **Importance**: UI for creating and managing users.
+    -   **Summary of Changes**:
+        1.  Overhauled the user creation/editing form for the 'client' role.
+        2.  The single company dropdown was replaced with a conditional UI: a dropdown to assign a whole corporation OR a multi-select checkbox list to assign specific companies.
+        3.  The component state and submission payload were updated to handle  and .
+
+-   :
+    -   **Importance**: Displays the audit trail of PDF operations.
+    -   **Summary of Changes**:
+        1.  Added state () to track selected rows.
+        2.  Added a checkbox to each row and a select all checkbox in the table header.
+        3.  Implemented a floating action bar that appears when items are selected, showing the selection count and a Download ZIP button.
+        4.  The  function was added to make a POST request to the  endpoint with the selected history IDs.
+
+-    (NEW):
+    -   **Importance**: A recovery script created as a last resort to fix production data issues.
+    -   **Summary**: It connects to the MongoDB database and deletes all documents from the , , , and  collections. It also deletes all users except for , effectively resetting the application's data to a clean state.
 </code_architecture>
 
 <pending_tasks>
-- Investigate and resolve root cause of duplicate segments if the frontend deduplication is insufficient.
-- The OCR functionality, while implemented, faces issues in the deployed environment due to missing system dependencies (, ). The AI engineer has created , , and  to address this.
-- The user is asking en donde se guarda el historial de documentos re ordenador y extraidos?, implying a need to implement a history/audit trail feature for these operations.
+- The original issue with missing OCR system dependencies (, ) in the deployment environment has not been explicitly confirmed as resolved. While scripts were created, the focus shifted to more critical application-breaking bugs.
 </pending_tasks>
 
 <current_work>
-Immediately prior to this summary, the AI engineer was addressing a user's question regarding the storage location of the history of reordered and extracted PDF documents. The user asked, en donde se guarda el historial de documentos re ordenador y extraidos?. The AI engineer's last action was to start investigating this by checking dónde se guardan los PDFs reordenados/extraídos y si hay un historial. This indicates the current focus is on understanding the persistence and audit trail (or lack thereof) for the PDF manipulation features that were recently added (reordering and extraction). This task aims to either locate an existing history mechanism or identify the need to implement one.
+The most recent work was a critical debugging session to resolve a production outage where the Companies and Users pages failed to load, returning a . Initial attempts to fix this by modifying Pydantic models with default values were unsuccessful.
+
+The root cause was ultimately traced to incorrect environment variables in the production deployment. The user provided a screenshot of their settings, revealing:
+1.  ** was incomplete**: It was missing the database name () in the connection string.
+2.  ** was incomplete**: It was missing the  TLD.
+
+After several back-and-forths and failed deployments, the user requested a way to reset the database to bypass data compatibility issues entirely. The AI engineer provided a Python script () to wipe all data except the main admin user.
+
+The final action was providing the user with a definitive set of correct environment variables and a clear, step-by-step plan:
+1.  Correct the  and  in the production environment settings.
+2.  Re-deploy the application.
+3.  Execute the  script in the production terminal to ensure a clean start.
+
+The immediate state is waiting for the user to perform these actions in their production environment and confirm the resolution.
 </current_work>
 
 <optional_next_step>
-Investigate MongoDB collections and file storage paths to determine if a history of reordered/extracted PDFs is already being maintained.
+Wait for the user to confirm they have updated the environment variables, re-deployed, and run the  script. Then, ask for confirmation that the application is working correctly.
 </optional_next_step>
