@@ -1925,11 +1925,14 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         prompt = f"""
         CRITICAL INSTRUCTIONS - READ CAREFULLY:
         
-        You MUST extract ONLY the REAL DATA that is ACTUALLY PRESENT in the document text provided below.
-        DO NOT generate example data, fictitious data, or placeholder data.
-        DO NOT invent names, numbers, dates, or any information that is not explicitly written in the document.
+        You are processing pages {display_start} to {display_end} of a legal/insurance document.
         
-        If a field cannot be found in the document text, set it to null - DO NOT make up data.
+        EXTRACTION RULES:
+        1. Extract ONLY REAL DATA that is ACTUALLY PRESENT in the document text below
+        2. DO NOT generate examples, fictitious data, or placeholder information
+        3. DO NOT invent names, numbers, dates, addresses, or any information
+        4. If a field is not found in the text, use null (not "N/A" or empty string)
+        5. Maintain original spelling, capitalization, and formatting from the document
         
         EXTRACTION INSTRUCTIONS:
         {semantic_instructions}
@@ -1939,14 +1942,22 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         {pdf_text}
         ===END OF DOCUMENT TEXT===
         
-        RESPONSE FORMAT:
-        Provide the extracted data in JSON format with clear field names and values.
-        Only include fields where you found REAL data in the document text above.
-        If certain information is not available in the text, mark it as null.
+        RESPONSE FORMAT - EXTREMELY IMPORTANT:
+        You MUST respond with ONLY a JSON object. Do not include any explanatory text, markdown, or formatting.
+        Start your response with {{ and end with }}.
         
-        REMINDER: Extract ONLY what is actually written in the document. NO examples, NO placeholders, NO invented data.
+        Example of correct response format:
+        {{
+          "field_name": "actual value from document",
+          "another_field": "another actual value",
+          "not_found_field": null
+        }}
+        
+        DO NOT write anything like "Here is the extracted data:" or "```json" - just the JSON object itself.
         
         This is chunk {chunk_number} of a larger document. Extract all relevant data from these specific pages.
+        
+        RESPOND NOW WITH ONLY THE JSON OBJECT:
         """
         
         user_message = UserMessage(text=prompt)
