@@ -559,9 +559,9 @@ frontend:
     implemented: true
     working: true
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
         - working: false
         - agent: "main"
@@ -569,6 +569,12 @@ frontend:
         - working: true
         - agent: "testing"
         - comment: "✅ CHUNK PROCESSING TESTED SUCCESSFULLY: All chunk processing functionality working perfectly. Tested: (1) Small PDF Normal Processing - PDFs <25 pages processed normally without chunking (1 page PDF correctly processed with chunk_count=1), (2) Large PDF Chunk Detection - PDFs >25 pages automatically activate chunking (28-page PDF correctly detected with chunk_count=2), (3) Chunk Progress Tracking - Progress updates correctly with chunks_processed, processing_progress, and chunk_results fields populated, (4) Batch Upload with Chunking - Mixed batch processing works with both small and large PDFs, (5) Chunk Error Handling - Malformed PDFs handled gracefully. All new Document model fields (total_pages, chunk_count, chunks_processed, chunk_results, processing_progress) working correctly. Chunking activates automatically for PDFs >25 pages with 25 pages per chunk. Chunk results contain proper structure with chunk_number, start_page, end_page, data, and status fields."
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó que PDF de 123 páginas solo extrajo datos de las primeras 18 páginas. Los chunks 2 y 3 no procesaron correctamente."
+        - working: true
+        - agent: "main"
+        - comment: "BUG CRÍTICO IDENTIFICADO Y RESUELTO: Error en indexación de páginas al procesar chunks. El problema era que se pasaba chunk_path (PDF con solo las páginas del chunk, empezando desde página 0) pero se usaban los índices absolutos del documento original (ej: páginas 51-100 para chunk 2). Esto causaba que extract_text_from_pdf_with_ocr intentara leer páginas inexistentes en el chunk. SOLUCIÓN: (1) Modificado process_single_chunk para aceptar parámetros original_start y original_end para visualización, (2) Al procesar chunks, siempre se extraen páginas 1 hasta chunk_pages del archivo chunk, (3) Los números de página originales se pasan solo para logging y display. Logs mostraban: Chunk 1 extrajo 132,120 chars ✅, Chunk 2 extrajo 0 chars ❌, Chunk 3 extrajo 0 chars ❌. Ahora todos los chunks deberían extraer correctamente. Requiere testing con PDF de 100+ páginas."
 
   - task: "Optimización de chunks adaptativos para alto volumen"
     implemented: true
