@@ -1954,36 +1954,71 @@ async def process_single_chunk(file_path: str, semantic_instructions: str, ai_co
         # Process with AI
         response = await chat.send_message(user_message)
         
+        # Log response for debugging
+        logger.info(f"Chunk {chunk_number} AI response length: {len(response)} characters")
+        logger.debug(f"Chunk {chunk_number} AI response preview: {response[:500]}...")
+        
         # Try to parse JSON from response
         import json
         import re
         
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
-        if json_match:
+        # Try multiple strategies to extract JSON
+        extracted_data = None
+        
+        # Strategy 1: Look for JSON between ```json and ``` markers
+        json_code_block = re.search(r'```json\s*(.*?)\s*```', response, re.DOTALL | re.IGNORECASE)
+        if json_code_block:
             try:
-                extracted_data = json.loads(json_match.group())
-                return {
-                    "chunk_number": chunk_number,
-                    "start_page": display_start,
-                    "end_page": display_end,
-                    "data": extracted_data,
-                    "status": "success"
-                }
-            except json.JSONDecodeError:
-                return {
-                    "chunk_number": chunk_number,
-                    "start_page": display_start,
-                    "end_page": display_end,
-                    "raw_response": response,
-                    "status": "needs_review"
-                }
-        else:
+                extracted_data = json.loads(json_code_block.group(1))
+                logger.info(f"Chunk {chunk_number}: Extracted JSON from code block")
+            except json.JSONDecodeError as e:
+                logger.warning(f"Chunk {chunk_number}: Failed to parse JSON from code block: {e}")
+        
+        # Strategy 2: Look for JSON between curly braces (greedy match for nested objects)
+        if not extracted_data:
+            # Find the outermost JSON object
+            brace_count = 0
+            start_idx = -1
+            end_idx = -1
+            
+            for i, char in enumerate(response):
+                if char == '{':
+                    if brace_count == 0:
+                        start_idx = i
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0 and start_idx != -1:
+                        end_idx = i + 1
+                        break
+            
+            if start_idx != -1 and end_idx != -1:
+                try:
+                    json_str = response[start_idx:end_idx]
+                    extracted_data = json.loads(json_str)
+                    logger.info(f"Chunk {chunk_number}: Extracted JSON using brace matching")
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Chunk {chunk_number}: Failed to parse JSON with brace matching: {e}")
+        
+        # If we successfully extracted data, return success
+        if extracted_data:
             return {
                 "chunk_number": chunk_number,
                 "start_page": display_start,
                 "end_page": display_end,
-                "raw_response": response,
-                "status": "needs_review"
+                "data": extracted_data,
+                "status": "success"
+            }
+        else:
+            # No valid JSON found
+            logger.warning(f"Chunk {chunk_number}: No valid JSON found in AI response")
+            return {
+                "chunk_number": chunk_number,
+                "start_page": display_start,
+                "end_page": display_end,
+                "raw_response": response[:1000],  # Store first 1000 chars for review
+                "status": "needs_review",
+                "error": "No valid JSON structure found in AI response"
             }
             
     except Exception as e:
