@@ -650,6 +650,12 @@ frontend:
         - working: true
         - agent: "main"
         - comment: "TERCER PROBLEMA IDENTIFICADO Y RESUELTO: Endpoint /api/projects/{project_id}/qa-findings filtraba solo documentos con hallazgos CRÍTICOS (qa_findings: {$ne: []}). Documentos con scores 60-79 pueden tener solo hallazgos tipo 'warning' o 'info', no 'critical'. SOLUCIÓN: Modificado endpoint para mostrar TODOS los documentos con qa_status 'manual_review' o 'failed', extrayendo TODOS los hallazgos de qa_results.agent_results[].findings, no solo critical_findings. Ahora incluye warnings, info y critical findings. Backend reiniciado. Necesita verificación en frontend."
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó dos problemas críticos: (1) La IA está generando datos FALSOS/FICTICIOS en lugar de extraer los datos REALES del PDF. (2) Solo procesó 18 páginas de un PDF de 123 páginas."
+        - working: true
+        - agent: "main"
+        - comment: "DOS BUGS CRÍTICOS IDENTIFICADOS Y RESUELTOS: (1) DATOS FICTICIOS: El prompt era demasiado genérico, causando que la IA generara ejemplos en lugar de extraer datos reales. SOLUCIÓN: Reescrito prompt con instrucciones EXPLÍCITAS y enfáticas de extraer SOLO datos reales presentes en el texto, NO inventar datos, NO usar ejemplos. (2) CHUNKS INCOMPLETOS: Bug de indexación causaba que solo el primer chunk se procesara correctamente (chunks 2 y 3 extraían 0 caracteres). SOLUCIÓN: Corregida lógica de indexación para que cada chunk extraiga páginas 1-N de su archivo temporal, no índices absolutos del documento original. Ambos fixes aplicados y backend reiniciado. Requiere testing con nuevo documento de 100+ páginas."
 
   - task: "Estados QA mejorados"
     implemented: true
