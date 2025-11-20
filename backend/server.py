@@ -1884,10 +1884,28 @@ async def store_extracted_data_normalized(document_id: str, document: dict, proj
     except Exception as e:
         logger.error(f"Error storing normalized extracted data for document {document_id}: {str(e)}")
 
-async def process_single_chunk(file_path: str, semantic_instructions: str, ai_config: dict, chunk_number: int, start_page: int, end_page: int, project_id: str) -> dict:
-    """Process a single PDF chunk with AI using configured model"""
+async def process_single_chunk(file_path: str, semantic_instructions: str, ai_config: dict, chunk_number: int, start_page: int, end_page: int, project_id: str, original_start: int = None, original_end: int = None) -> dict:
+    """
+    Process a single PDF chunk with AI using configured model
+    
+    Args:
+        file_path: Path to the chunk PDF file
+        semantic_instructions: Instructions for data extraction
+        ai_config: AI configuration
+        chunk_number: Chunk number for tracking
+        start_page: Start page within the chunk PDF (1-indexed)
+        end_page: End page within the chunk PDF (1-indexed)
+        project_id: Project ID
+        original_start: Original start page in the full document (for display)
+        original_end: Original end page in the full document (for display)
+    """
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        # Use original page numbers for display if provided
+        display_start = original_start if original_start else start_page
+        display_end = original_end if original_end else end_page
+        
         # Extract text from specified pages of the PDF with OCR fallback
         # Note: emergentintegrations only supports file attachments with Gemini provider
         # For OpenAI, we extract text and send it in the prompt
