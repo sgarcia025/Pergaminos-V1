@@ -5526,13 +5526,23 @@ Ejemplos:
         user_message = UserMessage(text=prompt)
         response = await chat.send_message(user_message)
         
+        logger.info(f"AI response for extract plan: {response[:500]}")
+        
         # Parse JSON
         import json, re
         json_match = re.search(r'\{.*\}', response, re.DOTALL)
         if not json_match:
+            logger.error(f"AI response did not contain JSON: {response}")
             raise ValueError("AI did not return valid JSON")
         
-        result = json.loads(json_match.group())
+        json_text = json_match.group()
+        logger.info(f"Extracted JSON text: {json_text[:300]}")
+        
+        try:
+            result = json.loads(json_text)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON: {json_text}")
+            raise ValueError(f"Invalid JSON from AI: {str(e)}")
         
         # Validate pages
         pages_to_extract = result.get("pages_to_extract", [])
