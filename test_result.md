@@ -440,6 +440,9 @@ frontend:
         - working: "NA"
         - agent: "main"
         - comment: "Implementada paleta de colores completa de ePergaminos.com: Oro/Dorado (#D4A61D) como color primario, Navy/Azul Oscuro (#1E3A5F) como secundario, Fondo oscuro (#2C3E50). Actualizados: (1) App.css con variables CSS personalizadas, (2) tailwind.config.js con colores 'pergaminos' y override de yellow con escala de oro, (3) Todos los componentes React reemplazando emerald-* con yellow-* (usando script automático). Botones, formularios, estadísticas, badges y todos los elementos ahora usan la paleta de ePergaminos. Screenshots verificados mostrando correcta aplicación de colores en login y dashboard."
+        - working: "NA"
+        - agent: "main"
+        - comment: "Agregado logo oficial de Pergaminos (pergaminos_logos-16.png) reemplazando el ícono SVG de block de notas. Logo implementado en: (1) Login.js - Logo principal de 96x96px, (2) Sidebar.js - Logo en navegación lateral de 48x48px. Logo almacenado en /app/frontend/public/pergaminos-logo.png. Screenshots verificados mostrando logo correctamente en ambas ubicaciones con tamaños apropiados."
 
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
