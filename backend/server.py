@@ -1034,6 +1034,134 @@ async def get_batch_processing_status(
         "completed_at": batch_task.get("completed_at")
     }
 
+
+@api_router.post("/projects/{project_id}/batch-cancel/{batch_task_id}")
+async def cancel_batch_processing(
+    project_id: str,
+    batch_task_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Cancel an ongoing batch processing task.
+    Stops processing of pending documents and marks the batch as cancelled.
+    """
+    # Verify project access
+    project = await db.projects.find_one({"id": project_id})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Only staff and asesor can cancel
+    if current_user.role == "client":
+        raise HTTPException(status_code=403, detail="Clients cannot cancel batch processing")
+    
+    # Get batch task
+    batch_task = await db.batch_tasks.find_one({"id": batch_task_id})
+    if not batch_task:
+        raise HTTPException(status_code=404, detail="Batch task not found")
+    
+    # Check if batch is in a cancellable state
+    if batch_task["status"] in ["completed", "failed", "cancelled"]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot cancel batch in {batch_task['status']} state"
+        )
+    
+    # Update batch task to cancelled
+    await db.batch_tasks.update_one(
+        {"id": batch_task_id},
+        {
+            "$set": {
+                "status": "cancelled",
+                "completed_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    # Update all pending/processing documents to failed with cancellation message
+    await db.documents.update_many(
+        {
+            "id": {"$in": batch_task["document_ids"]},
+            "status": {"$in": ["pending", "processing", "uploaded", "qa_pending"]}
+        },
+        {
+            "$set": {
+                "status": "failed",
+                "error": "Processing cancelled by user",
+                "processed_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    logger.info(f"Batch task {batch_task_id} cancelled by user {current_user.email}")
+    
+    return {
+        "message": "Batch processing cancelled successfully",
+        "batch_task_id": batch_task_id,
+        "cancelled_documents": len([d for d in batch_task["document_ids"]])
+    }
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a document from the system.
+    Only staff and asesor can delete documents.
+    Removes the document record and its associated file.
+    """
+    # Get document
+    document = await db.documents.find_one({"id": document_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Verify project and company access
+    project = await db.projects.find_one({"id": document["project_id"]})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    company = await db.companies.find_one({"id": project["company_id"]})
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Permission checks
+    if current_user.role == "client":
+        raise HTTPException(status_code=403, detail="Clients cannot delete documents")
+    elif current_user.role == "asesor" and company.get("asesor_comercial_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Delete physical file if it exists
+    try:
+        file_path = Path(document["file_path"])
+        if file_path.exists():
+            file_path.unlink()
+            logger.info(f"Deleted file: {file_path}")
+    except Exception as e:
+        logger.error(f"Error deleting file {document['file_path']}: {str(e)}")
+        # Continue even if file deletion fails
+    
+    # Delete extracted data records
+    try:
+        deleted_extracted = await db.extracted_data.delete_many({"document_id": document_id})
+        if deleted_extracted.deleted_count > 0:
+            logger.info(f"Deleted {deleted_extracted.deleted_count} extracted data records for document {document_id}")
+        
+        # Delete extracted data summary
+        await db.extracted_data_summaries.delete_one({"document_id": document_id})
+    except Exception as e:
+        logger.error(f"Error deleting extracted data for document {document_id}: {str(e)}")
+    
+    # Delete document record from database
+    await db.documents.delete_one({"id": document_id})
+    
+    logger.info(f"Document {document_id} deleted by user {current_user.email}")
+    
+    return {
+        "message": "Document deleted successfully",
+        "document_id": document_id,
+        "filename": document["original_filename"]
+    }
+
 # Batch Processing Function
 async def process_documents_batch(batch_task_id: str, project: dict):
     """Process multiple documents in parallel with a limit of 10 concurrent tasks"""
