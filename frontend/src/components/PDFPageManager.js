@@ -248,10 +248,23 @@ const PDFPageManager = ({ projectId, user }) => {
         setCurrentJob(null);
         setPlan(null);
         setInstruction('');
+        setSelectedPdfs([]);
         
       } else {
         // Single job (original behavior)
         console.log('❌ NOT A SPLIT OPERATION - Using single job flow');
+        
+        // Check if the response includes success message from split operation
+        if (response.data.message && response.data.message.includes('completada')) {
+          // This is actually a split operation that was executed automatically
+          setSuccess(response.data.message);
+          setCurrentJob(null);
+          setPlan(null);
+          setInstruction('');
+          setSelectedPdfs([]);
+          return;
+        }
+        
         setCurrentJob(response.data);
         setPlan(response.data.plan || response.data.extract_plan);
         
