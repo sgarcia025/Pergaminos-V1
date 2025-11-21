@@ -23,6 +23,7 @@ const ProjectDetail = ({ user }) => {
   const [batchProgress, setBatchProgress] = useState({});
   const [uploadProgress, setUploadProgress] = useState([]);
   const [activeTab, setActiveTab] = useState('documents'); // documents, pdf-manager, or pdf-page-manager
+  const [uploadAbortController, setUploadAbortController] = useState(null);
   
   // QA Review Modal
   const [showQAModal, setShowQAModal] = useState(false);
