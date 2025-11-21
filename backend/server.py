@@ -6122,8 +6122,13 @@ async def execute_pdf_page_plan(
     """
     try:
         job_id = request_body.get("job_id")
+        logger.info(f"Execute request received: project={project_id}, request_body={request_body}")
+        
         if not job_id:
+            logger.error(f"job_id is missing in request_body: {request_body}")
             raise HTTPException(status_code=400, detail="job_id is required")
+        
+        logger.info(f"Looking for job with id={job_id} in project={project_id}")
         
         # Find job
         job_doc = await db.pdf_page_manager_jobs.find_one({"id": job_id, "project_id": project_id})
