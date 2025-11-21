@@ -413,6 +413,9 @@ frontend:
         - working: "NA"
         - agent: "main"
         - comment: "Implementado endpoint POST /api/projects/{project_id}/batch-cancel/{batch_task_id} que cancela el procesamiento en curso, marca el batch como cancelled y actualiza documentos pendientes a failed. En frontend, agregado botón 'Cancelar Procesamiento' en la tarjeta de progreso del lote, visible solo para staff y asesor, con confirmación antes de cancelar."
+        - working: "NA"
+        - agent: "main"
+        - comment: "MEJORADO: Ahora el botón cancela tanto la SUBIDA en curso como el procesamiento posterior. Implementado usando AbortController para cancelar peticiones HTTP. El botón cambia dinámicamente entre 'Cancelar Subida' (durante upload) y 'Cancelar Procesamiento' (después de upload). Agregado progreso visual de subida con porcentaje y barra de progreso por archivo. Estado 'uploading' agregado con tracking de progreso mediante onUploadProgress de axios."
 
   - task: "Eliminar documentos procesados (exitosos o fallidos)"
     implemented: true
