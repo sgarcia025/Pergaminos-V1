@@ -5967,30 +5967,96 @@ async def create_pdf_page_plan(
                 plan_request.manual_range
             )
             
-            # Create job record for extract
-            job = PDFPageManagerJob(
-                company_id=project["company_id"],
-                project_id=project_id,
-                pdf_filename=plan_request.pdf_filename,
-                instruction=plan_request.instruction,
-                mode="extract",
-                plan=None,
-                extract_plan=extract_plan,
-                status="plan_ready",
-                created_by=current_user.id,
-                logs=[{
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "event": "extract_plan_generated",
-                    "details": f"Plan to extract {len(extract_plan.pages_to_extract)} pages from {extract_plan.total_pages} total pages"
-                }]
-            )
-            
-            # Save job
-            await db.pdf_page_manager_jobs.insert_one(job.dict())
-            
-            return {
-                "job_id": job.id,
-                "mode": "extract",
+            # Check if this is a split operation (create multiple PDFs)
+            if extract_plan.is_split_operation and extract_plan.split_size:
+                # Create multiple jobs for split operation
+                total_pages = extract_plan.total_pages
+                split_size = extract_plan.split_size
+                job_ids = []
+                
+                # Calculate how many splits we need
+                num_splits = (total_pages + split_size - 1) // split_size  # Ceiling division
+                
+                logger.info(f"Split operation detected: {num_splits} PDFs will be created ({split_size} pages each)")
+                
+                for i in range(num_splits):
+                    start_page = i * split_size + 1
+                    end_page = min(start_page + split_size - 1, total_pages)
+                    pages_for_this_split = list(range(start_page, end_page + 1))
+                    
+                    # Create filename for this split
+                    base_name = Path(plan_request.pdf_filename).stem
+                    new_filename = f"{base_name}_parte_{i+1}_de_{num_splits}.pdf"
+                    
+                    # Create a new extract plan for this split
+                    split_plan = PDFPageExtractPlan(
+                        pdf_filename=plan_request.pdf_filename,
+                        total_pages=total_pages,
+                        pages_to_extract=pages_for_this_split,
+                        new_filename=new_filename,
+                        confidence=extract_plan.confidence,
+                        reasoning=f"Parte {i+1} de {num_splits}: páginas {start_page} a {end_page}",
+                        is_split_operation=True,
+                        split_size=split_size
+                    )
+                    
+                    # Create job for this split
+                    split_job = PDFPageManagerJob(
+                        company_id=project["company_id"],
+                        project_id=project_id,
+                        pdf_filename=plan_request.pdf_filename,
+                        instruction=f"{plan_request.instruction} (Parte {i+1}/{num_splits})",
+                        mode="extract",
+                        plan=None,
+                        extract_plan=split_plan,
+                        status="plan_ready",
+                        created_by=current_user.id,
+                        logs=[{
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "event": "extract_plan_generated",
+                            "details": f"Split {i+1}/{num_splits}: extracting pages {start_page}-{end_page} ({len(pages_for_this_split)} pages)"
+                        }]
+                    )
+                    
+                    # Save this job
+                    await db.pdf_page_manager_jobs.insert_one(split_job.dict())
+                    job_ids.append(split_job.id)
+                
+                return {
+                    "job_ids": job_ids,
+                    "mode": "extract",
+                    "is_split": True,
+                    "num_splits": num_splits,
+                    "split_size": split_size,
+                    "extract_plan": extract_plan.dict(),
+                    "message": f"Se crearon {num_splits} planes de extracción. Ejecuta cada uno para generar los PDFs."
+                }
+            else:
+                # Single extraction (original behavior)
+                # Create job record for extract
+                job = PDFPageManagerJob(
+                    company_id=project["company_id"],
+                    project_id=project_id,
+                    pdf_filename=plan_request.pdf_filename,
+                    instruction=plan_request.instruction,
+                    mode="extract",
+                    plan=None,
+                    extract_plan=extract_plan,
+                    status="plan_ready",
+                    created_by=current_user.id,
+                    logs=[{
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "event": "extract_plan_generated",
+                        "details": f"Plan to extract {len(extract_plan.pages_to_extract)} pages from {extract_plan.total_pages} total pages"
+                    }]
+                )
+                
+                # Save job
+                await db.pdf_page_manager_jobs.insert_one(job.dict())
+                
+                return {
+                    "job_id": job.id,
+                    "mode": "extract",
                 "plan": extract_plan.dict(),
                 "status": "plan_ready"
             }
