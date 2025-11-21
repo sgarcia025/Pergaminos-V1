@@ -202,15 +202,25 @@ const ProjectDetail = ({ user }) => {
         });
         setUploadProgress(updatedProgress);
         
+        // Always fetch documents to keep list updated
+        fetchDocuments();
+        
         // Stop polling when batch is completed
-        if (status.status === 'completed' || status.status === 'failed') {
+        if (status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
           clearInterval(pollInterval);
+          
+          // Fetch documents one more time after a short delay to ensure all updates are captured
+          setTimeout(() => {
+            fetchDocuments();
+          }, 1000);
+          
           setBatchUploading(false);
           setBatchTaskId(null);
-          fetchDocuments();
           
           if (status.status === 'completed') {
             setSuccess(`Procesamiento completado: ${status.completed_documents} exitosos, ${status.failed_documents} fallidos`);
+          } else if (status.status === 'cancelled') {
+            setSuccess('Procesamiento cancelado');
           } else {
             setError('Error en el procesamiento del lote');
           }
