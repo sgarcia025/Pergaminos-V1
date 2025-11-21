@@ -162,7 +162,7 @@ const Sidebar = ({ user }) => {
               to={item.path}
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                 isActive(item.path)
-                  ? 'bg-gradient-to-r from-yellow-500 to-teal-500 text-white shadow-lg'
+                  ? 'bg-yellow-600 text-white shadow-lg'
                   : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700'
               }`}
             >
