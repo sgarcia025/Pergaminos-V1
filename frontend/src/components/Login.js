@@ -29,7 +29,8 @@ const Login = ({ onLogin }) => {
             <img 
               src="/pergaminos-logo.png" 
               alt="Pergaminos Logo" 
-              className="w-24 h-24"
+              className="w-20 h-20"
+              style={{ width: '75px', height: '75px' }}
             />
           </div>
           <h1 className="text-3xl font-extrabold text-gray-900 mb-2" >
