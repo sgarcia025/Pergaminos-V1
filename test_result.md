@@ -489,6 +489,21 @@ frontend:
         - agent: "main"
         - comment: "PROBLEMA IDENTIFICADO Y RESUELTO: El polling de documentos se detenía cuando no había documentos en estado 'processing', lo que causaba que documentos recién completados no aparecieran hasta refrescar manualmente. SOLUCIONES IMPLEMENTADAS: (1) Mejorado useEffect de auto-refresh para continuar polling mientras batchUploading esté activo, no solo cuando hay docs en processing. (2) Modificado pollBatchStatus para llamar fetchDocuments() en cada iteración, no solo al final. Agregado fetch adicional con delay de 1s después de completar batch. (3) Mejorado handleQAReview para hacer múltiples fetches después de aprobar documento (inmediato, +2s, +5s, +10s) capturando así la extracción de datos. RESULTADO: Documentos ahora se actualizan automáticamente en la interfaz sin necesidad de refrescar página, tanto durante procesamiento como al completarse."
 
+  - task: "PDF Page Manager: dividir documento en múltiples PDFs (cada N páginas)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/components/PDFPageManager.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "user"
+        - comment: "Usuario solicitó crear un nuevo PDF cada 4 páginas de un documento de 123 páginas, pero solo se creó 1 PDF con las primeras 4 páginas en lugar de 31 PDFs (~123/4)."
+        - working: true
+        - agent: "main"
+        - comment: "PROBLEMA IDENTIFICADO Y RESUELTO: El sistema de extracción de páginas solo creaba un PDF a la vez. No detectaba instrucciones de división/split (cada N páginas). SOLUCIONES IMPLEMENTADAS: (1) Backend - Agregados campos is_split_operation y split_size a PDFPageExtractPlan. Mejorado prompt de IA para detectar instrucciones tipo 'cada N páginas' y marcar como split operation. Modificado endpoint /pdf-page-manager/plan para crear múltiples jobs automáticamente cuando detecta split (calcula num_splits = total_pages/split_size, crea un job por cada grupo con filename parte_X_de_Y). (2) Frontend - Actualizado PDFPageManager.js para detectar respuesta is_split y ejecutar automáticamente todos los jobs creados en secuencia. Muestra progreso y resultado final. RESULTADO: Ahora cuando usuario pide 'crear documento cada N páginas', el sistema automáticamente crea y ejecuta múltiples extracciones generando todos los PDFs divididos. Ejemplo: 123 páginas / 4 = 31 PDFs creados automáticamente."
+
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
     working: "NA"
