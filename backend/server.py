@@ -6072,11 +6072,18 @@ async def create_pdf_page_plan(
                         # Convert dict to PDFPageExtractPlan object
                         extract_plan_obj = PDFPageExtractPlan(**job_doc["extract_plan"])
                         
+                        # Get user info for history
+                        user_doc = await db.users.find_one({"id": current_user.id})
+                        user_name = user_doc.get("name") if user_doc else current_user.email
+                        
                         # Execute using the dedicated function
                         result_path = await execute_pdf_page_extract(
                             extract_plan_obj,
                             str(pdf_path),
-                            job_id
+                            job_id,
+                            project_id=project_id,
+                            user_id=current_user.id,
+                            user_name=user_name
                         )
                         
                         # Update job status
