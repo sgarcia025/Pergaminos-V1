@@ -6021,6 +6021,9 @@ async def create_pdf_page_plan(
                     # Save this job
                     await db.pdf_page_manager_jobs.insert_one(split_job.dict())
                     job_ids.append(split_job.id)
+                    logger.info(f"Created split job {i+1}/{num_splits}: ID={split_job.id}, pages {start_page}-{end_page}")
+                
+                logger.info(f"All {num_splits} split jobs created successfully. Job IDs: {job_ids}")
                 
                 return {
                     "job_ids": job_ids,
@@ -6029,7 +6032,7 @@ async def create_pdf_page_plan(
                     "num_splits": num_splits,
                     "split_size": split_size,
                     "extract_plan": extract_plan.dict(),
-                    "message": f"Se crearon {num_splits} planes de extracción. Ejecuta cada uno para generar los PDFs."
+                    "message": f"Se crearon {num_splits} planes de extracción. El sistema los ejecutará automáticamente."
                 }
             else:
                 # Single extraction (original behavior)
