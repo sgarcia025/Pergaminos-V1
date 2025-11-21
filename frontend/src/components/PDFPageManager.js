@@ -270,8 +270,14 @@ const PDFPageManager = ({ projectId, user }) => {
   };
 
   const handleExecutePlan = async () => {
-    if (!currentJob || !currentJob.job_id) {
+    if (!currentJob) {
       setError('No hay plan para ejecutar');
+      return;
+    }
+    
+    // Check if job_id exists
+    if (!currentJob.job_id) {
+      setError('El plan no tiene un job_id válido. Por favor, genera el plan nuevamente.');
       return;
     }
 
