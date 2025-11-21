@@ -78,7 +78,27 @@ const PDFPageManager = ({ projectId, user }) => {
         manual_range: mode === 'extract' && manualRange.trim() ? manualRange.trim() : null
       });
 
+      // Check if operation was auto-executed by backend (split operation)
+      if (planResponse.data.auto_executed) {
+        console.log('Auto-executed operation detected in batch processing');
+        setBatchProgress(prev => {
+          const updated = [...prev];
+          updated[index] = { 
+            status: 'completed', 
+            filename: pdfFilename,
+            autoExecuted: true
+          };
+          return updated;
+        });
+        return { success: true, filename: pdfFilename, autoExecuted: true };
+      }
+
       const jobId = planResponse.data.job_id;
+      
+      // Validate job_id exists
+      if (!jobId) {
+        throw new Error('No se recibió job_id del servidor');
+      }
 
       // Update progress
       setBatchProgress(prev => {
