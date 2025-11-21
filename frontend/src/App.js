@@ -46,8 +46,13 @@ function App() {
         setUser(response.data);
       } catch (error) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('token');
-        delete axios.defaults.headers.common['Authorization'];
+        // Only remove token if it's actually invalid (401), not for network errors
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem('token');
+          delete axios.defaults.headers.common['Authorization'];
+        } else {
+          console.warn('Network error during auth check, keeping token');
+        }
       }
     }
     setLoading(false);
