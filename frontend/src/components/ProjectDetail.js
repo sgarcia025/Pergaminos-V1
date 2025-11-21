@@ -542,17 +542,30 @@ const ProjectDetail = ({ user }) => {
               <h2 className="text-lg font-semibold text-gray-900">
                 Procesando Lote de Documentos
               </h2>
-              {batchProgress.progress !== undefined && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${batchProgress.progress}%` }}
-                    ></div>
+              <div className="flex items-center space-x-4">
+                {batchProgress.progress !== undefined && (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${batchProgress.progress}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-sm text-gray-600">{batchProgress.progress}%</span>
                   </div>
-                  <span className="text-sm text-gray-600">{batchProgress.progress}%</span>
-                </div>
-              )}
+                )}
+                {batchUploading && batchTaskId && user && user.role !== 'client' && (
+                  <button
+                    onClick={handleCancelBatch}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Cancelar Procesamiento</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {batchProgress.status && (
