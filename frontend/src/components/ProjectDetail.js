@@ -646,6 +646,7 @@ const ProjectDetail = ({ user }) => {
                       </p>
                       <p className="text-xs text-gray-500">
                         {file.status === 'completed' ? 'Procesado exitosamente' :
+                         file.status === 'uploading' ? `Subiendo... ${file.progress}%` :
                          file.status === 'processing' ? 'Procesando con IA...' :
                          file.status === 'failed' ? 'Error en procesamiento' :
                          'Esperando...'}
