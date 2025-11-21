@@ -6025,14 +6025,63 @@ async def create_pdf_page_plan(
                 
                 logger.info(f"All {num_splits} split jobs created successfully. Job IDs: {job_ids}")
                 
+                # Execute all jobs automatically in the backend
+                logger.info("Starting automatic execution of split jobs...")
+                successful_jobs = 0
+                failed_jobs = 0
+                
+                for idx, job_id in enumerate(job_ids):
+                    try:
+                        logger.info(f"Executing split job {idx+1}/{num_splits}: {job_id}")
+                        
+                        # Execute this job (reuse the execute logic)
+                        job_doc = await db.pdf_page_manager_jobs.find_one({"id": job_id, "project_id": project_id})
+                        if not job_doc:
+                            logger.error(f"Job {job_id} not found")
+                            failed_jobs += 1
+                            continue
+                        
+                        # Import the execute function logic here inline
+                        from app.backend.server import apply_pdf_page_extract_plan
+                        
+                        result_path = await apply_pdf_page_extract_plan(
+                            job_doc["extract_plan"]["pdf_filename"],
+                            str(pdf_path),
+                            job_doc["extract_plan"]["pages_to_extract"],
+                            job_doc["extract_plan"]["new_filename"],
+                            project_id,
+                            job_id
+                        )
+                        
+                        # Update job status
+                        await db.pdf_page_manager_jobs.update_one(
+                            {"id": job_id},
+                            {"$set": {"status": "completed", "result_path": result_path}}
+                        )
+                        
+                        successful_jobs += 1
+                        logger.info(f"Split job {idx+1}/{num_splits} completed successfully")
+                        
+                    except Exception as e:
+                        logger.error(f"Error executing split job {job_id}: {str(e)}")
+                        failed_jobs += 1
+                        await db.pdf_page_manager_jobs.update_one(
+                            {"id": job_id},
+                            {"$set": {"status": "failed", "error": str(e)}}
+                        )
+                
+                logger.info(f"Split operation completed: {successful_jobs} successful, {failed_jobs} failed")
+                
                 return {
                     "job_ids": job_ids,
                     "mode": "extract",
                     "is_split": True,
                     "num_splits": num_splits,
                     "split_size": split_size,
+                    "successful_executions": successful_jobs,
+                    "failed_executions": failed_jobs,
                     "extract_plan": extract_plan.dict(),
-                    "message": f"Se crearon {num_splits} planes de extracción. El sistema los ejecutará automáticamente."
+                    "message": f"✅ Operación completada: Se crearon y procesaron {successful_jobs} documentos PDF de {num_splits} totales. {'Revisa el historial de PDFs.' if successful_jobs > 0 else 'Hubo errores en el procesamiento.'}"
                 }
             else:
                 # Single extraction (original behavior)
