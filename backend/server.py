@@ -5551,7 +5551,9 @@ Ejemplos:
             pages_to_extract=sorted(pages_to_extract),
             new_filename=result.get("new_filename", f"{Path(pdf_filename).stem}_extracted.pdf"),
             confidence=result.get("confidence", 0.8),
-            reasoning=result.get("reasoning", "Páginas extraídas según instrucción")
+            reasoning=result.get("reasoning", "Páginas extraídas según instrucción"),
+            is_split_operation=result.get("is_split_operation", False),
+            split_size=result.get("split_size")
         )
         
     except Exception as e:
