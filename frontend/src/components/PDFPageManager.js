@@ -186,13 +186,16 @@ const PDFPageManager = ({ projectId, user }) => {
         manual_range: mode === 'extract' && manualRange.trim() ? manualRange.trim() : null
       });
 
-      console.log('Full response from plan generation:', response.data);
+      console.log('=== FULL RESPONSE FROM PLAN GENERATION ===');
+      console.log('Full response:', JSON.stringify(response.data, null, 2));
       console.log('is_split:', response.data.is_split);
       console.log('job_ids:', response.data.job_ids);
       console.log('job_id (singular):', response.data.job_id);
+      console.log('==========================================');
       
       // Check if it's a split operation (multiple jobs)
       if (response.data.is_split && response.data.job_ids && response.data.job_ids.length > 0) {
+        console.log('✅ ENTERING SPLIT OPERATION BRANCH');
         setSuccess(`✅ Operación de división detectada: Se crearon ${response.data.num_splits} planes de extracción. Ejecutando automáticamente...`);
         
         // Wait a moment for DB to be consistent
