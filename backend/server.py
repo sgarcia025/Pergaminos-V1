@@ -6138,8 +6138,8 @@ async def create_pdf_page_plan(
                 logger.info(f"Split operation completed: {successful_jobs} successful, {failed_jobs} failed")
                 
                 # Return a response that doesn't trigger frontend execution
+                # Don't include job_id at all to prevent frontend from trying to execute
                 return {
-                    "job_id": None,  # No single job_id since we executed multiple
                     "mode": "extract",
                     "is_split": True,
                     "auto_executed": True,  # Flag to indicate jobs were executed automatically
@@ -6147,8 +6147,6 @@ async def create_pdf_page_plan(
                     "split_size": split_size,
                     "successful_executions": successful_jobs,
                     "failed_executions": failed_jobs,
-                    "extract_plan": None,  # No single plan since we processed all
-                    "plan": None,  # No single plan
                     "message": f"✅ Operación completada automáticamente: Se crearon y procesaron {successful_jobs} documentos PDF de {num_splits} totales. Revisa el historial de PDFs para descargarlos."
                 }
             else:
