@@ -383,7 +383,7 @@ const Projects = ({ user }) => {
                 setFilterCompany('');
                 setFilterCorporacion('');
               }}
-              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              className="text-sm text-yellow-700 hover:text-yellow-700 font-medium"
             >
               Limpiar filtros
             </button>
@@ -398,7 +398,7 @@ const Projects = ({ user }) => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   {project.project_code && (
-                    <div className="inline-block bg-emerald-100 text-emerald-700 text-xs font-medium px-2 py-1 rounded mb-2">
+                    <div className="inline-block bg-yellow-100 text-yellow-700 text-xs font-medium px-2 py-1 rounded mb-2">
                       ID: {project.project_code}
                     </div>
                   )}
@@ -414,7 +414,7 @@ const Projects = ({ user }) => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => handleEditClick(e, project)}
-                    className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                    className="p-2 text-gray-600 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-colors"
                     title="Editar proyecto"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -461,8 +461,8 @@ const Projects = ({ user }) => {
                   </label>
                   <button
                     onClick={(e) => handleToggleActive(e, project)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
-                      (project.is_active !== false) ? 'bg-emerald-600' : 'bg-gray-300'
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 ${
+                      (project.is_active !== false) ? 'bg-yellow-600' : 'bg-gray-300'
                     }`}
                     title={(project.is_active !== false) ? 'Proyecto activo' : 'Proyecto inactivo'}
                   >
@@ -505,7 +505,7 @@ const Projects = ({ user }) => {
                   
                   <button
                     onClick={(e) => handleExtendRetention(e, project)}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center"
+                    className="text-xs text-yellow-700 hover:text-yellow-700 font-medium flex items-center"
                   >
                     <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -523,7 +523,7 @@ const Projects = ({ user }) => {
                   <div className="flex items-center space-x-2">
                     <Link 
                       to={`/projects/${project.id}`}
-                      className="flex items-center text-emerald-600 text-sm font-medium hover:text-emerald-700"
+                      className="flex items-center text-yellow-700 text-sm font-medium hover:text-yellow-700"
                     >
                       Ver detalles
                       <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

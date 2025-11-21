@@ -188,7 +188,7 @@ const Segmentos = ({ user }) => {
                 <div className="flex items-center space-x-3">
                   <button
                     onClick={() => handleEditClick(segmento)}
-                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                    className="text-yellow-700 hover:text-yellow-700 text-sm font-medium"
                     title="Editar segmento"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

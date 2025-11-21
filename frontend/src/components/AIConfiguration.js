@@ -373,7 +373,7 @@ const AIConfiguration = ({ user }) => {
                   onClick={() => handleOcrToggle(!ocrConfig.ocr_enabled)}
                   disabled={ocrLoading}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    ocrConfig.ocr_enabled ? 'bg-emerald-600' : 'bg-gray-300'
+                    ocrConfig.ocr_enabled ? 'bg-yellow-600' : 'bg-gray-300'
                   } ${ocrLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <span
@@ -630,7 +630,7 @@ const AIConfiguration = ({ user }) => {
                       
                       <button
                         onClick={() => handleEditClick(configType)}
-                        className="w-full bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-emerald-700"
+                        className="w-full bg-yellow-600 text-white rounded-lg px-4 py-2 text-sm hover:bg-yellow-700"
                       >
                         Configurar
                       </button>

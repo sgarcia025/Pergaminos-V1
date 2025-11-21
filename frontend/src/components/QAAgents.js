@@ -409,7 +409,7 @@ const QAAgents = ({ user }) => {
                     {agent.project_ids.slice(0, 3).map((projectId) => (
                       <span
                         key={projectId}
-                        className="inline-block bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded"
+                        className="inline-block bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded"
                       >
                         {getProjectName(projectId)}
                       </span>
@@ -441,7 +441,7 @@ const QAAgents = ({ user }) => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => runQACheck(agent.id)}
-                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium flex items-center"
+                    className="text-yellow-700 hover:text-yellow-700 text-sm font-medium flex items-center"
                     title="Ejecutar QA"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,7 +603,7 @@ const QAAgents = ({ user }) => {
                           />
                           <span className="text-sm text-gray-700">
                             {project.project_code && (
-                              <span className="font-medium text-emerald-600 mr-1">
+                              <span className="font-medium text-yellow-700 mr-1">
                                 [{project.project_code}]
                               </span>
                             )}

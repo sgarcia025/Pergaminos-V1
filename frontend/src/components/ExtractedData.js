@@ -145,7 +145,7 @@ const ExtractedData = ({ user }) => {
                   onClick={() => setActiveTab('data')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'data'
-                      ? 'border-emerald-500 text-emerald-600'
+                      ? 'border-yellow-500 text-yellow-700'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -155,7 +155,7 @@ const ExtractedData = ({ user }) => {
                   onClick={() => setActiveTab('summary')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'summary'
-                      ? 'border-emerald-500 text-emerald-600'
+                      ? 'border-yellow-500 text-yellow-700'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -298,7 +298,7 @@ const ExtractedData = ({ user }) => {
               {activeTab === 'summary' && dataSummary && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-6">
+                    <div className="bg-gradient-to-r from-yellow-50 to-teal-50 rounded-lg p-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         📊 Estadísticas Generales
                       </h3>

@@ -257,7 +257,7 @@ const PDFManager = ({ projectId, user }) => {
                     {plan.rename_operations.slice(0, 10).map((op, idx) => (
                       <tr key={idx}>
                         <td className="px-4 py-2 text-sm text-gray-600">{op.from_name}</td>
-                        <td className="px-4 py-2 text-center text-emerald-600">→</td>
+                        <td className="px-4 py-2 text-center text-yellow-700">→</td>
                         <td className="px-4 py-2 text-sm font-medium text-gray-900">{op.to_name}</td>
                       </tr>
                     ))}
@@ -335,11 +335,11 @@ const PDFManager = ({ projectId, user }) => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">✅ Resultados</h3>
           
           {/* ZIP Download */}
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-emerald-900">📦 Archivo ZIP Completo</h4>
-                <p className="text-sm text-emerald-700 mt-1">
+                <h4 className="font-medium text-yellow-900">📦 Archivo ZIP Completo</h4>
+                <p className="text-sm text-yellow-700 mt-1">
                   {currentJob.result_urls.zip_filename} ({formatFileSize(currentJob.result_urls.zip_size)})
                 </p>
               </div>
@@ -366,7 +366,7 @@ const PDFManager = ({ projectId, user }) => {
                 </div>
                 <button
                   onClick={() => handleDownloadFile(file.url, file.name)}
-                  className="text-emerald-600 hover:text-emerald-700 text-sm cursor-pointer"
+                  className="text-yellow-700 hover:text-yellow-700 text-sm cursor-pointer"
                   title="Descargar archivo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

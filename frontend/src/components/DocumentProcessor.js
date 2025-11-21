@@ -266,12 +266,12 @@ const DocumentProcessor = ({ user }) => {
         </div>
 
         {selectedProject && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mt-4">
-            <h3 className="text-emerald-900 font-semibold mb-2">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+            <h3 className="text-yellow-900 font-semibold mb-2">
               Documentos Disponibles: {documents.length}
             </h3>
             {documents.length === 0 && (
-              <p className="text-emerald-700 text-sm">
+              <p className="text-yellow-700 text-sm">
                 No hay documentos procesados disponibles en este proyecto.
               </p>
             )}
@@ -452,7 +452,7 @@ const DocumentProcessor = ({ user }) => {
           </div>
           
           <div className="flex items-center">
-            <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mr-4"></div>
+            <div className="w-8 h-8 border-4 border-yellow-600 border-t-transparent rounded-full animate-spin mr-4"></div>
             <div>
               <p className="text-gray-900 font-medium">Procesando cambios en los documentos</p>
               <p className="text-gray-600 text-sm">Aplicando nombres y orden especificados...</p>

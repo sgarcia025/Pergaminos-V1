@@ -228,8 +228,8 @@ const UserManagement = ({ user }) => {
               <tr key={userItem.id}>
                 <td>
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center mr-3">
-                      <span className="text-emerald-700 font-semibold text-xs">
+                    <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-yellow-700 font-semibold text-xs">
                         {userItem.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
                       </span>
                     </div>
@@ -466,7 +466,7 @@ const UserManagement = ({ user }) => {
                                   });
                                 }
                               }}
-                              className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 mr-3"
+                              className="w-4 h-4 text-yellow-700 border-gray-300 rounded focus:ring-yellow-500 mr-3"
                             />
                             <span className="text-sm text-gray-700">
                               {company.name}

@@ -138,7 +138,7 @@ const Sidebar = ({ user }) => {
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-600 to-teal-600 rounded-xl flex items-center justify-center">
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -162,8 +162,8 @@ const Sidebar = ({ user }) => {
               to={item.path}
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                 isActive(item.path)
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-700'
+                  ? 'bg-gradient-to-r from-yellow-500 to-teal-500 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-yellow-50 hover:text-yellow-700'
               }`}
             >
               <span className={`mr-3 ${isActive(item.path) ? 'text-white' : 'text-gray-400'}`}>
@@ -177,8 +177,8 @@ const Sidebar = ({ user }) => {
       {/* User Info */}
       <div className="p-4 border-t border-gray-200">
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center">
-            <span className="text-emerald-700 font-semibold text-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-100 to-teal-100 rounded-full flex items-center justify-center">
+            <span className="text-yellow-700 font-semibold text-sm">
               {user.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
             </span>
           </div>

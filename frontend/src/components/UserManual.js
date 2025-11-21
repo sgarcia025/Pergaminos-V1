@@ -419,7 +419,7 @@ El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado 
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     activeSection === section.id
-                      ? 'bg-emerald-100 text-emerald-700 font-medium'
+                      ? 'bg-yellow-100 text-yellow-700 font-medium'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -493,9 +493,9 @@ El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado 
               )}
 
               {chatAnswer && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-emerald-900 mb-2">Respuesta de la IA:</h4>
-                  <div className="text-sm text-emerald-800 whitespace-pre-line">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="text-sm font-semibold text-yellow-900 mb-2">Respuesta de la IA:</h4>
+                  <div className="text-sm text-yellow-800 whitespace-pre-line">
                     {chatAnswer}
                   </div>
                 </div>

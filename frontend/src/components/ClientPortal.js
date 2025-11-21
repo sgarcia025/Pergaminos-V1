@@ -158,15 +158,15 @@ const ClientPortal = ({ user }) => {
             </div>
 
             {selectedProject && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="text-2xl font-bold text-emerald-800">{stats.totalDocs}</div>
-                    <div className="text-emerald-600 text-sm">Documentos Procesados</div>
+                    <div className="text-2xl font-bold text-yellow-800">{stats.totalDocs}</div>
+                    <div className="text-yellow-700 text-sm">Documentos Procesados</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-emerald-800">{stats.docsWithData}</div>
-                    <div className="text-emerald-600 text-sm">Con Datos Extraídos</div>
+                    <div className="text-2xl font-bold text-yellow-800">{stats.docsWithData}</div>
+                    <div className="text-yellow-700 text-sm">Con Datos Extraídos</div>
                   </div>
                 </div>
               </div>
@@ -210,7 +210,7 @@ const ClientPortal = ({ user }) => {
               <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-3xl px-4 py-3 rounded-lg ${
                   message.type === 'user' 
-                    ? 'bg-emerald-600 text-white' 
+                    ? 'bg-yellow-600 text-white' 
                     : message.type === 'error'
                     ? 'bg-red-100 text-red-800'
                     : 'bg-gray-100 text-gray-800'
@@ -236,7 +236,7 @@ const ClientPortal = ({ user }) => {
                             {source.document_id && (
                               <button
                                 onClick={() => handleDownloadSource(source.document_id, source.filename)}
-                                className="ml-3 px-3 py-1 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors flex items-center"
+                                className="ml-3 px-3 py-1 text-xs font-medium text-white bg-yellow-600 rounded hover:bg-yellow-700 transition-colors flex items-center"
                               >
                                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -323,7 +323,7 @@ const ClientPortal = ({ user }) => {
               <div className="text-center pt-4">
                 <Link 
                   to={`/projects/${selectedProject}`}
-                  className="text-emerald-600 hover:text-emerald-700 font-medium"
+                  className="text-yellow-700 hover:text-yellow-700 font-medium"
                 >
                   Ver todos los {documents.length} documentos →
                 </Link>

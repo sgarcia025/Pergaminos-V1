@@ -250,7 +250,7 @@ const QAFindings = ({ user }) => {
               <h3 className="text-lg font-semibold text-gray-900">
                 Documentos con Hallazgos ({findings.documents_with_findings.length})
                 {selectedDocuments.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-emerald-600">
+                  <span className="ml-2 text-sm font-normal text-yellow-700">
                     ({selectedDocuments.length} seleccionados)
                   </span>
                 )}
@@ -285,7 +285,7 @@ const QAFindings = ({ user }) => {
                       type="checkbox"
                       checked={selectedDocuments.length === findings.documents_with_findings.length}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                      className="w-4 h-4 text-yellow-700 border-gray-300 rounded focus:ring-yellow-500"
                     />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -316,7 +316,7 @@ const QAFindings = ({ user }) => {
                         type="checkbox"
                         checked={selectedDocuments.includes(doc.document_id)}
                         onChange={() => handleDocumentToggle(doc.document_id)}
-                        className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                        className="w-4 h-4 text-yellow-700 border-gray-300 rounded focus:ring-yellow-500"
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -571,7 +571,7 @@ const QAFindings = ({ user }) => {
                 <textarea
                   value={bulkComments}
                   onChange={(e) => setBulkComments(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   rows="4"
                   placeholder={`Escribe el motivo por el cual ${bulkAction === 'approve' ? 'apruebas' : 'rechazas'} estos documentos...`}
                   disabled={processing}

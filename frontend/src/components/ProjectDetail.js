@@ -366,7 +366,7 @@ const ProjectDetail = ({ user }) => {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Proyecto no encontrado</h3>
-        <Link to="/projects" className="text-emerald-600 hover:text-emerald-700">
+        <Link to="/projects" className="text-yellow-700 hover:text-yellow-700">
           Volver a proyectos
         </Link>
       </div>
@@ -412,26 +412,26 @@ const ProjectDetail = ({ user }) => {
         </div>
 
         {/* Current User Processing */}
-        <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4">
+        <div className="mb-4 bg-gradient-to-r from-yellow-50 to-teal-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center">
-            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center mr-3">
+            <div className="w-10 h-10 bg-yellow-600 rounded-full flex items-center justify-center mr-3">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-emerald-900">
+              <h4 className="text-sm font-semibold text-yellow-900">
                 Usuario Trabajando en este Proyecto
               </h4>
-              <p className="text-emerald-800 font-medium text-base">
+              <p className="text-yellow-800 font-medium text-base">
                 {user.name} ({user.email})
               </p>
-              <p className="text-emerald-700 text-xs">
+              <p className="text-yellow-700 text-xs">
                 Rol: {user.role === 'staff' ? 'Staff' : user.role === 'asesor' ? 'Asesor' : 'Cliente'}
               </p>
             </div>
-            <div className="ml-4 px-3 py-1 bg-emerald-100 rounded-full">
-              <span className="text-xs font-semibold text-emerald-800">
+            <div className="ml-4 px-3 py-1 bg-yellow-100 rounded-full">
+              <span className="text-xs font-semibold text-yellow-800">
                 🟢 Activo
               </span>
             </div>
@@ -477,7 +477,7 @@ const ProjectDetail = ({ user }) => {
             onClick={() => setActiveTab('documents')}
             className={`${
               activeTab === 'documents'
-                ? 'border-emerald-500 text-emerald-600'
+                ? 'border-yellow-500 text-yellow-700'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
@@ -490,7 +490,7 @@ const ProjectDetail = ({ user }) => {
                 onClick={() => setActiveTab('pdf-page-manager')}
                 className={`${
                   activeTab === 'pdf-page-manager'
-                    ? 'border-emerald-500 text-emerald-600'
+                    ? 'border-yellow-500 text-yellow-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
               >
@@ -500,7 +500,7 @@ const ProjectDetail = ({ user }) => {
                 onClick={() => setActiveTab('pdf-manager')}
                 className={`${
                   activeTab === 'pdf-manager'
-                    ? 'border-emerald-500 text-emerald-600'
+                    ? 'border-yellow-500 text-yellow-700'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
               >
@@ -559,7 +559,7 @@ const ProjectDetail = ({ user }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="file-upload-text mb-1">
-                  Arrastra archivos PDF o <span className="text-emerald-600 font-medium">haz clic</span>
+                  Arrastra archivos PDF o <span className="text-yellow-700 font-medium">haz clic</span>
                 </p>
                 <p className="file-upload-hint">
                   Máximo 10 archivos simultáneos • 500 MB por archivo • 1 GB por lote
@@ -620,7 +620,7 @@ const ProjectDetail = ({ user }) => {
                   <div className="flex items-center space-x-2">
                     <div className="w-32 bg-gray-200 rounded-full h-2">
                       <div 
-                        className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                        className="bg-yellow-600 h-2 rounded-full transition-all duration-300"
                         style={{ width: `${batchProgress.progress}%` }}
                       ></div>
                     </div>
@@ -727,7 +727,7 @@ const ProjectDetail = ({ user }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center">
                         {document.display_order && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 mr-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">
                             #{document.display_order}
                           </span>
                         )}
@@ -744,7 +744,7 @@ const ProjectDetail = ({ user }) => {
                               />
                               <button
                                 onClick={() => handleRenameDocument(document.id, newDocName)}
-                                className="text-emerald-600 hover:text-emerald-700"
+                                className="text-yellow-700 hover:text-yellow-700"
                               >
                                 ✓
                               </button>
@@ -773,7 +773,7 @@ const ProjectDetail = ({ user }) => {
                           </span>
                         )}
                         {document.reordered_at && (
-                          <span className="text-xs text-emerald-600">
+                          <span className="text-xs text-yellow-700">
                             Reordenado por IA
                           </span>
                         )}
@@ -787,15 +787,15 @@ const ProjectDetail = ({ user }) => {
                       {document.processing_message && document.status === 'processing' && (
                         <div className="mt-2">
                           <div className="flex items-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>
-                            <span className="text-sm text-emerald-700 font-medium">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                            <span className="text-sm text-yellow-700 font-medium">
                               {document.processing_message}
                             </span>
                           </div>
                           {document.processing_progress > 0 && (
                             <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                               <div 
-                                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                                className="bg-yellow-600 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${document.processing_progress}%` }}
                               ></div>
                             </div>
@@ -1029,7 +1029,7 @@ const ProjectDetail = ({ user }) => {
                   <textarea
                     value={qaComments}
                     onChange={(e) => setQaComments(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     rows="4"
                     placeholder="Agrega comentarios sobre la revisión (opcional)"
                   />

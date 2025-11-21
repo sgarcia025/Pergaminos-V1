@@ -370,7 +370,7 @@ const Companies = ({ user }) => {
                 setFilterCorporacion('');
                 setFilterEstado('');
               }}
-              className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              className="text-sm text-yellow-700 hover:text-yellow-700 font-medium"
             >
               Limpiar filtros
             </button>
@@ -455,7 +455,7 @@ const Companies = ({ user }) => {
                 <div className="flex items-center space-x-2">
                   <button 
                     onClick={() => handleViewProjects(company.id)}
-                    className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                    className="text-yellow-700 hover:text-yellow-700 text-sm font-medium"
                   >
                     Ver Proyectos
                   </button>
@@ -760,8 +760,8 @@ const Companies = ({ user }) => {
                       </select>
                     </div>
                   ) : (
-                    <div className="space-y-3 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                      <div className="text-sm font-medium text-emerald-800 mb-2">
+                    <div className="space-y-3 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="text-sm font-medium text-yellow-800 mb-2">
                         Crear Nueva Corporación
                       </div>
                       <input
@@ -769,14 +769,14 @@ const Companies = ({ user }) => {
                         value={newCorporationName}
                         onChange={(e) => setNewCorporationName(e.target.value)}
                         placeholder="Escribe el nombre de la corporación"
-                        className="w-full px-4 py-3 text-base border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full px-4 py-3 text-base border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                         autoFocus
                       />
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={handleCreateCorporation}
-                          className="flex-1 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                          className="flex-1 px-4 py-2.5 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors"
                         >
                           ✓ Crear y Seleccionar
                         </button>
@@ -791,7 +791,7 @@ const Companies = ({ user }) => {
                           Cancelar
                         </button>
                       </div>
-                      <p className="text-xs text-emerald-700 mt-1">
+                      <p className="text-xs text-yellow-700 mt-1">
                         💡 La nueva corporación se agregará a la lista para uso futuro
                       </p>
                     </div>

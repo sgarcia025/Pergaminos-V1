@@ -301,7 +301,7 @@ const PDFPageManager = ({ projectId, user }) => {
             {documents.length > 0 && (
               <button
                 onClick={handleSelectAll}
-                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                className="text-sm text-yellow-700 hover:text-yellow-700 font-medium"
                 disabled={loading || executing || batchProcessing}
               >
                 {selectedPdfs.length === documents.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
@@ -326,7 +326,7 @@ const PDFPageManager = ({ projectId, user }) => {
                     checked={selectedPdfs.includes(doc.original_filename)}
                     onChange={() => handlePdfToggle(doc.original_filename)}
                     disabled={loading || executing || batchProcessing}
-                    className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+                    className="w-4 h-4 text-yellow-700 border-gray-300 rounded focus:ring-yellow-500"
                   />
                   <label
                     htmlFor={`pdf-${doc.id}`}
@@ -351,7 +351,7 @@ const PDFPageManager = ({ projectId, user }) => {
               disabled={loading || executing}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                 mode === 'reorder'
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
                   : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -363,7 +363,7 @@ const PDFPageManager = ({ projectId, user }) => {
               disabled={loading || executing}
               className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                 mode === 'extract'
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                  ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
                   : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -425,7 +425,7 @@ const PDFPageManager = ({ projectId, user }) => {
           <button
             onClick={handleGeneratePlan}
             disabled={loading || selectedPdfs.length === 0 || (!instruction.trim() && !manualRange.trim()) || batchProcessing}
-            className="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-yellow-700 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Generando...' : 'Vista Previa (Primer PDF)'}
           </button>
@@ -473,7 +473,7 @@ const PDFPageManager = ({ projectId, user }) => {
                     <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-3"></div>
                   )}
                   {item.status === 'executing' && (
-                    <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mr-3"></div>
+                    <div className="w-5 h-5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mr-3"></div>
                   )}
                   {item.status === 'completed' && (
                     <svg className="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -491,7 +491,7 @@ const PDFPageManager = ({ projectId, user }) => {
                       <p className="text-xs text-blue-600">Generando plan...</p>
                     )}
                     {item.status === 'executing' && (
-                      <p className="text-xs text-emerald-600">Ejecutando...</p>
+                      <p className="text-xs text-yellow-700">Ejecutando...</p>
                     )}
                     {item.status === 'completed' && item.resultUrl && (
                       <p className="text-xs text-green-600">Completado - Listo para descargar</p>
@@ -504,7 +504,7 @@ const PDFPageManager = ({ projectId, user }) => {
                 {item.status === 'completed' && item.resultUrl && (
                   <button
                     onClick={() => handleDownloadFile(item.resultUrl, item.resultFilename)}
-                    className="ml-3 px-3 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 rounded hover:bg-emerald-200"
+                    className="ml-3 px-3 py-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded hover:bg-yellow-200"
                   >
                     Descargar
                   </button>
@@ -583,8 +583,8 @@ const PDFPageManager = ({ projectId, user }) => {
                 )}
               </div>
             ) : plan.new_page_sequence ? (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded">
-                <p className="text-sm text-emerald-900 mb-2">
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-sm text-yellow-900 mb-2">
                   <strong>Nuevo orden de páginas:</strong>
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -594,7 +594,7 @@ const PDFPageManager = ({ projectId, user }) => {
                       className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                       pageNum === idx + 1
                         ? 'bg-gray-200 text-gray-700'
-                        : 'bg-emerald-100 text-emerald-800'
+                        : 'bg-yellow-100 text-yellow-800'
                     }`}
                     >
                       {idx + 1}: Pág {pageNum}
@@ -650,11 +650,11 @@ const PDFPageManager = ({ projectId, user }) => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">✅ Resultado</h3>
           
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-emerald-900">📄 PDF Reordenado</h4>
-                <p className="text-sm text-emerald-700 mt-1">
+                <h4 className="font-medium text-yellow-900">📄 PDF Reordenado</h4>
+                <p className="text-sm text-yellow-700 mt-1">
                   {currentJob.result_filename}
                 </p>
               </div>
