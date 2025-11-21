@@ -593,7 +593,7 @@ const ProjectDetail = ({ user }) => {
                     <span className="text-sm text-gray-600">{batchProgress.progress}%</span>
                   </div>
                 )}
-                {batchUploading && batchTaskId && user && user.role !== 'client' && (
+                {batchUploading && user && user.role !== 'client' && (
                   <button
                     onClick={handleCancelBatch}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center space-x-2"
@@ -601,7 +601,7 @@ const ProjectDetail = ({ user }) => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    <span>Cancelar Procesamiento</span>
+                    <span>{uploadAbortController ? 'Cancelar Subida' : 'Cancelar Procesamiento'}</span>
                   </button>
                 )}
               </div>
