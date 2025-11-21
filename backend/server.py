@@ -6034,12 +6034,31 @@ async def create_pdf_page_plan(
                     try:
                         logger.info(f"Executing split job {idx+1}/{num_splits}: {job_id}")
                         
+                        # Get the job document to access extract_plan
+                        job_doc = await db.pdf_page_manager_jobs.find_one({"id": job_id})
+                        if not job_doc:
+                            logger.error(f"Job {job_id} not found in database")
+                            failed_jobs += 1
+                            continue
+                        
+                        # Convert dict to PDFPageExtractPlan object
+                        extract_plan_obj = PDFPageExtractPlan(**job_doc["extract_plan"])
+                        
                         # Execute using the dedicated function
                         result_path = await execute_pdf_page_extract(
-                            project_id,
-                            job_id,
-                            project,
-                            current_user
+                            extract_plan_obj,
+                            str(pdf_path),
+                            job_id
+                        )
+                        
+                        # Update job status
+                        await db.pdf_page_manager_jobs.update_one(
+                            {"id": job_id},
+                            {"$set": {
+                                "status": "completed",
+                                "result_path": result_path,
+                                "executed_at": datetime.now(timezone.utc)
+                            }}
                         )
                         
                         successful_jobs += 1
@@ -6048,6 +6067,17 @@ async def create_pdf_page_plan(
                     except Exception as e:
                         logger.error(f"Error executing split job {job_id}: {str(e)}")
                         logger.exception(e)
+                        
+                        # Update job status to failed
+                        await db.pdf_page_manager_jobs.update_one(
+                            {"id": job_id},
+                            {"$set": {
+                                "status": "failed",
+                                "error": str(e),
+                                "executed_at": datetime.now(timezone.utc)
+                            }}
+                        )
+                        
                         failed_jobs += 1
                 
                 logger.info(f"Split operation completed: {successful_jobs} successful, {failed_jobs} failed")
