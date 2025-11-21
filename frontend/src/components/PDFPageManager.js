@@ -193,11 +193,14 @@ const PDFPageManager = ({ projectId, user }) => {
       // Check if operation was auto-executed by backend
       if (response.data.auto_executed) {
         console.log('✅ OPERATION WAS AUTO-EXECUTED BY BACKEND');
+        setLoading(false);
         setSuccess(response.data.message || 'Operación completada exitosamente');
         setCurrentJob(null);
         setPlan(null);
         setInstruction('');
         setSelectedPdfs([]);
+        setExecuting(false);
+        setBatchProcessing(false);
         return;
       }
       
