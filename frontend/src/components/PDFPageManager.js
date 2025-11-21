@@ -188,12 +188,20 @@ const PDFPageManager = ({ projectId, user }) => {
 
       console.log('=== FULL RESPONSE FROM PLAN GENERATION ===');
       console.log('Full response:', JSON.stringify(response.data, null, 2));
-      console.log('is_split:', response.data.is_split);
-      console.log('job_ids:', response.data.job_ids);
-      console.log('job_id (singular):', response.data.job_id);
       console.log('==========================================');
       
-      // Check if it's a split operation (multiple jobs)
+      // Check if operation was auto-executed by backend
+      if (response.data.auto_executed) {
+        console.log('✅ OPERATION WAS AUTO-EXECUTED BY BACKEND');
+        setSuccess(response.data.message || 'Operación completada exitosamente');
+        setCurrentJob(null);
+        setPlan(null);
+        setInstruction('');
+        setSelectedPdfs([]);
+        return;
+      }
+      
+      // Check if it's a split operation (multiple jobs) - legacy code
       if (response.data.is_split && response.data.job_ids && response.data.job_ids.length > 0) {
         console.log('✅ ENTERING SPLIT OPERATION BRANCH');
         setSuccess(`✅ Operación de división detectada: Se crearon ${response.data.num_splits} planes de extracción. Ejecutando automáticamente...`);
