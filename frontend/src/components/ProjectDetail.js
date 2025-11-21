@@ -254,6 +254,39 @@ const ProjectDetail = ({ user }) => {
     }
   };
 
+  const handleCancelBatch = async () => {
+    if (!batchTaskId) return;
+    
+    if (!window.confirm('¿Estás seguro de que deseas cancelar el procesamiento en curso? Los documentos pendientes no se procesarán.')) {
+      return;
+    }
+    
+    try {
+      await axios.post(`${API}/projects/${projectId}/batch-cancel/${batchTaskId}`);
+      setSuccess('Procesamiento cancelado exitosamente');
+      setBatchUploading(false);
+      setBatchTaskId(null);
+      setUploadProgress([]);
+      fetchDocuments();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al cancelar el procesamiento');
+    }
+  };
+
+  const handleDeleteDocument = async (documentId, documentName) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar "${documentName}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    
+    try {
+      await axios.delete(`${API}/documents/${documentId}`);
+      setSuccess('Documento eliminado exitosamente');
+      fetchDocuments();
+    } catch (error) {
+      setError(error.response?.data?.detail || 'Error al eliminar el documento');
+    }
+  };
+
   const getStatusColor = (status) => {
     const colors = {
       'uploaded': 'status-uploaded',
