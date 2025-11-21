@@ -57,8 +57,8 @@ body {
 
 /* Button styles */
 .btn-primary {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-gold) 0%, var(--primary-gold-light) 100%);
+  color: var(--text-dark);
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   border: none;
@@ -66,13 +66,13 @@ body {
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 4px 12px rgba(212, 166, 29, 0.25);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  background: linear-gradient(135deg, var(--primary-gold-dark) 0%, var(--primary-gold) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 6px 20px rgba(212, 166, 29, 0.35);
 }
 
 .btn-primary:active {
@@ -81,10 +81,10 @@ body {
 
 .btn-secondary {
   background: white;
-  color: #059669;
+  color: var(--secondary-navy);
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
-  border: 1px solid #d1fae5;
+  border: 1px solid var(--border-color);
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
@@ -92,8 +92,8 @@ body {
 }
 
 .btn-secondary:hover {
-  background: #f0fdf4;
-  border-color: #a7f3d0;
+  background: var(--background-light);
+  border-color: var(--primary-gold);
   transform: translateY(-1px);
 }
 
