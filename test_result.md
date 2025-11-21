@@ -429,6 +429,18 @@ frontend:
         - agent: "main"
         - comment: "Implementado endpoint DELETE /api/documents/{document_id} que elimina documento físico, registros de datos extraídos y documento de la BD. Solo staff y asesor pueden eliminar. En frontend, agregado botón de eliminar (icono papelera) visible solo para documentos con status 'completed' o 'failed', con confirmación antes de eliminar. Botón solo visible para staff y asesor."
 
+  - task: "Aplicar paleta de colores de ePergaminos.com a toda la plataforma"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.css, /app/frontend/tailwind.config.js, /app/frontend/src/components/*.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementada paleta de colores completa de ePergaminos.com: Oro/Dorado (#D4A61D) como color primario, Navy/Azul Oscuro (#1E3A5F) como secundario, Fondo oscuro (#2C3E50). Actualizados: (1) App.css con variables CSS personalizadas, (2) tailwind.config.js con colores 'pergaminos' y override de yellow con escala de oro, (3) Todos los componentes React reemplazando emerald-* con yellow-* (usando script automático). Botones, formularios, estadísticas, badges y todos los elementos ahora usan la paleta de ePergaminos. Screenshots verificados mostrando correcta aplicación de colores en login y dashboard."
+
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
     working: "NA"
