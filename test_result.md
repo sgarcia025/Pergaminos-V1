@@ -444,6 +444,18 @@ frontend:
         - agent: "main"
         - comment: "Agregado logo oficial de Pergaminos (pergaminos_logos-16.png) reemplazando el ícono SVG de block de notas. Logo implementado en: (1) Login.js - Logo principal de 96x96px, (2) Sidebar.js - Logo en navegación lateral de 48x48px. Logo almacenado en /app/frontend/public/pergaminos-logo.png. Screenshots verificados mostrando logo correctamente en ambas ubicaciones con tamaños apropiados."
 
+  - task: "Estandarizar fuente tipográfica a Inter en toda la plataforma"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.css, /app/frontend/src/components/*.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Estandarizada la tipografía de toda la plataforma para usar únicamente Inter (Google Fonts). Eliminadas todas las referencias a 'Playfair Display' que se usaba en títulos y headers. Actualizados: (1) App.css - Eliminada importación de Playfair Display, (2) Login.js - Título 'Pergaminos' ahora usa Inter extrabold, (3) Sidebar.js - Logo y nombre usan Inter extrabold, (4) 18+ componentes actualizados automáticamente con script. Resultado: tipografía limpia, moderna y consistente en login, sidebar, menú de navegación, títulos, contenido, botones y formularios. Screenshots verificados mostrando consistencia visual completa."
+
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
     working: "NA"
