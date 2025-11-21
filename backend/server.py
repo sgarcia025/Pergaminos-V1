@@ -6076,15 +6076,16 @@ async def create_pdf_page_plan(
                         user_doc = await db.users.find_one({"id": current_user.id})
                         user_name = user_doc.get("name") if user_doc else current_user.email
                         
-                        # Execute using the dedicated function
+                        # Execute using the dedicated function (without history saving in the function)
                         result_path = await execute_pdf_page_extract(
                             extract_plan_obj,
                             str(pdf_path),
-                            job_id,
-                            project_id=project_id,
-                            user_id=current_user.id,
-                            user_name=user_name
+                            job_id
                         )
+                        
+                        # Generate download URL
+                        result_filename = Path(result_path).name
+                        result_url = f"/api/pdf-page-manager/download/{job_id}/{result_filename}"
                         
                         # Update job status
                         await db.pdf_page_manager_jobs.update_one(
@@ -6092,8 +6093,27 @@ async def create_pdf_page_plan(
                             {"$set": {
                                 "status": "completed",
                                 "result_path": result_path,
+                                "result_url": result_url,
+                                "result_filename": result_filename,
                                 "executed_at": datetime.now(timezone.utc)
                             }}
+                        )
+                        
+                        # Save to PDF history
+                        await save_pdf_history(
+                            company_id=company["id"],
+                            company_name=company.get("name", "Unknown"),
+                            project_id=project_id,
+                            project_name=project.get("name", "Unknown"),
+                            operation_type="extract",
+                            original_pdf_name=extract_plan_obj.pdf_filename,
+                            result_pdf_name=result_filename,
+                            result_pdf_path=result_path,
+                            instruction=job_doc["instruction"],
+                            job_id=job_id,
+                            performed_by=current_user.id,
+                            performed_by_name=user_name,
+                            download_url=result_url
                         )
                         
                         successful_jobs += 1
