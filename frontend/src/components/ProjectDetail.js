@@ -287,7 +287,16 @@ const ProjectDetail = ({ user }) => {
       setShowQAModal(false);
       setSelectedDocument(null);
       setQaComments('');
+      
+      // Fetch immediately
       fetchDocuments();
+      
+      // If approved, poll a few more times to capture data extraction completion
+      if (action === 'approved') {
+        setTimeout(() => fetchDocuments(), 2000);
+        setTimeout(() => fetchDocuments(), 5000);
+        setTimeout(() => fetchDocuments(), 10000);
+      }
     } catch (error) {
       setError(error.response?.data?.detail || 'Error al procesar la revisión QA');
     } finally {
