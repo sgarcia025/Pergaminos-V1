@@ -144,7 +144,7 @@ const Sidebar = ({ user }) => {
             className="w-12 h-12"
           />
           <div className="ml-3">
-            <h2 className="text-lg font-bold text-gray-900" >
+            <h2 className="text-lg font-extrabold text-gray-900" >
               Pergaminos
             </h2>
             <p className="text-xs text-gray-500">Digitalización</p>
