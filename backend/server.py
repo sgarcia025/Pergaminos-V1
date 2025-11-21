@@ -5492,6 +5492,11 @@ Instrucción: {instruction}
 
 Determina qué páginas deben extraerse basándote en la instrucción.
 
+IMPORTANTE - DETECCIÓN DE DIVISIÓN/SPLIT:
+- Si la instrucción menciona "cada N páginas", "dividir en grupos de N", "crear documento cada N páginas", o similar, debes extraer SOLO el primer grupo de N páginas.
+- El sistema creará automáticamente los demás documentos. TU TRABAJO es extraer solo el PRIMER GRUPO.
+- Indica en el reasoning que detectaste una operación de división.
+
 REGLAS:
 1. Devuelve SOLO JSON válido
 2. Los números de página empiezan en 1
@@ -5502,13 +5507,17 @@ FORMATO OBLIGATORIO:
   "pages_to_extract": [1, 2, 3, ...],
   "new_filename": "nombre_descriptivo.pdf",
   "confidence": 0.95,
-  "reasoning": "Explicación de por qué estas páginas"
+  "reasoning": "Explicación de por qué estas páginas",
+  "is_split_operation": false,
+  "split_size": null
 }}
 
 Ejemplos:
-- "Extraer primeras 20 páginas" -> pages_to_extract: [1,2,3...20]
-- "Solo páginas impares" -> pages_to_extract: [1,3,5,7...]
-- "Páginas 10 a 50" -> pages_to_extract: [10,11,12...50]
+- "Extraer primeras 20 páginas" -> pages_to_extract: [1,2,3...20], is_split_operation: false
+- "Solo páginas impares" -> pages_to_extract: [1,3,5,7...], is_split_operation: false
+- "Páginas 10 a 50" -> pages_to_extract: [10,11,12...50], is_split_operation: false
+- "Crear un nuevo documento cada 4 páginas" -> pages_to_extract: [1,2,3,4], is_split_operation: true, split_size: 4
+- "Dividir en grupos de 10 páginas" -> pages_to_extract: [1,2,3...10], is_split_operation: true, split_size: 10
 """
         
         from emergentintegrations.llm.chat import UserMessage
