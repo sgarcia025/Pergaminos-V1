@@ -474,6 +474,21 @@ frontend:
         - agent: "main"
         - comment: "PROBLEMA IDENTIFICADO Y RESUELTO: Tokens JWT expiraban en 30 minutos y había inconsistencia (15 min en fallback). Al refrescar, si el token expiraba, se perdía la sesión. SOLUCIONES IMPLEMENTADAS: (1) Backend - Aumentado ACCESS_TOKEN_EXPIRE_MINUTES de 30 a 480 minutos (8 horas), corregida inconsistencia en create_access_token para usar ACCESS_TOKEN_EXPIRE_MINUTES en lugar de 15 min hardcoded. (2) Frontend - Mejorado checkAuthStatus para solo eliminar token en errores 401/403 (token inválido), no en errores de red. Agregado interceptor axios global para manejar 401 y redirigir al login solo cuando token realmente expiró. RESULTADO: Sesión ahora persiste 8 horas y no se pierde al refrescar página. Token solo se elimina si realmente está inválido, no por errores temporales de red."
 
+  - task: "Actualización automática de documentos completados sin refrescar página"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/components/ProjectDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó que hay que refrescar la página manualmente para ver los documentos completados. No se actualizan automáticamente."
+        - working: true
+        - agent: "main"
+        - comment: "PROBLEMA IDENTIFICADO Y RESUELTO: El polling de documentos se detenía cuando no había documentos en estado 'processing', lo que causaba que documentos recién completados no aparecieran hasta refrescar manualmente. SOLUCIONES IMPLEMENTADAS: (1) Mejorado useEffect de auto-refresh para continuar polling mientras batchUploading esté activo, no solo cuando hay docs en processing. (2) Modificado pollBatchStatus para llamar fetchDocuments() en cada iteración, no solo al final. Agregado fetch adicional con delay de 1s después de completar batch. (3) Mejorado handleQAReview para hacer múltiples fetches después de aprobar documento (inmediato, +2s, +5s, +10s) capturando así la extracción de datos. RESULTADO: Documentos ahora se actualizan automáticamente en la interfaz sin necesidad de refrescar página, tanto durante procesamiento como al completarse."
+
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
     working: "NA"
