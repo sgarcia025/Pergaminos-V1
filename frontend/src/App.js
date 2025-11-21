@@ -35,6 +35,25 @@ function App() {
 
   useEffect(() => {
     checkAuthStatus();
+    
+    // Setup axios interceptor to handle 401 errors globally
+    const interceptor = axios.interceptors.response.use(
+      response => response,
+      error => {
+        if (error.response?.status === 401 && window.location.pathname !== '/') {
+          console.log('Session expired, logging out...');
+          localStorage.removeItem('token');
+          delete axios.defaults.headers.common['Authorization'];
+          window.location.href = '/';
+        }
+        return Promise.reject(error);
+      }
+    );
+    
+    // Cleanup interceptor on unmount
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
   }, []);
 
   const checkAuthStatus = async () => {
