@@ -253,7 +253,7 @@ const PDFHistory = ({ user }) => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Playfair Display' }}>
+        <h1 className="text-3xl font-bold text-gray-900" >
           Historial de PDFs
         </h1>
         <p className="text-gray-600 mt-2">

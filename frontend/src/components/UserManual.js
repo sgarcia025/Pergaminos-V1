@@ -389,7 +389,7 @@ El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado 
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Playfair Display' }}>
+          <h1 className="text-3xl font-bold text-gray-900" >
             📚 Manual de Usuario
           </h1>
           <p className="text-gray-600 mt-1">
@@ -434,7 +434,7 @@ El sistema primero intenta extraer texto normalmente. Si el PDF está escaneado 
         <div className="lg:col-span-3 space-y-6">
           {/* Section Content */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: 'Playfair Display' }}>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4" >
               {currentSection?.title}
             </h2>
             <div className="prose max-w-none">

@@ -32,7 +32,7 @@ const Login = ({ onLogin }) => {
               className="w-24 h-24"
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Playfair Display' }}>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2" >
             Pergaminos
           </h1>
           <p className="text-gray-600">Sistema de Digitalización Inteligente</p>

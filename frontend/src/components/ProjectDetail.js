@@ -398,7 +398,7 @@ const ProjectDetail = ({ user }) => {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Playfair Display' }}>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2" >
               {project.name}
             </h1>
             {project.description && (
