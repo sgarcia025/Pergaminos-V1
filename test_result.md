@@ -402,6 +402,30 @@ frontend:
         - agent: "main"
         - comment: "Agregado botón de eliminación con modal de confirmación, visible solo para usuarios staff"
 
+  - task: "Cancelar procesamiento de lote en curso"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/components/ProjectDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementado endpoint POST /api/projects/{project_id}/batch-cancel/{batch_task_id} que cancela el procesamiento en curso, marca el batch como cancelled y actualiza documentos pendientes a failed. En frontend, agregado botón 'Cancelar Procesamiento' en la tarjeta de progreso del lote, visible solo para staff y asesor, con confirmación antes de cancelar."
+
+  - task: "Eliminar documentos procesados (exitosos o fallidos)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/components/ProjectDetail.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Implementado endpoint DELETE /api/documents/{document_id} que elimina documento físico, registros de datos extraídos y documento de la BD. Solo staff y asesor pueden eliminar. En frontend, agregado botón de eliminar (icono papelera) visible solo para documentos con status 'completed' o 'failed', con confirmación antes de eliminar. Botón solo visible para staff y asesor."
+
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
     working: "NA"
