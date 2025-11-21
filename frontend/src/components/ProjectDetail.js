@@ -283,22 +283,33 @@ const ProjectDetail = ({ user }) => {
   };
 
   const handleCancelBatch = async () => {
-    if (!batchTaskId) return;
-    
-    if (!window.confirm('¿Estás seguro de que deseas cancelar el procesamiento en curso? Los documentos pendientes no se procesarán.')) {
+    if (!window.confirm('¿Estás seguro de que deseas cancelar? Se detendrá la subida y procesamiento en curso.')) {
       return;
     }
     
-    try {
-      await axios.post(`${API}/projects/${projectId}/batch-cancel/${batchTaskId}`);
-      setSuccess('Procesamiento cancelado exitosamente');
-      setBatchUploading(false);
-      setBatchTaskId(null);
-      setUploadProgress([]);
-      fetchDocuments();
-    } catch (error) {
-      setError(error.response?.data?.detail || 'Error al cancelar el procesamiento');
+    // Cancel upload if in progress
+    if (uploadAbortController) {
+      uploadAbortController.abort();
+      setUploadAbortController(null);
     }
+    
+    // Cancel batch processing if already uploaded
+    if (batchTaskId) {
+      try {
+        await axios.post(`${API}/projects/${projectId}/batch-cancel/${batchTaskId}`);
+        setSuccess('Procesamiento cancelado exitosamente');
+      } catch (error) {
+        setError(error.response?.data?.detail || 'Error al cancelar el procesamiento');
+      }
+    } else {
+      setSuccess('Subida cancelada exitosamente');
+    }
+    
+    // Reset all states
+    setBatchUploading(false);
+    setBatchTaskId(null);
+    setUploadProgress([]);
+    fetchDocuments();
   };
 
   const handleDeleteDocument = async (documentId, documentName) => {
