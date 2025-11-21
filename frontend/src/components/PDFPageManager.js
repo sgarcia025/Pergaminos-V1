@@ -187,22 +187,36 @@ const PDFPageManager = ({ projectId, user }) => {
       });
 
       // Check if it's a split operation (multiple jobs)
-      if (response.data.is_split) {
-        setSuccess(`✅ Operación de división detectada: Se crearon ${response.data.num_splits} planes de extracción. El sistema ejecutará automáticamente todos los planes.`);
+      if (response.data.is_split && response.data.job_ids && response.data.job_ids.length > 0) {
+        setSuccess(`✅ Operación de división detectada: Se crearon ${response.data.num_splits} planes de extracción. Ejecutando automáticamente...`);
         
-        // Execute all jobs automatically
+        // Wait a moment for DB to be consistent
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Execute all jobs automatically with progress tracking
         setExecuting(true);
         let successCount = 0;
         let failCount = 0;
         
-        for (const jobId of response.data.job_ids) {
+        for (let i = 0; i < response.data.job_ids.length; i++) {
+          const jobId = response.data.job_ids[i];
+          
           try {
+            setSuccess(`📄 Procesando PDF ${i + 1} de ${response.data.job_ids.length}...`);
+            
             await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute`, {
               job_id: jobId
             });
+            
             successCount++;
+            
+            // Small delay between executions to avoid overwhelming the server
+            if (i < response.data.job_ids.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           } catch (err) {
             console.error(`Error executing job ${jobId}:`, err);
+            console.error('Error details:', err.response?.data);
             failCount++;
           }
         }
@@ -210,9 +224,9 @@ const PDFPageManager = ({ projectId, user }) => {
         setExecuting(false);
         
         if (failCount === 0) {
-          setSuccess(`✅ ¡Operación completada! Se crearon ${successCount} documentos PDF exitosamente.`);
+          setSuccess(`✅ ¡Operación completada! Se crearon ${successCount} documentos PDF exitosamente. Revisa el historial de PDFs.`);
         } else {
-          setError(`⚠️ Se crearon ${successCount} documentos, pero ${failCount} fallaron. Revisa el historial de PDFs.`);
+          setError(`⚠️ Se crearon ${successCount} documentos, pero ${failCount} fallaron. Revisa el historial de PDFs para más detalles.`);
         }
         
         // Clear for next operation
