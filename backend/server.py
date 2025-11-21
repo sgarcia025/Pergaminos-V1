@@ -5849,7 +5849,10 @@ async def execute_pdf_page_reorder(
 async def execute_pdf_page_extract(
     extract_plan: PDFPageExtractPlan,
     source_pdf_path: str,
-    job_id: str
+    job_id: str,
+    project_id: str = None,
+    user_id: str = None,
+    user_name: str = None
 ) -> str:
     """
     Execute page extraction from a PDF and save as new PDF.
@@ -5880,6 +5883,31 @@ async def execute_pdf_page_extract(
             writer.write(output_file)
         
         logger.info(f"PDF page extraction completed: {output_path}, {len(extract_plan.pages_to_extract)} pages extracted")
+        
+        # Save to PDF history if project_id is provided
+        if project_id and user_id:
+            try:
+                history_entry = {
+                    "id": str(uuid.uuid4()),
+                    "project_id": project_id,
+                    "operation_type": "extract",
+                    "original_filename": extract_plan.pdf_filename,
+                    "result_filename": output_filename,
+                    "result_path": str(output_path),
+                    "pages_affected": extract_plan.pages_to_extract,
+                    "performed_by": user_id,
+                    "performed_by_name": user_name or "System",
+                    "performed_at": datetime.now(timezone.utc),
+                    "job_id": job_id,
+                    "success": True
+                }
+                
+                await db.pdf_history.insert_one(history_entry)
+                logger.info(f"PDF history entry created for job {job_id}")
+                
+            except Exception as hist_error:
+                logger.error(f"Failed to save PDF history: {str(hist_error)}")
+                # Don't fail the whole operation if history fails
         
         return str(output_path)
         
