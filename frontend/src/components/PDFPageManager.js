@@ -198,16 +198,22 @@ const PDFPageManager = ({ projectId, user }) => {
         let successCount = 0;
         let failCount = 0;
         
+        console.log('Split operation - job_ids received:', response.data.job_ids);
+        
         for (let i = 0; i < response.data.job_ids.length; i++) {
           const jobId = response.data.job_ids[i];
+          
+          console.log(`Attempting to execute job ${i + 1}/${response.data.job_ids.length}, job_id:`, jobId);
           
           try {
             setSuccess(`📄 Procesando PDF ${i + 1} de ${response.data.job_ids.length}...`);
             
-            await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute`, {
-              job_id: jobId
-            });
+            const executePayload = { job_id: jobId };
+            console.log('Execute payload:', executePayload);
             
+            const executeResponse = await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute`, executePayload);
+            
+            console.log(`Job ${jobId} executed successfully:`, executeResponse.data);
             successCount++;
             
             // Small delay between executions to avoid overwhelming the server
@@ -217,6 +223,7 @@ const PDFPageManager = ({ projectId, user }) => {
           } catch (err) {
             console.error(`Error executing job ${jobId}:`, err);
             console.error('Error details:', err.response?.data);
+            console.error('Full error:', err);
             failCount++;
           }
         }
