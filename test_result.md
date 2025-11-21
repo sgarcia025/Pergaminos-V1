@@ -455,6 +455,24 @@ frontend:
         - working: "NA"
         - agent: "main"
         - comment: "Estandarizada la tipografía de toda la plataforma para usar únicamente Inter (Google Fonts). Eliminadas todas las referencias a 'Playfair Display' que se usaba en títulos y headers. Actualizados: (1) App.css - Eliminada importación de Playfair Display, (2) Login.js - Título 'Pergaminos' ahora usa Inter extrabold, (3) Sidebar.js - Logo y nombre usan Inter extrabold, (4) 18+ componentes actualizados automáticamente con script. Resultado: tipografía limpia, moderna y consistente en login, sidebar, menú de navegación, títulos, contenido, botones y formularios. Screenshots verificados mostrando consistencia visual completa."
+        - working: "NA"
+        - agent: "main"
+        - comment: "AJUSTES VISUALES: (1) Logo de login aumentado a w-32 (128px) para mejor visibilidad, (2) Color del menú activo del sidebar cambiado de degradado amarillo-verde a dorado sólido (bg-yellow-600) para mantener identidad de marca ePergaminos."
+
+  - task: "Corregir problema de sesión: deslogueo al refrescar página"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+        - working: false
+        - agent: "user"
+        - comment: "Usuario reportó que cada vez que refresca la página, se desloguea automáticamente y debe ingresar credenciales nuevamente."
+        - working: true
+        - agent: "main"
+        - comment: "PROBLEMA IDENTIFICADO Y RESUELTO: Tokens JWT expiraban en 30 minutos y había inconsistencia (15 min en fallback). Al refrescar, si el token expiraba, se perdía la sesión. SOLUCIONES IMPLEMENTADAS: (1) Backend - Aumentado ACCESS_TOKEN_EXPIRE_MINUTES de 30 a 480 minutos (8 horas), corregida inconsistencia en create_access_token para usar ACCESS_TOKEN_EXPIRE_MINUTES en lugar de 15 min hardcoded. (2) Frontend - Mejorado checkAuthStatus para solo eliminar token en errores 401/403 (token inválido), no en errores de red. Agregado interceptor axios global para manejar 401 y redirigir al login solo cuando token realmente expiró. RESULTADO: Sesión ahora persiste 8 horas y no se pierde al refrescar página. Token solo se elimina si realmente está inválido, no por errores temporales de red."
 
   - task: "Descarga por lotes en PDFHistory frontend"
     implemented: true
