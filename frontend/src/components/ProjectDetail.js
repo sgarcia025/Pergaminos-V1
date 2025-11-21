@@ -95,6 +95,10 @@ const ProjectDetail = ({ user }) => {
     setError('');
     setSuccess('');
 
+    // Create abort controller for upload cancellation
+    const abortController = new AbortController();
+    setUploadAbortController(abortController);
+
     // Single file upload (legacy)
     if (files.length === 1) {
       setUploading(true);
@@ -106,13 +110,19 @@ const ProjectDetail = ({ user }) => {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          signal: abortController.signal
         });
         setSuccess('Documento subido exitosamente');
         fetchDocuments();
       } catch (error) {
-        setError(error.response?.data?.detail || 'Error al subir el documento');
+        if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+          setError('Subida cancelada por el usuario');
+        } else {
+          setError(error.response?.data?.detail || 'Error al subir el documento');
+        }
       } finally {
         setUploading(false);
+        setUploadAbortController(null);
       }
     } else {
       // Batch upload for multiple files
@@ -121,7 +131,7 @@ const ProjectDetail = ({ user }) => {
       // Initialize upload progress tracking
       const progressTracking = Array.from(files).map(file => ({
         name: file.name,
-        status: 'pending',
+        status: 'uploading',
         progress: 0
       }));
       setUploadProgress(progressTracking);
@@ -136,17 +146,34 @@ const ProjectDetail = ({ user }) => {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          signal: abortController.signal,
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            // Update all files to show upload progress
+            setUploadProgress(prev => prev.map(item => ({
+              ...item,
+              status: 'uploading',
+              progress: percentCompleted
+            })));
+          }
         });
         
         setSuccess(`${files.length} documentos subidos exitosamente. Procesando...`);
         setBatchTaskId(response.data.batch_task_id);
+        setUploadAbortController(null);
         
         // Start polling for batch status
         pollBatchStatus(response.data.batch_task_id);
         
       } catch (error) {
-        setError(error.response?.data?.detail || 'Error al subir los documentos');
+        if (error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+          setError('Subida cancelada por el usuario');
+        } else {
+          setError(error.response?.data?.detail || 'Error al subir los documentos');
+        }
         setBatchUploading(false);
+        setUploadAbortController(null);
+        setUploadProgress([]);
       }
     }
   };
