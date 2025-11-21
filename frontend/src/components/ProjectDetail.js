@@ -44,7 +44,10 @@ const ProjectDetail = ({ user }) => {
       doc.status === 'uploaded'
     );
 
-    if (processingDocs.length > 0) {
+    // Also poll if batch is uploading
+    const shouldPoll = processingDocs.length > 0 || batchUploading;
+
+    if (shouldPoll) {
       // Poll every 3 seconds when documents are processing
       const interval = setInterval(() => {
         fetchDocuments();
@@ -52,7 +55,7 @@ const ProjectDetail = ({ user }) => {
 
       return () => clearInterval(interval);
     }
-  }, [documents, projectId]);
+  }, [documents, projectId, batchUploading]);
 
   const fetchProject = async () => {
     try {
