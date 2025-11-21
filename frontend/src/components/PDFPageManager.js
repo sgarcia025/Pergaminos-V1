@@ -251,8 +251,9 @@ const PDFPageManager = ({ projectId, user }) => {
         
       } else {
         // Single job (original behavior)
+        console.log('❌ NOT A SPLIT OPERATION - Using single job flow');
         setCurrentJob(response.data);
-        setPlan(response.data.plan);
+        setPlan(response.data.plan || response.data.extract_plan);
         
         if (mode === 'extract') {
           const pagesCount = response.data.plan?.pages_to_extract?.length || response.data.extract_plan?.pages_to_extract?.length || 0;
