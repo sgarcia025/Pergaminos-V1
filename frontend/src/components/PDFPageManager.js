@@ -186,14 +186,51 @@ const PDFPageManager = ({ projectId, user }) => {
         manual_range: mode === 'extract' && manualRange.trim() ? manualRange.trim() : null
       });
 
-      setCurrentJob(response.data);
-      setPlan(response.data.plan);
-      
-      if (mode === 'extract') {
-        const pagesCount = response.data.plan.pages_to_extract?.length || 0;
-        setSuccess(`Plan de extracción generado para "${selectedPdfs[0]}": ${pagesCount} páginas serán extraídas`);
+      // Check if it's a split operation (multiple jobs)
+      if (response.data.is_split) {
+        setSuccess(`✅ Operación de división detectada: Se crearon ${response.data.num_splits} planes de extracción. El sistema ejecutará automáticamente todos los planes.`);
+        
+        // Execute all jobs automatically
+        setExecuting(true);
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const jobId of response.data.job_ids) {
+          try {
+            await axios.post(`${API}/projects/${projectId}/pdf-page-manager/execute`, {
+              job_id: jobId
+            });
+            successCount++;
+          } catch (err) {
+            console.error(`Error executing job ${jobId}:`, err);
+            failCount++;
+          }
+        }
+        
+        setExecuting(false);
+        
+        if (failCount === 0) {
+          setSuccess(`✅ ¡Operación completada! Se crearon ${successCount} documentos PDF exitosamente.`);
+        } else {
+          setError(`⚠️ Se crearon ${successCount} documentos, pero ${failCount} fallaron. Revisa el historial de PDFs.`);
+        }
+        
+        // Clear for next operation
+        setCurrentJob(null);
+        setPlan(null);
+        setInstruction('');
+        
       } else {
-        setSuccess(`Plan de reordenamiento generado para "${selectedPdfs[0]}": ${response.data.plan.total_pages} páginas`);
+        // Single job (original behavior)
+        setCurrentJob(response.data);
+        setPlan(response.data.plan);
+        
+        if (mode === 'extract') {
+          const pagesCount = response.data.plan?.pages_to_extract?.length || response.data.extract_plan?.pages_to_extract?.length || 0;
+          setSuccess(`Plan de extracción generado para "${selectedPdfs[0]}": ${pagesCount} páginas serán extraídas`);
+        } else {
+          setSuccess(`Plan de reordenamiento generado para "${selectedPdfs[0]}": ${response.data.plan.total_pages} páginas`);
+        }
       }
     } catch (error) {
       setError(error.response?.data?.detail || 'Error al generar el plan');
