@@ -384,6 +384,8 @@ class PDFPageExtractPlan(BaseModel):
     new_filename: str  # Name for the extracted PDF
     confidence: float  # 0.0 to 1.0
     reasoning: str  # AI explanation
+    is_split_operation: bool = False  # True if this is a split/divide operation
+    split_size: Optional[int] = None  # Number of pages per split (if is_split_operation=True)
 
 class PDFPageManagerJob(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
